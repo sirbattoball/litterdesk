@@ -70,7 +70,7 @@ export default function BuyersPage() {
             {STATUSES.map(s => (
               <button key={s.key} onClick={() => setStatus(s.key)}
                 className="badge"
-                style={{ cursor:'pointer', border:'none', padding:'6px 14px', fontSize:12.5, background: status===s.key ? 'var(--ink)' : 'var(--white)', color: status===s.key ? '#fff' : 'var(--ink-3)', border: status===s.key ? 'none' : '1px solid var(--paper-3)', borderRadius: 20 }}>
+                style={{ cursor:'pointer', padding:'6px 14px', fontSize:12.5, background: status===s.key ? 'var(--ink)' : 'var(--white)', color: status===s.key ? '#fff' : 'var(--ink-3)', border: status===s.key ? 'none' : '1px solid var(--paper-3)', borderRadius: 20 }}>
                 {s.label}
               </button>
             ))}
