@@ -17,27 +17,28 @@ export default function LoginPage() {
     try {
       await login(email, password)
       router.push('/dashboard')
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Login failed')
+    } catch {
+      toast.error('Invalid email or password')
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-green-700 rounded-xl flex items-center justify-center mx-auto mb-3">
-            <span className="text-white text-xl font-bold">L</span>
+    <div className="auth-wrap">
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div className="auth-logo">
+          <div className="auth-logomark">
+            <svg viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">LitterDesk</h1>
-          <p className="text-gray-500 text-sm mt-1">Sign in to your kennel</p>
+          <span className="auth-logo-text">LitterDesk</span>
         </div>
 
-        <div className="card p-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="label">Email</label>
+        <div className="auth-card">
+          <h1 className="auth-title">Welcome back</h1>
+          <p className="auth-sub">Sign in to your kennel account</p>
+
+          <form onSubmit={handleSubmit}>
+            <div className="field">
+              <label className="label">Email address</label>
               <input
                 type="email"
                 className="input"
@@ -47,7 +48,7 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <div>
+            <div className="field">
               <label className="label">Password</label>
               <input
                 type="password"
@@ -58,18 +59,21 @@ export default function LoginPage() {
                 required
               />
             </div>
+
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary w-full py-2.5"
+              className="btn-primary"
+              style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '15px', marginTop: 8 }}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Signing in…' : 'Sign in →'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Don't have an account?{' '}
-            <Link href="/register" className="text-green-700 font-medium hover:underline">
+          <div className="divider" />
+          <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--ink-4)' }}>
+            Don&apos;t have an account?{' '}
+            <Link href="/register" style={{ color: 'var(--forest)', fontWeight: 500, textDecoration: 'none' }}>
               Start free trial
             </Link>
           </p>

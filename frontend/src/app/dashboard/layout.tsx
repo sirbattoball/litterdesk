@@ -10,19 +10,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter()
 
   useEffect(() => {
-    if (!token || !user) {
-      router.push('/login')
-    }
+    if (!token || !user) router.push('/login')
   }, [token, user, router])
 
-  if (!user) return null
+  if (!user) return (
+    <div style={{ minHeight: '100vh', background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="spinner" style={{ width: 32, height: 32 }} />
+    </div>
+  )
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="shell">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+      <div className="main-content">{children}</div>
     </div>
   )
 }
