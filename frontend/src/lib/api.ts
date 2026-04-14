@@ -45,18 +45,18 @@ export const dashboardApi = {
 
 // ─── Dogs ────────────────────────────────────────────────────────────────────
 export const dogsApi = {
-  list: (params?: any) => api.get('/dogs', { params }),
+  list: (params?: any) => api.get('/dogs/', { params }),
   get: (id: string) => api.get(`/dogs/${id}`),
-  create: (data: any) => api.post('/dogs', data),
+  create: (data: any) => api.post('/dogs/', data),
   update: (id: string, data: any) => api.put(`/dogs/${id}`, data),
   delete: (id: string) => api.delete(`/dogs/${id}`),
 }
 
 // ─── Litters ─────────────────────────────────────────────────────────────────
 export const littersApi = {
-  list: (params?: any) => api.get('/litters', { params }),
+  list: (params?: any) => api.get('/litters/', { params }),
   get: (id: string) => api.get(`/litters/${id}`),
-  create: (data: any) => api.post('/litters', data),
+  create: (data: any) => api.post('/litters/', data),
   update: (id: string, data: any) => api.put(`/litters/${id}`, data),
   delete: (id: string) => api.delete(`/litters/${id}`),
   puppies: (id: string) => api.get(`/litters/${id}/puppies`),
@@ -66,9 +66,9 @@ export const littersApi = {
 
 // ─── Buyers ──────────────────────────────────────────────────────────────────
 export const buyersApi = {
-  list: (params?: any) => api.get('/buyers', { params }),
+  list: (params?: any) => api.get('/buyers/', { params }),
   get: (id: string) => api.get(`/buyers/${id}`),
-  create: (data: any) => api.post('/buyers', data),
+  create: (data: any) => api.post('/buyers/', data),
   update: (id: string, data: any) => api.put(`/buyers/${id}`, data),
   addToWaitlist: (buyerId: string, litterId: string) =>
     api.post(`/buyers/${buyerId}/add-to-waitlist`, null, { params: { litter_id: litterId } }),
@@ -79,7 +79,7 @@ export const buyersApi = {
 
 // ─── Contracts ───────────────────────────────────────────────────────────────
 export const contractsApi = {
-  list: (params?: any) => api.get('/contracts', { params }),
+  list: (params?: any) => api.get('/contracts/', { params }),
   get: (id: string) => api.get(`/contracts/${id}`),
   send: (id: string) => api.post(`/contracts/${id}/send`),
   void: (id: string) => api.delete(`/contracts/${id}`),

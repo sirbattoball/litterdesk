@@ -12,7 +12,7 @@ export default function NewDogPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [health, setHealth] = useState<string[]>([])
-  const [form, setForm] = useState({ name:'', registered_name:'', breed:'Golden Retriever', sex:'female', dob:'', akc_number:'', color:'', weight_lbs:'', is_external:false, notes:'' })
+  const [form, setForm] = useState({ name:'', registered_name:'', breed:'Golden Retriever', sex:'female', dob:'', akc_number:'', color:'', weight_lbs:'', is_external:false, health_notes:'' })
   const set = (k: string, v: any) => setForm(f => ({...f,[k]:v}))
 
   const toggleHealth = (h: string) => setHealth(prev => prev.includes(h) ? prev.filter(x=>x!==h) : [...prev, h])
