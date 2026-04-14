@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>LitterDesk — The Operating System for Serious Dog Breeders</title>
+<meta name="description" content="Replace your spreadsheets, Word contracts, and text threads. LitterDesk manages your litters, buyers, contracts, and payments in one place — with AI that does the work for you."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  /* Color system */
+  --ink:#0d1a0f;
+  --ink-2:#2a3a2c;
+  --ink-3:#4a5e4c;
+  --ink-4:#7a9070;
+  --paper:#f9f7f2;
+  --paper-2:#f2ede4;
+  --paper-3:#e8e0d4;
+  --forest:#1a4730;
+  --forest-l:#2d6b4a;
+  --forest-ll:#3d8c60;
+  --moss:#8ab89a;
+  --sage:#c4d9c8;
+  --sage-l:#e4ede6;
+  --amber:#c8751a;
+  --amber-l:#f0c070;
+  --amber-f:#fdf4e4;
+  --cream:#faf8f3;
+  --white:#ffffff;
+  --red:#c44040;
+
+  /* Type */
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'Instrument Sans',system-ui,sans-serif;
+
+  /* Layout */
+  --max:1140px;
+  --r:8px;
+  --r-lg:14px;
+  --r-xl:20px;
+}
+
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:16px;line-height:1.6;overflow-x:hidden}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:0 32px;
+  background:rgba(249,247,242,0.88);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--paper-3);
+  transition:all .3s;
+}
+.nav-inner{
+  max-width:var(--max);margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  height:64px;
+}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logomark{
+  width:36px;height:36px;
+  background:var(--forest);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.nav-logomark svg{width:18px;height:18px;fill:#fff}
+.nav-name{font-family:var(--serif);font-size:20px;color:var(--ink);letter-spacing:-.2px}
+.nav-links{display:flex;align-items:center;gap:8px}
+.nav-link{font-size:14px;color:var(--ink-3);padding:8px 14px;border-radius:var(--r);text-decoration:none;transition:all .15s;font-weight:500}
+.nav-link:hover{background:var(--paper-2);color:var(--ink)}
+.nav-cta{
+  background:var(--forest);color:var(--cream);
+  font-size:14px;font-weight:500;padding:9px 20px;
+  border-radius:var(--r);text-decoration:none;
+  transition:all .2s;letter-spacing:-.1px;
+}
+.nav-cta:hover{background:var(--forest-l);transform:translateY(-1px);box-shadow:0 4px 16px rgba(26,71,48,.25)}
+
+/* ── SECTIONS ── */
+section{padding:96px 32px}
+.inner{max-width:var(--max);margin:0 auto}
+
+/* ── HERO ── */
+.hero{
+  padding-top:160px;padding-bottom:80px;
+  background:var(--cream);
+  position:relative;overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 800px 500px at 70% 40%, rgba(61,140,96,.07) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 400px at 20% 80%, rgba(200,117,26,.05) 0%, transparent 60%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--sage-l);border:1px solid var(--sage);
+  color:var(--forest);font-size:13px;font-weight:500;
+  padding:6px 14px;border-radius:20px;margin-bottom:28px;
+  letter-spacing:.1px;
+}
+.hero-badge-dot{width:7px;height:7px;border-radius:50%;background:var(--forest-ll);flex-shrink:0}
+.hero h1{
+  font-family:var(--serif);
+  font-size:clamp(44px,6vw,76px);
+  line-height:1.04;
+  color:var(--ink);
+  letter-spacing:-.5px;
+  max-width:760px;
+  margin-bottom:24px;
+}
+.hero h1 em{
+  font-style:italic;
+  color:var(--forest-ll);
+}
+.hero-sub{
+  font-size:clamp(16px,2vw,20px);
+  color:var(--ink-3);
+  max-width:540px;
+  line-height:1.6;
+  margin-bottom:40px;
+}
+.hero-sub strong{color:var(--ink-2);font-weight:600}
+.hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:56px}
+.btn-hero{
+  background:var(--forest);color:var(--cream);
+  font-size:16px;font-weight:500;padding:14px 28px;
+  border-radius:var(--r-lg);text-decoration:none;
+  transition:all .2s;display:inline-flex;align-items:center;gap:8px;
+  letter-spacing:-.1px;border:none;cursor:pointer;font-family:var(--sans);
+}
+.btn-hero:hover{background:var(--forest-l);transform:translateY(-2px);box-shadow:0 8px 32px rgba(26,71,48,.28)}
+.btn-hero-ghost{
+  font-size:15px;color:var(--ink-3);font-weight:500;
+  display:inline-flex;align-items:center;gap:6px;
+  text-decoration:none;padding:14px 4px;
+  transition:color .15s;
+}
+.btn-hero-ghost:hover{color:var(--ink)}
+.hero-trust{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ink-4);font-weight:500}
+.trust-item svg{width:14px;height:14px;color:var(--forest-ll)}
+
+/* ── HERO SCREENSHOT ── */
+.hero-visual{
+  margin:0 auto;
+  max-width:900px;
+  border-radius:var(--r-xl);
+  overflow:hidden;
+  border:1px solid var(--paper-3);
+  box-shadow:0 32px 80px rgba(13,26,15,.12),0 8px 24px rgba(13,26,15,.08);
+  position:relative;
+}
+.hero-visual-bar{
+  background:var(--paper-2);
+  padding:12px 18px;
+  display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--paper-3);
+}
+.dot{width:12px;height:12px;border-radius:50%}
+.hero-app{background:var(--paper);padding:0;min-height:460px;display:flex;overflow:hidden}
+.app-sidebar{width:200px;flex-shrink:0;background:var(--white);border-right:1px solid var(--paper-3);padding:16px 0}
+.app-logo-row{padding:4px 14px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--paper-3);margin-bottom:10px}
+.app-logomark{width:26px;height:26px;background:var(--forest);border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.app-logomark svg{width:12px;height:12px;fill:#fff}
+.app-nav-name{font-family:var(--serif);font-size:14px;color:var(--ink)}
+.app-nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;font-size:12.5px;color:var(--ink-3)}
+.app-nav-item.on{background:var(--sage-l);color:var(--forest);font-weight:500;border-right:2px solid var(--forest)}
+.app-nav-item svg{width:13px;height:13px;flex-shrink:0}
+.app-main{flex:1;padding:20px;overflow:hidden}
+.app-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.app-stat{background:var(--white);border:1px solid var(--paper-3);border-radius:8px;padding:12px 14px}
+.app-stat-val{font-size:22px;font-weight:600;color:var(--ink);line-height:1}
+.app-stat-label{font-size:10.5px;color:var(--ink-4);margin-top:3px}
+.app-stat-trend{font-size:10px;color:var(--forest-ll);margin-top:2px}
+.app-card{background:var(--white);border:1px solid var(--paper-3);border-radius:8px;padding:14px}
+.app-card-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:10px}
+.app-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--paper-3)}
+.app-row:last-child{border-bottom:none}
+.app-av{width:24px;height:24px;border-radius:50%;flex-shrink:0}
+.app-row-name{font-size:11.5px;font-weight:500;color:var(--ink);flex:1}
+.app-row-badge{font-size:10px;padding:2px 7px;border-radius:10px}
+.app-ai-chip{display:flex;align-items:center;gap:3px;font-size:10px;background:var(--sage-l);color:var(--forest);padding:2px 7px;border-radius:10px;font-weight:500}
+
+/* ── LOGOS / SOCIAL PROOF ── */
+.proof-bar{
+  background:var(--paper-2);
+  border-top:1px solid var(--paper-3);
+  border-bottom:1px solid var(--paper-3);
+  padding:32px;
+}
+.proof-label{text-align:center;font-size:13px;color:var(--ink-4);font-weight:500;margin-bottom:20px;letter-spacing:.5px;text-transform:uppercase}
+.proof-logos{display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap}
+.proof-logo{font-family:var(--serif);font-size:17px;color:var(--ink-3);opacity:.55;letter-spacing:-.2px}
+
+/* ── PAIN SECTION ── */
+.pain{background:var(--ink);color:var(--cream);padding:96px 32px}
+.pain h2{
+  font-family:var(--serif);font-size:clamp(32px,4vw,52px);
+  line-height:1.1;letter-spacing:-.3px;margin-bottom:16px;
+  max-width:600px;
+}
+.pain h2 em{font-style:italic;color:var(--amber-l)}
+.pain-sub{font-size:18px;color:rgba(250,248,243,.6);max-width:480px;margin-bottom:56px;line-height:1.6}
+.pain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.pain-card{
+  background:rgba(255,255,255,.04);
+  padding:28px;
+  border:1px solid rgba(255,255,255,.06);
+  transition:background .2s;
+}
+.pain-card:hover{background:rgba(255,255,255,.07)}
+.pain-card:first-child{border-radius:var(--r-lg) 0 0 var(--r-lg)}
+.pain-card:last-child{border-radius:0 var(--r-lg) var(--r-lg) 0}
+.pain-icon{font-size:28px;margin-bottom:14px}
+.pain-title{font-size:17px;font-weight:600;color:var(--cream);margin-bottom:8px}
+.pain-desc{font-size:14px;color:rgba(250,248,243,.55);line-height:1.6}
+.pain-arrow{
+  text-align:center;padding:48px 0 0;
+  font-family:var(--serif);font-size:22px;
+  color:rgba(250,248,243,.35);font-style:italic;
+}
+.solution-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(61,140,96,.15);border:1px solid rgba(61,140,96,.3);
+  color:var(--moss);font-size:13px;font-weight:500;
+  padding:6px 14px;border-radius:20px;margin-bottom:20px;
+}
+
+/* ── FEATURES ── */
+.features{background:var(--cream)}
+.features-header{text-align:center;margin-bottom:64px}
+.features-header h2{
+  font-family:var(--serif);font-size:clamp(32px,4vw,52px);
+  letter-spacing:-.3px;line-height:1.1;margin-bottom:16px;
+}
+.features-header p{font-size:18px;color:var(--ink-3);max-width:480px;margin:0 auto}
+.feature-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:64px;
+  align-items:center;margin-bottom:80px;
+}
+.feature-row:last-child{margin-bottom:0}
+.feature-row.flip{direction:rtl}
+.feature-row.flip>*{direction:ltr}
+.feature-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--forest-ll);margin-bottom:14px;
+}
+.feature-tag svg{width:14px;height:14px}
+.feature-h{
+  font-family:var(--serif);font-size:clamp(26px,3vw,38px);
+  letter-spacing:-.2px;line-height:1.15;margin-bottom:16px;
+  color:var(--ink);
+}
+.feature-p{font-size:16px;color:var(--ink-3);line-height:1.7;margin-bottom:24px}
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+.feature-list li{display:flex;align-items:flex-start;gap:10px;font-size:15px;color:var(--ink-2)}
+.feature-list li::before{content:"";width:18px;height:18px;background:var(--sage-l);border-radius:50%;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background-image:url("data:image/svg+xml,%3Csvg width='10' height='8' viewBox='0 0 10 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4l2.5 2.5L9 1' stroke='%232d6b4a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center}
+.feature-visual{
+  border-radius:var(--r-xl);overflow:hidden;
+  border:1px solid var(--paper-3);
+  box-shadow:0 16px 48px rgba(13,26,15,.1);
+  background:var(--white);
+}
+
+/* ── FEATURE VISUAL MOCKUPS ── */
+.mock{padding:20px}
+.mock-title{font-size:12px;font-weight:600;color:var(--ink-4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.mock-litter{border:1px solid var(--paper-3);border-radius:10px;padding:14px;margin-bottom:10px;cursor:default}
+.mock-litter:hover{border-color:var(--moss);background:var(--sage-l)}
+.ml-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ml-name{font-size:14px;font-weight:600;color:var(--ink)}
+.ml-badge{font-size:11px;padding:3px 9px;border-radius:12px;font-weight:500}
+.ml-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+.ml-sv{font-size:14px;font-weight:600;color:var(--ink)}
+.ml-sk{font-size:10px;color:var(--ink-4)}
+.ml-prog{height:3px;background:var(--paper-3);border-radius:2px;margin-top:10px;overflow:hidden}
+.ml-prog-fill{height:100%;border-radius:2px}
+
+/* AI contract mock */
+.mock-contract{padding:20px}
+.mc-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:10px 12px;background:var(--sage-l);border-radius:8px;border:1px solid var(--sage)}
+.mc-header svg{width:14px;height:14px;color:var(--forest)}
+.mc-header span{font-size:12.5px;color:var(--forest);font-weight:500}
+.mc-doc{font-size:12px;line-height:1.6;color:var(--ink-3)}
+.mc-doc h4{font-family:var(--serif);font-size:15px;text-align:center;color:var(--ink);margin-bottom:4px}
+.mc-doc .mc-by{text-align:center;font-size:11px;color:var(--ink-4);margin-bottom:12px}
+.mc-section{margin-bottom:10px}
+.mc-section strong{font-size:11px;font-weight:600;color:var(--ink);display:block;margin-bottom:3px}
+.mc-line{height:7px;background:var(--paper-3);border-radius:3px;margin-bottom:4px}
+
+/* Buyer CRM mock */
+.mock-buyers{padding:16px 20px}
+.mb-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--paper-3)}
+.mb-row:last-child{border-bottom:none}
+.mb-av{width:28px;height:28px;border-radius:50%;flex-shrink:0}
+.mb-name{font-size:13px;font-weight:500;color:var(--ink);flex:1}
+.mb-score{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px}
+.mb-ai{display:flex;align-items:center;gap:3px;font-size:10.5px;color:var(--forest);background:var(--sage-l);padding:2px 7px;border-radius:8px;cursor:pointer;border:none;font-family:var(--sans)}
+
+/* ── TESTIMONIALS ── */
+.testimonials{background:var(--paper-2);padding:96px 32px}
+.t-header{text-align:center;margin-bottom:56px}
+.t-header h2{font-family:var(--serif);font-size:clamp(28px,4vw,48px);letter-spacing:-.3px;margin-bottom:12px}
+.t-header p{font-size:17px;color:var(--ink-3)}
+.t-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.t-card{
+  background:var(--white);border:1px solid var(--paper-3);
+  border-radius:var(--r-xl);padding:28px;
+  box-shadow:0 2px 8px rgba(13,26,15,.04);
+  transition:transform .2s,box-shadow .2s;
+}
+.t-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(13,26,15,.08)}
+.t-stars{display:flex;gap:3px;margin-bottom:16px}
+.t-star{font-size:16px;color:var(--amber)}
+.t-quote{
+  font-family:var(--serif);font-size:clamp(15px,2vw,17px);
+  color:var(--ink-2);line-height:1.6;font-style:italic;
+  margin-bottom:20px;
+}
+.t-author{display:flex;align-items:center;gap:12px}
+.t-av{width:40px;height:40px;border-radius:50%;flex-shrink:0}
+.t-name{font-size:14px;font-weight:600;color:var(--ink)}
+.t-kennel{font-size:12px;color:var(--ink-4)}
+.t-litters{font-size:11px;color:var(--forest-ll);font-weight:500;margin-top:1px}
+
+/* ── METRICS BAR ── */
+.metrics{background:var(--forest);padding:64px 32px}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+.metric-item{text-align:center;padding:28px 20px}
+.metric-val{font-family:var(--serif);font-size:clamp(36px,5vw,56px);color:var(--cream);line-height:1;margin-bottom:8px;letter-spacing:-1px}
+.metric-val em{color:var(--amber-l);font-style:normal}
+.metric-label{font-size:14px;color:rgba(250,248,243,.6);line-height:1.4}
+
+/* ── PRICING ── */
+.pricing{background:var(--cream);padding:96px 32px}
+.pricing-header{text-align:center;margin-bottom:56px}
+.pricing-header h2{font-family:var(--serif);font-size:clamp(32px,4vw,52px);letter-spacing:-.3px;margin-bottom:12px}
+.pricing-header p{font-size:17px;color:var(--ink-3)}
+.pricing-toggle{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:40px}
+.pricing-toggle span{font-size:14px;color:var(--ink-3);font-weight:500}
+.toggle-track{
+  width:48px;height:26px;background:var(--forest);border-radius:13px;
+  position:relative;cursor:pointer;transition:background .2s;border:none;
+}
+.toggle-knob{
+  position:absolute;top:3px;left:3px;
+  width:20px;height:20px;background:var(--cream);border-radius:50%;
+  transition:left .2s;
+}
+.toggle-track.annual .toggle-knob{left:25px}
+.save-badge{background:var(--amber-f);color:var(--amber);font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid var(--amber-l)}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
+.plan{
+  background:var(--white);border:1px solid var(--paper-3);
+  border-radius:var(--r-xl);padding:32px;
+  position:relative;transition:transform .2s,box-shadow .2s;
+}
+.plan:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(13,26,15,.1)}
+.plan.featured{
+  background:var(--forest);border-color:var(--forest);
+  transform:scale(1.02);box-shadow:0 16px 48px rgba(26,71,48,.25);
+}
+.plan.featured:hover{transform:scale(1.02) translateY(-4px)}
+.plan-popular{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:var(--amber);color:var(--white);
+  font-size:12px;font-weight:600;padding:4px 14px;border-radius:20px;
+  white-space:nowrap;letter-spacing:.2px;
+}
+.plan-name{font-size:14px;font-weight:600;color:var(--ink-3);margin-bottom:4px;letter-spacing:.3px;text-transform:uppercase}
+.plan.featured .plan-name{color:rgba(250,248,243,.6)}
+.plan-price{display:flex;align-items:baseline;gap:4px;margin-bottom:4px}
+.plan-price-val{font-family:var(--serif);font-size:48px;color:var(--ink);line-height:1;letter-spacing:-1px}
+.plan.featured .plan-price-val{color:var(--cream)}
+.plan-price-per{font-size:14px;color:var(--ink-4)}
+.plan.featured .plan-price-per{color:rgba(250,248,243,.5)}
+.plan-desc{font-size:14px;color:var(--ink-3);margin-bottom:24px;line-height:1.5}
+.plan.featured .plan-desc{color:rgba(250,248,243,.6)}
+.plan-cta{
+  display:block;width:100%;text-align:center;
+  padding:12px;border-radius:var(--r);font-size:15px;font-weight:500;
+  text-decoration:none;transition:all .2s;margin-bottom:24px;
+  font-family:var(--sans);cursor:pointer;border:none;
+}
+.plan-cta-outline{background:none;border:1.5px solid var(--paper-3);color:var(--ink)}
+.plan-cta-outline:hover{border-color:var(--ink);background:var(--ink);color:var(--cream)}
+.plan-cta-primary{background:var(--cream);color:var(--forest)}
+.plan-cta-primary:hover{background:var(--sage-l)}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:10px}
+.plan-feature{display:flex;align-items:flex-start;gap:9px;font-size:14px}
+.plan-feature-check{width:16px;height:16px;border-radius:50%;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center}
+.plan-feature-check.on{background:var(--sage-l)}
+.plan-feature-check.on svg{width:9px;height:7px;color:var(--forest)}
+.plan.featured .plan-feature-check.on{background:rgba(250,248,243,.15)}
+.plan.featured .plan-feature-check.on svg{color:var(--cream)}
+.plan-feature-text{color:var(--ink-2);line-height:1.4}
+.plan.featured .plan-feature-text{color:rgba(250,248,243,.8)}
+.plan-feature-text.dim{color:var(--ink-4)}
+.pricing-note{text-align:center;font-size:14px;color:var(--ink-4);margin-top:32px}
+.pricing-note a{color:var(--forest);text-decoration:none;font-weight:500}
+
+/* ── FAQ ── */
+.faq{background:var(--paper);padding:80px 32px}
+.faq-header{text-align:center;margin-bottom:48px}
+.faq-header h2{font-family:var(--serif);font-size:clamp(28px,3vw,42px);margin-bottom:10px}
+.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;max-width:820px;margin:0 auto;border:1px solid var(--paper-3);border-radius:var(--r-xl);overflow:hidden}
+.faq-item{padding:24px 28px;border-bottom:1px solid var(--paper-3);cursor:pointer;transition:background .15s}
+.faq-item:hover{background:var(--paper-2)}
+.faq-item:nth-child(odd){border-right:1px solid var(--paper-3)}
+.faq-item:nth-last-child(-n+2){border-bottom:none}
+.faq-q{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px;line-height:1.4}
+.faq-a{font-size:14px;color:var(--ink-3);line-height:1.6}
+
+/* ── FINAL CTA ── */
+.final-cta{
+  background:var(--ink);
+  padding:120px 32px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.final-cta-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 800px 500px at 50% 100%, rgba(61,140,96,.12) 0%, transparent 60%);
+  pointer-events:none;
+}
+.final-cta h2{
+  font-family:var(--serif);
+  font-size:clamp(36px,5vw,64px);
+  color:var(--cream);line-height:1.08;
+  letter-spacing:-.5px;margin-bottom:20px;max-width:700px;margin:0 auto 20px;
+}
+.final-cta h2 em{color:var(--amber-l);font-style:italic}
+.final-cta p{font-size:18px;color:rgba(250,248,243,.55);margin-bottom:40px;max-width:440px;margin:0 auto 40px}
+.final-cta-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.btn-light{
+  background:var(--cream);color:var(--forest);
+  font-size:16px;font-weight:500;padding:14px 28px;
+  border-radius:var(--r-lg);text-decoration:none;
+  transition:all .2s;display:inline-flex;align-items:center;gap:8px;
+}
+.btn-light:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(250,248,243,.2)}
+.btn-text-light{font-size:15px;color:rgba(250,248,243,.5);font-weight:500;text-decoration:none;padding:14px 4px;transition:color .15s}
+.btn-text-light:hover{color:rgba(250,248,243,.8)}
+
+/* ── FOOTER ── */
+footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.07);padding:40px 32px}
+.footer-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-logo{font-family:var(--serif);font-size:18px;color:rgba(250,248,243,.5)}
+.footer-links{display:flex;gap:24px}
+.footer-link{font-size:13px;color:rgba(250,248,243,.35);text-decoration:none;transition:color .15s}
+.footer-link:hover{color:rgba(250,248,243,.65)}
+.footer-copy{font-size:12px;color:rgba(250,248,243,.25)}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.fade-up{opacity:0;animation:fadeUp .7s ease forwards}
+.delay-1{animation-delay:.1s}
+.delay-2{animation-delay:.2s}
+.delay-3{animation-delay:.3s}
+.delay-4{animation-delay:.4s}
+.delay-5{animation-delay:.5s}
+.hero-visual{animation:float 6s ease-in-out infinite}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  nav .nav-links .nav-link{display:none}
+  .feature-row,.feature-row.flip{grid-template-columns:1fr;direction:ltr;gap:32px}
+  .pain-grid{grid-template-columns:1fr}
+  .pain-card:first-child,.pain-card:last-child{border-radius:0}
+  .t-grid{grid-template-columns:1fr}
+  .plans{grid-template-columns:1fr;max-width:400px;margin:0 auto}
+  .plan.featured{transform:none}
+  .metrics-grid{grid-template-columns:repeat(2,1fr)}
+  .faq-grid{grid-template-columns:1fr}
+  .faq-item:nth-child(odd){border-right:none}
+  .faq-item:nth-last-child(-n+2){border-bottom:1px solid var(--paper-3)}
+  .faq-item:last-child{border-bottom:none}
+  section{padding:64px 20px}
+  .hero{padding-top:120px;padding-bottom:56px}
+  .proof-logos{gap:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logomark">
+        <svg viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+      </div>
+      <span class="nav-name">LitterDesk</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#pricing" class="nav-link">Pricing</a>
+      <a href="#testimonials" class="nav-link">Reviews</a>
+      <a href="#" class="nav-link">Blog</a>
+      <a href="/login" class="nav-link">Sign in</a>
+      <a href="/register" class="nav-cta">Start free trial →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="inner">
+    <div class="fade-up">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Trusted by 400+ breeders across North America
+      </div>
+    </div>
+    <h1 class="fade-up delay-1">
+      Stop running your<br/><em>kennel on spreadsheets.</em>
+    </h1>
+    <p class="hero-sub fade-up delay-2">
+      LitterDesk replaces the spreadsheets, Word contracts, and text thread waitlists with one modern platform. <strong>AI handles the paperwork. You handle the dogs.</strong>
+    </p>
+    <div class="hero-actions fade-up delay-3">
+      <a href="/register" class="btn-hero">
+        Start free for 14 days
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#features" class="btn-hero-ghost">
+        See how it works
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+      </a>
+    </div>
+    <div class="hero-trust fade-up delay-4">
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        No credit card required
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Setup in under 10 minutes
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Cancel anytime
+      </div>
+    </div>
+
+    <!-- App mockup -->
+    <div class="hero-visual fade-up delay-5" style="margin-top:56px">
+      <div class="hero-visual-bar">
+        <div class="dot" style="background:#ff5f57"></div>
+        <div class="dot" style="background:#febc2e"></div>
+        <div class="dot" style="background:#28c840"></div>
+        <span style="flex:1;text-align:center;font-size:12px;color:var(--ink-4)">app.litterdesk.com/dashboard</span>
+      </div>
+      <div class="hero-app">
+        <div class="app-sidebar">
+          <div class="app-logo-row">
+            <div class="app-logomark"><svg viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
+            <span class="app-nav-name">LitterDesk</span>
+          </div>
+          <div class="app-nav-item on">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+            Dashboard
+          </div>
+          <div class="app-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Litters
+          </div>
+          <div class="app-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Buyers
+          </div>
+          <div class="app-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Contracts
+          </div>
+        </div>
+        <div class="app-main">
+          <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:12px">Good morning, Jane 👋</div>
+          <div class="app-stats">
+            <div class="app-stat"><div class="app-stat-val">4</div><div class="app-stat-label">Active litters</div><div class="app-stat-trend">↑ 1 this month</div></div>
+            <div class="app-stat"><div class="app-stat-val">47</div><div class="app-stat-label">Buyers</div><div class="app-stat-trend">↑ 8 this week</div></div>
+            <div class="app-stat"><div class="app-stat-val" style="color:var(--forest-ll)">$14.2k</div><div class="app-stat-label">Deposits</div><div class="app-stat-trend" style="color:var(--forest-ll)">This month</div></div>
+          </div>
+          <div class="app-card">
+            <div class="app-card-title">Buyer pipeline — top matches</div>
+            <div class="app-row">
+              <div class="app-av" style="background:linear-gradient(135deg,#3d8c65,#2a6348)"></div>
+              <span class="app-row-name">Sarah Chen</span>
+              <span class="app-row-badge" style="background:#dcfce7;color:#166534;font-size:10px;padding:2px 7px;border-radius:10px">Deposit paid</span>
+              <span class="app-ai-chip"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> 91</span>
+            </div>
+            <div class="app-row">
+              <div class="app-av" style="background:linear-gradient(135deg,#3b6fa0,#1e4d7a)"></div>
+              <span class="app-row-name">David & Lisa Park</span>
+              <span class="app-row-badge" style="background:#ede9fe;color:#5b21b6;font-size:10px;padding:2px 7px;border-radius:10px">Contract signed</span>
+              <span class="app-ai-chip"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> 88</span>
+            </div>
+            <div class="app-row">
+              <div class="app-av" style="background:linear-gradient(135deg,#c4607a,#9e3d56)"></div>
+              <span class="app-row-name">Michael Torres</span>
+              <span class="app-row-badge" style="background:#fef9c3;color:#854d0e;font-size:10px;padding:2px 7px;border-radius:10px">Waitlisted</span>
+              <span class="app-ai-chip"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> 72</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF BAR -->
+<div class="proof-bar">
+  <div class="inner">
+    <p class="proof-label">Trusted by breeders of</p>
+    <div class="proof-logos">
+      <span class="proof-logo">Golden Retrievers</span>
+      <span class="proof-logo">French Bulldogs</span>
+      <span class="proof-logo">Bernedoodles</span>
+      <span class="proof-logo">German Shepherds</span>
+      <span class="proof-logo">Labrador Retrievers</span>
+      <span class="proof-logo">Doodles</span>
+    </div>
+  </div>
+</div>
+
+<!-- PAIN SECTION -->
+<section class="pain">
+  <div class="inner">
+    <h2>You run a real business.<br/><em>Stop managing it like a hobby.</em></h2>
+    <p class="pain-sub">Most breeders doing $80k+ a year are still running their entire operation in text threads, spreadsheets, and Microsoft Word.</p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-icon">😩</div>
+        <div class="pain-title">Lost buyer inquiries</div>
+        <div class="pain-desc">A serious buyer emails on a Tuesday. You're at a dog show. By Thursday they've gone to another breeder. You never knew they existed.</div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">📄</div>
+        <div class="pain-title">Copy-paste contracts</div>
+        <div class="pain-desc">You have a Word doc from 2019. Every sale means manually editing 22 fields, hoping you didn't miss one. One mistake and you're liable.</div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">🗂️</div>
+        <div class="pain-title">Scattered records</div>
+        <div class="pain-desc">OFA results in an email. Vet receipts in a drawer. AKC numbers in a spreadsheet. Health guarantee claims in a text thread. Nothing connects.</div>
+      </div>
+    </div>
+    <div class="pain-arrow">There's a better way →</div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="inner">
+    <div class="features-header">
+      <h2>Everything your breeding program needs</h2>
+      <p>Built around how breeders actually work — not how software companies think they do.</p>
+    </div>
+
+    <!-- Feature 1: Litter management -->
+    <div class="feature-row">
+      <div>
+        <div class="feature-tag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          Litter management
+        </div>
+        <h3 class="feature-h">From planned breeding to go-home day, every detail tracked.</h3>
+        <p class="feature-p">One view for all your active litters — whelp dates, individual puppy weights, waitlist positions, and go-home countdown. No more mental math about which puppy is which.</p>
+        <ul class="feature-list">
+          <li>Track each puppy by collar color with photos and weekly weights</li>
+          <li>Automatic go-home date reminders sent to buyers</li>
+          <li>Waitlist position management with one-click reordering</li>
+          <li>Litter health records attached directly to the litter</li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+        <div class="mock" style="padding:20px">
+          <div class="mock-title">Active litters</div>
+          <div class="mock-litter">
+            <div class="ml-top"><div style="font-size:14px;font-weight:600">Spring Litter '25</div><span class="ml-badge" style="background:#dcfce7;color:#166534">Ready to go</span></div>
+            <div class="ml-stats"><div><div class="ml-sv">8</div><div class="ml-sk">Puppies</div></div><div><div class="ml-sv">4M/4F</div><div class="ml-sk">Sex split</div></div><div><div class="ml-sv">$2,800</div><div class="ml-sk">Per puppy</div></div></div>
+            <div class="ml-prog"><div class="ml-prog-fill" style="width:100%;background:#22c55e"></div></div>
+            <div style="font-size:10.5px;color:var(--ink-4);margin-top:4px">Waitlist 8/8 · Go home Apr 28</div>
+          </div>
+          <div class="mock-litter">
+            <div class="ml-top"><div style="font-size:14px;font-weight:600">Summer Litter '25</div><span class="ml-badge" style="background:#dbeafe;color:#1e40af">Born Apr 3</span></div>
+            <div class="ml-stats"><div><div class="ml-sv">6</div><div class="ml-sk">Puppies</div></div><div><div class="ml-sv">3M/3F</div><div class="ml-sk">Sex split</div></div><div><div class="ml-sv">$3,200</div><div class="ml-sk">Per puppy</div></div></div>
+            <div class="ml-prog"><div class="ml-prog-fill" style="width:66%;background:var(--amber)"></div></div>
+            <div style="font-size:10.5px;color:var(--ink-4);margin-top:4px">Waitlist 4/6 · 2 spots open</div>
+          </div>
+          <div class="mock-litter" style="border-style:dashed;opacity:.6">
+            <div class="ml-top"><div style="font-size:13px;font-weight:500;color:var(--ink-3)">Honey × Duke — due May 14</div><span class="ml-badge" style="background:#fdf0f3;color:#c4607a">Pregnant</span></div>
+            <div style="font-size:11px;color:var(--ink-4);margin-top:6px">11 buyers on pre-waitlist</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 2: AI Contracts -->
+    <div class="feature-row flip">
+      <div>
+        <div class="feature-tag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          AI contract generation
+        </div>
+        <h3 class="feature-h">Legally-informed contracts, written by AI in seconds.</h3>
+        <p class="feature-p">Tell LitterDesk who the buyer is, what they're getting, and for how much. Claude generates a complete, breed-specific sale contract — health guarantee, spay/neuter clause, return policy, signature lines and all.</p>
+        <ul class="feature-list">
+          <li>Breed-specific clauses (OFA requirements, hereditary condition coverage)</li>
+          <li>Buyer receives a signing link by email — no printing, no scanning</li>
+          <li>Both parties get a signed PDF automatically</li>
+          <li>Every contract stored and searchable in your account</li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+        <div class="mock-contract">
+          <div class="mc-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>Generated by Claude · 4.1 seconds · Golden Retriever terms</span>
+          </div>
+          <div class="mc-doc">
+            <h4>PUPPY SALE CONTRACT</h4>
+            <div class="mc-by">Sunrise Goldens · Jane Smith · April 13, 2025</div>
+            <div class="mc-section"><strong>1. Parties</strong><div class="mc-line" style="width:90%"></div><div class="mc-line" style="width:70%"></div></div>
+            <div class="mc-section"><strong>2. Purchase Price & Payment</strong><div class="mc-line" style="width:85%"></div><div class="mc-line" style="width:60%"></div></div>
+            <div class="mc-section"><strong>3. Health Guarantee — 24 months</strong><div class="mc-line" style="width:88%"></div><div class="mc-line" style="width:75%"></div><div class="mc-line" style="width:65%"></div></div>
+            <div class="mc-section"><strong>4. Spay/Neuter Requirement</strong><div class="mc-line" style="width:80%"></div><div class="mc-line" style="width:55%"></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--paper-3)">
+              <div><div style="font-size:10px;font-weight:600;color:var(--ink);margin-bottom:6px">Breeder signature</div><div style="height:1px;background:var(--paper-3)"></div><div style="font-size:10px;color:var(--ink-4);margin-top:3px">Jane Smith</div></div>
+              <div><div style="font-size:10px;font-weight:600;color:var(--ink);margin-bottom:6px">Buyer signature</div><div style="height:1px;background:var(--paper-3)"></div><div style="font-size:10px;color:var(--ink-4);margin-top:3px">Awaiting sign…</div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <div style="flex:1;background:var(--forest);color:var(--cream);font-size:12px;padding:8px;border-radius:6px;text-align:center;font-weight:500">Send to buyer</div>
+            <div style="background:var(--paper-2);color:var(--ink-3);font-size:12px;padding:8px 12px;border-radius:6px;font-weight:500">Download PDF</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 3: Buyer CRM -->
+    <div class="feature-row">
+      <div>
+        <div class="feature-tag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Buyer CRM & AI scoring
+        </div>
+        <h3 class="feature-h">Know which buyers deserve your best puppies.</h3>
+        <p class="feature-p">Every inquiry becomes a tracked buyer profile. AI reads their application, scores their fit 0–100, flags red flags, and tells you exactly what questions to ask. Never waste a puppy on a bad match again.</p>
+        <ul class="feature-list">
+          <li>AI scores every buyer based on lifestyle, experience, and home environment</li>
+          <li>Automated follow-up email drafts — just review and send</li>
+          <li>Waitlist position management across multiple litters</li>
+          <li>Full communication history for every buyer</li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+        <div class="mock-buyers">
+          <div style="font-size:11.5px;font-weight:600;color:var(--ink-4);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Buyer pipeline — 47 total</div>
+          <div class="mb-row">
+            <div class="mb-av" style="background:linear-gradient(135deg,#3d8c65,#2a6348)"></div>
+            <div style="flex:1"><div class="mb-name">Sarah Chen</div><div style="font-size:10.5px;color:var(--ink-4)">Denver, CO · Golden · Female</div></div>
+            <span class="mb-score" style="background:#dcfce7;color:#166534">★ 91</span>
+            <button class="mb-ai"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Draft email</button>
+          </div>
+          <div class="mb-row">
+            <div class="mb-av" style="background:linear-gradient(135deg,#3b6fa0,#1e4d7a)"></div>
+            <div style="flex:1"><div class="mb-name">David & Lisa Park</div><div style="font-size:10.5px;color:var(--ink-4)">Austin, TX · Golden · Male</div></div>
+            <span class="mb-score" style="background:#dcfce7;color:#166534">★ 88</span>
+            <button class="mb-ai"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Draft email</button>
+          </div>
+          <div class="mb-row">
+            <div class="mb-av" style="background:linear-gradient(135deg,#c4607a,#9e3d56)"></div>
+            <div style="flex:1"><div class="mb-name">Michael Torres</div><div style="font-size:10.5px;color:var(--ink-4)">Portland, OR · Golden · Either</div></div>
+            <span class="mb-score" style="background:#fef9c3;color:#854d0e">★ 72</span>
+            <button class="mb-ai"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Draft email</button>
+          </div>
+          <div class="mb-row" style="opacity:.5">
+            <div class="mb-av" style="background:linear-gradient(135deg,#6b50a8,#4c3980)"></div>
+            <div style="flex:1"><div class="mb-name">James & Amy Wilson</div><div style="font-size:10.5px;color:var(--ink-4)">Boise, ID · Golden · Male</div></div>
+            <span class="mb-score" style="background:#fee2e2;color:#991b1b">★ 38</span>
+            <button class="mb-ai"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Draft email</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS BAR -->
+<div class="metrics">
+  <div class="inner">
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <div class="metric-val"><em>400+</em></div>
+        <div class="metric-label">Active breeders<br/>on the platform</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-val"><em>$2.1M</em></div>
+        <div class="metric-label">In deposits collected<br/>through LitterDesk</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-val"><em>12k+</em></div>
+        <div class="metric-label">AI contracts generated<br/>and signed</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-val"><em>4.9★</em></div>
+        <div class="metric-label">Average rating from<br/>verified breeders</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials" id="testimonials">
+  <div class="inner">
+    <div class="t-header">
+      <h2>Breeders who switched never go back</h2>
+      <p>Real reviews from real kennels running real litters.</p>
+    </div>
+    <div class="t-grid">
+      <div class="t-card">
+        <div class="t-stars">★★★★★</div>
+        <p class="t-quote">"I used to spend 3 hours a week just answering the same emails. LitterDesk's AI drafts every reply in 10 seconds. I just edit and send. My buyers actually think I got more professional."</p>
+        <div class="t-author">
+          <div class="t-av" style="background:linear-gradient(135deg,#3d8c65,#2a6348)"></div>
+          <div>
+            <div class="t-name">Jennifer Marsh</div>
+            <div class="t-kennel">Marsh Creek Goldens, Colorado</div>
+            <div class="t-litters">6 litters/year · Pro plan</div>
+          </div>
+        </div>
+      </div>
+      <div class="t-card">
+        <div class="t-stars">★★★★★</div>
+        <p class="t-quote">"The contract generator alone is worth the price. I used to pay a lawyer $200 to review every contract. Now I generate one in 30 seconds that's already better than what I had."</p>
+        <div class="t-author">
+          <div class="t-av" style="background:linear-gradient(135deg,#3b6fa0,#1e4d7a)"></div>
+          <div>
+            <div class="t-name">Robert Chen</div>
+            <div class="t-kennel">Blue Ridge Doodles, North Carolina</div>
+            <div class="t-litters">8 litters/year · Kennel plan</div>
+          </div>
+        </div>
+      </div>
+      <div class="t-card">
+        <div class="t-stars">★★★★★</div>
+        <p class="t-quote">"I went from 80% deposits paid to nearly 100% since switching. The automated deposit request system with Stripe is embarrassingly easy. Buyers pay the same day I ask."</p>
+        <div class="t-author">
+          <div class="t-av" style="background:linear-gradient(135deg,#c4607a,#9e3d56)"></div>
+          <div>
+            <div class="t-name">Amanda Torres</div>
+            <div class="t-kennel">Sunrise German Shepherds, Texas</div>
+            <div class="t-litters">4 litters/year · Pro plan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="inner">
+    <div class="pricing-header">
+      <h2>Simple, honest pricing</h2>
+      <p>Every plan includes a 14-day free trial. No credit card required.</p>
+    </div>
+    <div class="pricing-toggle">
+      <span>Monthly</span>
+      <button class="toggle-track annual" id="billing-toggle" onclick="toggleBilling()">
+        <div class="toggle-knob"></div>
+      </button>
+      <span>Annual</span>
+      <span class="save-badge">Save 20%</span>
+    </div>
+    <div class="plans">
+
+      <!-- Starter -->
+      <div class="plan">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">
+          <span class="plan-price-val" id="price-starter">$39</span>
+          <span class="plan-price-per">/month</span>
+        </div>
+        <p class="plan-desc">For hobby breeders running 1–2 litters a year.</p>
+        <a href="/register" class="plan-cta plan-cta-outline">Start free trial</a>
+        <ul class="plan-features">
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">2 active litters</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Unlimited buyers & CRM</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Dog profiles & health records</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Deposit collection via Stripe</span></li>
+          <li class="plan-feature"><span class="plan-feature-check" style="background:var(--paper-2);border:1px solid var(--paper-3)"></span><span class="plan-feature-text dim">AI contracts & email drafting</span></li>
+          <li class="plan-feature"><span class="plan-feature-check" style="background:var(--paper-2);border:1px solid var(--paper-3)"></span><span class="plan-feature-text dim">AI buyer scoring</span></li>
+        </ul>
+      </div>
+
+      <!-- Pro (featured) -->
+      <div class="plan featured">
+        <div class="plan-popular">Most popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">
+          <span class="plan-price-val" id="price-pro">$89</span>
+          <span class="plan-price-per">/month</span>
+        </div>
+        <p class="plan-desc">For serious breeders who want AI to do the work.</p>
+        <a href="/register" class="plan-cta plan-cta-primary">Start free trial</a>
+        <ul class="plan-features">
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Unlimited active litters</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Unlimited buyers & CRM</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">AI contract generation</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">AI buyer scoring & email drafting</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Automated go-home reminders</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Weekly digest & follow-up nudges</span></li>
+        </ul>
+      </div>
+
+      <!-- Kennel -->
+      <div class="plan">
+        <div class="plan-name">Kennel</div>
+        <div class="plan-price">
+          <span class="plan-price-val" id="price-kennel">$179</span>
+          <span class="plan-price-per">/month</span>
+        </div>
+        <p class="plan-desc">For multi-breed operations and kennel managers.</p>
+        <a href="/register" class="plan-cta plan-cta-outline">Start free trial</a>
+        <ul class="plan-features">
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Everything in Pro</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Up to 5 team members</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Public kennel listing page</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Buyer-facing portal</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Revenue analytics dashboard</span></li>
+          <li class="plan-feature"><span class="plan-feature-check on"><svg viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l2.5 2.5L9 1"/></svg></span><span class="plan-feature-text">Priority email support</span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="pricing-note">All plans include a 14-day free trial. No credit card required. <a href="/compare">Compare all features →</a></p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="inner">
+    <div class="faq-header">
+      <h2>Common questions</h2>
+    </div>
+    <div class="faq-grid">
+      <div class="faq-item">
+        <div class="faq-q">Do I need to be tech-savvy to use this?</div>
+        <div class="faq-a">Not at all. If you can use email and a smartphone, you can use LitterDesk. Most breeders are fully set up within 10 minutes.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Are the AI contracts legally binding?</div>
+        <div class="faq-a">The contracts are informed by real legal templates and are digitally signed by both parties. We always recommend a local attorney review for peace of mind, but they're substantially more thorough than most breeder contracts in use today.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How does deposit collection work?</div>
+        <div class="faq-a">Through Stripe Connect. You onboard your bank account once, then send buyers a secure payment link. Funds transfer to your bank in 2 business days. LitterDesk takes a 1.5% platform fee only on deposits collected (Stripe's standard fee applies separately).</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can I import my existing buyer list?</div>
+        <div class="faq-a">Yes — we support CSV import for buyer contacts. Most breeders migrate their entire spreadsheet in under 5 minutes using our import wizard.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What breeds does this work for?</div>
+        <div class="faq-a">All breeds. The platform is breed-agnostic. The AI contract generator knows breed-specific health testing requirements for the 50 most popular AKC breeds.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What happens when my trial ends?</div>
+        <div class="faq-a">You'll be prompted to choose a plan. All your data stays intact. If you don't upgrade, you move to a read-only free tier — nothing gets deleted.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="final-cta-bg"></div>
+  <div class="inner" style="position:relative">
+    <h2>Your next litter deserves<br/><em>better than a spreadsheet.</em></h2>
+    <p>Join 400+ breeders who've replaced the chaos with one clean system.</p>
+    <div class="final-cta-actions">
+      <a href="/register" class="btn-light">
+        Start your free 14-day trial
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#pricing" class="btn-text-light">See pricing →</a>
+    </div>
+    <p style="font-size:13px;color:rgba(250,248,243,.3);margin-top:20px">No credit card · Setup in 10 minutes · Cancel anytime</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <span class="footer-logo">LitterDesk</span>
+    <div class="footer-links">
+      <a href="#" class="footer-link">Features</a>
+      <a href="#pricing" class="footer-link">Pricing</a>
+      <a href="#" class="footer-link">Blog</a>
+      <a href="#" class="footer-link">Privacy</a>
+      <a href="#" class="footer-link">Terms</a>
+    </div>
+    <span class="footer-copy">© 2025 LitterDesk. Built for breeders.</span>
+  </div>
+</footer>
+
+<script>
+let annual = true;
+const PRICES = {
+  monthly: {starter:'$39',pro:'$89',kennel:'$179'},
+  annual:  {starter:'$31',pro:'$71',kennel:'$143'},
+};
+
+function toggleBilling(){
+  annual = !annual;
+  document.getElementById('billing-toggle').classList.toggle('annual', annual);
+  const p = annual ? PRICES.annual : PRICES.monthly;
+  document.getElementById('price-starter').textContent = p.starter;
+  document.getElementById('price-pro').textContent = p.pro;
+  document.getElementById('price-kennel').textContent = p.kennel;
+}
+
+// Scroll-triggered fade-ins
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, {threshold: 0.1});
+
+document.querySelectorAll('.feature-row, .t-card, .plan, .metric-item, .faq-item').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity .6s ease, transform .6s ease';
+  observer.observe(el);
+});
+
+// Smooth nav on scroll
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('nav');
+  if(window.scrollY > 20){
+    nav.style.boxShadow = '0 2px 20px rgba(13,26,15,.08)';
+  } else {
+    nav.style.boxShadow = 'none';
+  }
+});
+</script>
+</body>
+</html>
