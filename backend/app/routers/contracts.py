@@ -6,7 +6,7 @@ import uuid
 
 from app.database import get_db
 from app.models import User, Contract, Buyer
-from app.schemas import ContractOut
+from app.schemas import ContractOut, ContractCreate
 from app.routers.auth import get_current_user
 from app.config import settings
 
