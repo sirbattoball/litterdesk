@@ -175,4 +175,27 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             user.subscription_plan = "free"
             db.commit()
 
+    elif event["type"] == "account.updated":
+        # Fired when a breeder completes Stripe Connect onboarding
+        account = event["data"]["object"]
+        stripe_account_id = account.get("id")
+        charges_enabled = account.get("charges_enabled", False)
+        if stripe_account_id and charges_enabled:
+            user = db.query(User).filter(User.stripe_account_id == stripe_account_id).first()
+            if user and not user.stripe_onboarded:
+                user.stripe_onboarded = True
+                db.commit()
+
+    elif event["type"] in ("payment_intent.succeeded", "payment_intent.payment_failed"):
+        # Update deposit status on buyer-litter match
+        pi = event["data"]["object"]
+        pi_id = pi.get("id")
+        if pi_id:
+            match = db.query(BuyerLitterMatch).filter(
+                BuyerLitterMatch.stripe_payment_intent_id == pi_id
+            ).first()
+            if match:
+                match.deposit_paid = (event["type"] == "payment_intent.succeeded")
+                db.commit()
+
     return {"received": True}

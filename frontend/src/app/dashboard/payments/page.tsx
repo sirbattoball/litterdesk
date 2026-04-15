@@ -1,11 +1,30 @@
 'use client'
+import { useEffect } from 'react'
 import { useAuthStore } from '@/lib/store'
-import { paymentsApi } from '@/lib/api'
+import { paymentsApi, authApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 
 export default function PaymentsPage() {
-  const { user } = useAuthStore()
+  const { user, setUser } = useAuthStore()
+
+  // Stripe Connect redirects back to this page — refetch user so
+  // stripe_onboarded flips to true without a manual page refresh
+  useEffect(() => {
+    const refreshUser = async () => {
+      try {
+        const res = await authApi.me()
+        const fresh = res.data
+        setUser(fresh)
+        // If we just returned from Stripe Connect and are now onboarded, celebrate
+        if (fresh.stripe_onboarded && !user?.stripe_onboarded) {
+          toast.success('Bank account connected! You can now collect deposits.', { duration: 5000 })
+        }
+      } catch (_) {}
+    }
+    refreshUser()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handlePortal = async () => {
     try {
@@ -19,7 +38,7 @@ export default function PaymentsPage() {
   const handleConnect = async () => {
     try {
       const res = await paymentsApi.stripeConnectOnboard()
-      window.open(res.data.onboard_url, '_blank')
+      window.location.href = res.data.onboard_url
     } catch (err: any) {
       const detail = err.response?.data?.detail || ''
       if (detail.includes('signed up for Connect')) {
@@ -53,7 +72,9 @@ export default function PaymentsPage() {
                   ? user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
                   : 'Free Trial'}
               </span>
-              {user?.subscription_active && <span style={{ fontSize: 13, color: 'var(--forest-ll)', fontWeight: 500 }}>✓ Active</span>}
+              {user?.subscription_active && (
+                <span style={{ fontSize: 13, color: 'var(--forest-ll)', fontWeight: 500 }}>✓ Active</span>
+              )}
             </div>
             <p style={{ fontSize: 13, color: 'var(--ink-4)', marginBottom: 16, lineHeight: 1.5 }}>
               {user?.subscription_active
