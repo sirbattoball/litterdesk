@@ -28,6 +28,9 @@ const NAV = [
   )},
 ]
 
+// Bottom nav shows only the 5 most important items on mobile
+const MOBILE_NAV = NAV.slice(0, 5)
+
 export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuthStore()
@@ -41,66 +44,101 @@ export function Sidebar() {
     : 'Free Trial'
 
   return (
-    <aside className="sidebar">
-      {/* Logo */}
-      <div className="sidebar-logo">
-        <div className="sidebar-logomark">
-          <svg viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+    <>
+      {/* ── Desktop Sidebar ── */}
+      <aside className="sidebar">
+        {/* Logo */}
+        <div className="sidebar-logo">
+          <div className="sidebar-logomark">
+            <svg viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          </div>
+          <div>
+            <div className="sidebar-name">LitterDesk</div>
+            {user?.kennel_name && <div className="sidebar-kennel">{user.kennel_name}</div>}
+          </div>
         </div>
-        <div>
-          <div className="sidebar-name">LitterDesk</div>
-          {user?.kennel_name && <div className="sidebar-kennel">{user.kennel_name}</div>}
+
+        {/* Plan badge */}
+        <div className="sidebar-plan">
+          <span className="plan-chip">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            {planLabel}
+          </span>
         </div>
-      </div>
 
-      {/* Plan badge */}
-      <div className="sidebar-plan">
-        <span className="plan-chip">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-          {planLabel}
-        </span>
-      </div>
+        {/* Navigation */}
+        <nav className="sidebar-nav">
+          {NAV.map(({ href, label, icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`nav-item ${isActive(href) ? 'active' : ''}`}
+            >
+              {icon}
+              {label}
+            </Link>
+          ))}
+        </nav>
 
-      {/* Navigation */}
-      <nav className="sidebar-nav">
-        {NAV.map(({ href, label, icon }) => (
+        {/* Bottom */}
+        <div className="sidebar-bottom">
+          {!user?.subscription_active && (
+            <Link href="/dashboard/upgrade" className="upgrade-strip">
+              <svg viewBox="0 0 24 24" fill="currentColor" style={{width:14,height:14}}><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              Upgrade to Pro
+            </Link>
+          )}
+          <div style={{display:'flex',alignItems:'center',gap:9,padding:'6px 4px'}}>
+            <div style={{width:30,height:30,borderRadius:'50%',background:'linear-gradient(135deg,var(--forest-l),var(--forest))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11.5,fontWeight:700,color:'#fff',flexShrink:0}}>
+              {initials}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12.5,fontWeight:600,color:'var(--ink-2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.full_name}</div>
+              <div style={{fontSize:11,color:'var(--ink-4)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.email}</div>
+            </div>
+            <button onClick={logout} style={{border:'none',background:'none',cursor:'pointer',color:'var(--ink-4)',padding:4,borderRadius:6,transition:'all var(--t-fast)'}}
+              onMouseOver={e=>(e.currentTarget as HTMLElement).style.color='var(--red)'}
+              onMouseOut={e=>(e.currentTarget as HTMLElement).style.color='var(--ink-4)'}
+              title="Sign out">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Mobile Top Bar ── */}
+      <header className="mobile-topbar">
+        <div className="mobile-topbar-logo">
+          <div className="sidebar-logomark" style={{width:28,height:28,borderRadius:8}}>
+            <svg viewBox="0 0 24 24" style={{width:14,height:14}}><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          </div>
+          <span className="sidebar-name" style={{fontSize:16}}>LitterDesk</span>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {!user?.subscription_active && (
+            <Link href="/dashboard/upgrade" className="plan-chip" style={{fontSize:11,padding:'3px 10px',textDecoration:'none'}}>
+              ↑ Pro
+            </Link>
+          )}
+          <button onClick={logout} style={{border:'none',background:'var(--paper)',cursor:'pointer',color:'var(--ink-4)',padding:'6px 8px',borderRadius:8,fontSize:13}}>
+            Sign out
+          </button>
+        </div>
+      </header>
+
+      {/* ── Mobile Bottom Nav ── */}
+      <nav className="mobile-bottom-nav">
+        {MOBILE_NAV.map(({ href, label, icon }) => (
           <Link
             key={href}
             href={href}
-            className={`nav-item ${isActive(href) ? 'active' : ''}`}
+            className={`mobile-nav-item ${isActive(href) ? 'active' : ''}`}
           >
             {icon}
-            {label}
+            <span>{label}</span>
           </Link>
         ))}
       </nav>
-
-      {/* Bottom */}
-      <div className="sidebar-bottom">
-        {!user?.subscription_active && (
-          <Link href="/dashboard/upgrade" className="upgrade-strip">
-            <svg viewBox="0 0 24 24" fill="currentColor" style={{width:14,height:14}}><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            Upgrade to Pro
-          </Link>
-        )}
-
-        {/* User row */}
-        <div style={{display:'flex',alignItems:'center',gap:9,padding:'6px 4px'}}>
-          <div style={{width:30,height:30,borderRadius:'50%',background:'linear-gradient(135deg,var(--forest-l),var(--forest))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11.5,fontWeight:700,color:'#fff',flexShrink:0}}>
-            {initials}
-          </div>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:12.5,fontWeight:600,color:'var(--ink-2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.full_name}</div>
-            <div style={{fontSize:11,color:'var(--ink-4)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.email}</div>
-          </div>
-          <button onClick={logout} style={{border:'none',background:'none',cursor:'pointer',color:'var(--ink-4)',padding:4,borderRadius:6,transition:'all var(--t-fast)'}}
-            onMouseOver={e=>(e.currentTarget as HTMLElement).style.color='var(--red)'}
-            onMouseOut={e=>(e.currentTarget as HTMLElement).style.color='var(--ink-4)'}
-            title="Sign out">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          </button>
-        </div>
-      </div>
-    </aside>
+    </>
   )
 }

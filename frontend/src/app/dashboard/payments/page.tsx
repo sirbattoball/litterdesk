@@ -35,22 +35,6 @@ export default function PaymentsPage() {
     }
   }
 
-  const handleConnect = async () => {
-    try {
-      const res = await paymentsApi.stripeConnectOnboard()
-      window.location.href = res.data.onboard_url
-    } catch (err: any) {
-      const detail = err.response?.data?.detail || ''
-      if (detail.includes('signed up for Connect')) {
-        toast.error(
-          'You need to enable Stripe Connect first. Go to dashboard.stripe.com → Connect and enable it.',
-          { duration: 8000 }
-        )
-      } else {
-        toast.error(detail || 'Could not open Stripe onboarding')
-      }
-    }
-  }
 
   return (
     <>
@@ -62,7 +46,7 @@ export default function PaymentsPage() {
       </div>
 
       <div className="page-body">
-        <div className="two-col" style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 24, maxWidth: 540 }}>
           {/* Subscription */}
           <div className="card" style={{ padding: 24 }}>
             <div className="section-label" style={{ marginBottom: 12 }}>Your Subscription</div>
@@ -87,41 +71,6 @@ export default function PaymentsPage() {
               <Link href="/dashboard/upgrade" className="btn-primary" style={{ textDecoration: 'none' }}>
                 Upgrade to Pro →
               </Link>
-            )}
-          </div>
-
-          {/* Stripe Connect */}
-          <div className="card" style={{ padding: 24 }}>
-            <div className="section-label" style={{ marginBottom: 12 }}>Deposit Collection</div>
-            <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6, marginBottom: 16 }}>
-              Connect your bank account via Stripe to collect deposits directly from buyers.
-              Funds transfer in 2 business days. LitterDesk takes 1.5% on deposits collected.
-            </p>
-
-            {user?.stripe_onboarded ? (
-              <div>
-                <span className="badge badge-ready" style={{ fontSize: 13, padding: '5px 14px', marginBottom: 12, display: 'inline-flex' }}>
-                  ✓ Stripe Connected
-                </span>
-                <p style={{ fontSize: 12, color: 'var(--ink-4)', marginTop: 8 }}>
-                  Your bank account is connected. You can now collect deposits from buyers.
-                </p>
-              </div>
-            ) : (
-              <div>
-                <button onClick={handleConnect} className="btn-primary" style={{ marginBottom: 12 }}>
-                  Connect Bank Account →
-                </button>
-                <div style={{ background: 'var(--amber-f)', border: '1px solid rgba(200,117,26,.2)', borderRadius: 'var(--r-lg)', padding: '10px 14px', marginTop: 8 }}>
-                  <p style={{ fontSize: 12, color: 'var(--amber)', lineHeight: 1.5 }}>
-                    <strong>Setup required:</strong> Before connecting, enable Stripe Connect at{' '}
-                    <a href="https://dashboard.stripe.com/connect" target="_blank" rel="noreferrer"
-                      style={{ color: 'var(--amber)', fontWeight: 600 }}>
-                      dashboard.stripe.com/connect
-                    </a>
-                  </p>
-                </div>
-              </div>
             )}
           </div>
         </div>
