@@ -12,8 +12,6 @@ export default function SettingsPage() {
     kennel_name: user?.kennel_name ?? '',
   })
   const [saving, setSaving] = useState(false)
-  const [savingPw, setSavingPw] = useState(false)
-  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +43,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="field">
                   <label className="label">Kennel name</label>
-                  <input className="input" value={form.kennel_name} onChange={e=>setForm(f=>({...f,kennel_name:e.target.value}))} placeholder="Sunrise Goldens"/>
+                  <input className="input" value={form.kennel_name} onChange={e=>setForm(f=>({...f,kennel_name:e.target.value}))} placeholder="Oakwood Goldens"/>
                 </div>
                 <div className="field">
                   <label className="label">Email address</label>
@@ -69,7 +67,7 @@ export default function SettingsPage() {
                 {user?.subscription_active && <span style={{fontSize:13,color:'var(--forest-ll)',fontWeight:500}}>✓ Active</span>}
               </div>
               {user?.subscription_active ? (
-                <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Manage your billing, download invoices, or cancel your subscription.</p>
+                <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Manage billing, download invoices, or cancel your subscription.</p>
               ) : (
                 <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Upgrade to unlock AI contracts, unlimited litters, and buyer automation.</p>
               )}
@@ -81,29 +79,24 @@ export default function SettingsPage() {
 
           {/* Notifications */}
           <div>
-            <div className="section-label">Email Notifications</div>
-            <div className="card" style={{padding:'4px 20px'}}>
+            <div className="section-label" style={{display:'flex',alignItems:'center',gap:8}}>
+              Email Notifications
+              <span style={{fontSize:10.5,fontWeight:600,background:'var(--amber-f)',color:'var(--amber)',border:'1px solid rgba(200,117,26,.25)',padding:'2px 8px',borderRadius:20,letterSpacing:'.2px'}}>Coming soon</span>
+            </div>
+            <div className="card" style={{padding:'4px 20px',opacity:.6,pointerEvents:'none'}}>
               {[
-                { label: 'Go-home reminders', sub: '7 and 3 days before go-home date', key: 'go_home' },
-                { label: 'Follow-up nudges', sub: 'Daily digest of buyers needing contact', key: 'followup' },
-                { label: 'New inquiry alerts', sub: 'Instant alert on new buyer inquiry', key: 'inquiry' },
-                { label: 'Deposit confirmations', sub: 'When a buyer pays their deposit', key: 'deposit' },
-                { label: 'Weekly digest', sub: 'Summary of kennel activity every Monday', key: 'weekly' },
+                { label: 'Go-home reminders', sub: '7 and 3 days before go-home date' },
+                { label: 'Follow-up nudges', sub: 'Daily digest of buyers needing contact' },
+                { label: 'New inquiry alerts', sub: 'Instant alert on new buyer inquiry' },
+                { label: 'Deposit confirmations', sub: 'When a buyer pays their deposit' },
+                { label: 'Weekly digest', sub: 'Summary of kennel activity every Monday' },
               ].map((n) => (
-                <div key={n.key} className="settings-row">
+                <div key={n.label} className="settings-row">
                   <div>
                     <div style={{fontSize:14,color:'var(--ink-2)',fontWeight:500}}>{n.label}</div>
                     <div style={{fontSize:12,color:'var(--ink-4)',marginTop:2}}>{n.sub}</div>
                   </div>
-                  <button
-                    className="toggle"
-                    onClick={e => {
-                      const el = e.currentTarget
-                      el.classList.toggle('toggle-off')
-                      toast(`${n.label} ${el.classList.contains('toggle-off') ? 'disabled' : 'enabled'}`, {icon: el.classList.contains('toggle-off') ? '🔕' : '🔔'})
-                    }}>
-                    <div className="toggle-knob"/>
-                  </button>
+                  <button className="toggle toggle-off" disabled><div className="toggle-knob"/></button>
                 </div>
               ))}
             </div>
@@ -112,7 +105,7 @@ export default function SettingsPage() {
             <div className="card" style={{padding:20}}>
               <h4 style={{fontSize:14,fontWeight:600,color:'var(--ink)',marginBottom:6}}>Delete account</h4>
               <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:14,lineHeight:1.5}}>
-                Permanently delete your LitterDesk account and all data. This cannot be undone. Export your data first.
+                Permanently delete your LitterDesk account and all data. This cannot be undone.
               </p>
               <button
                 onClick={() => toast.error('Please contact support@litterdesk.com to delete your account.')}

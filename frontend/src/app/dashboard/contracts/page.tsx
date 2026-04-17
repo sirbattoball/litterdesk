@@ -32,6 +32,17 @@ export default function ContractsPage() {
     } finally { setActionId(null) }
   }
 
+  const handleResend = async (id: string) => {
+    setActionId(id)
+    try {
+      await contractsApi.send(id)
+      toast.success('Contract re-sent to buyer!')
+      qc.invalidateQueries({ queryKey: ['contracts'] })
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to resend contract')
+    } finally { setActionId(null) }
+  }
+
   const handleVoid = async (id: string) => {
     if (!confirm('Void this contract? This cannot be undone.')) return
     setActionId(id)
@@ -60,7 +71,7 @@ export default function ContractsPage() {
         <div className="three-col" style={{marginBottom:24}}>
           {[
             ['Drafts / Pending', pending, 'var(--amber)'],
-            ['Signed this month', signed, 'var(--forest-ll)'],
+            ['Signed', signed, 'var(--forest-ll)'],
             ['Total contracts', contracts?.length ?? 0, 'var(--ink-3)']
           ].map(([l,v,c]: any) => (
             <div key={l} className="stat-card">
@@ -107,9 +118,12 @@ export default function ContractsPage() {
                     </button>
                   )}
                   {c.status === 'sent' && (
-                    <button className="btn-ghost" style={{fontSize:12,padding:'6px 14px'}}
-                      onClick={()=>toast('Reminder sent!',{icon:'📧'})}>
-                      Remind
+                    <button
+                      disabled={actionId===c.id}
+                      onClick={()=>handleResend(c.id)}
+                      className="btn-ghost"
+                      style={{fontSize:12,padding:'6px 14px'}}>
+                      {actionId===c.id ? 'Sending…' : 'Resend'}
                     </button>
                   )}
                   {['draft','sent'].includes(c.status) && (

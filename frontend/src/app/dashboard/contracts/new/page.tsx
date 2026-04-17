@@ -22,7 +22,13 @@ export default function NewContractPage() {
     buyer_id: searchParams.get('buyer') ?? '',
     sale_price: '',
     deposit_amount: '',
-    puppy_description: '',
+    puppy_name: '',
+    puppy_sex: 'female',
+    dob: '',
+    go_home_date: '',
+    balance_due_date: '',
+    spay_neuter_required: true,
+    health_guarantee_months: '24',
     special_terms: '',
   })
   const set = (k: string, v: any) => setForm(f => ({...f, [k]: v}))
@@ -35,27 +41,34 @@ export default function NewContractPage() {
       toast.error('AI contract generation requires a Pro plan.')
       return
     }
-    if (!form.buyer_id) {
-      toast.error('Please select a buyer first')
-      return
-    }
+    if (!form.buyer_id) { toast.error('Please select a buyer'); return }
+    if (!form.sale_price) { toast.error('Please enter the sale price'); return }
+    if (!form.dob) { toast.error('Please enter the puppy\'s date of birth'); return }
+    if (!form.go_home_date) { toast.error('Please enter the go-home date'); return }
+
     setStep('generating')
     try {
       const res = await aiApi.generateContract({
-        litter_id: form.litter_id || null,
         buyer_id: form.buyer_id,
-        sale_price: form.sale_price ? Number(form.sale_price) : null,
-        deposit_amount: form.deposit_amount ? Number(form.deposit_amount) : null,
-        puppy_description: form.puppy_description || null,
-        special_terms: form.special_terms || null,
+        litter_id: form.litter_id || null,
+        puppy_name: form.puppy_name || null,
+        puppy_sex: form.puppy_sex,
+        dob: form.dob,
+        go_home_date: form.go_home_date,
+        balance_due_date: form.balance_due_date || form.go_home_date,
+        sale_price: Number(form.sale_price),
+        deposit_amount: form.deposit_amount ? Number(form.deposit_amount) : 0,
+        spay_neuter_required: form.spay_neuter_required,
+        health_guarantee_months: Number(form.health_guarantee_months) || 24,
       })
-      setGeneratedText(res.data.contract_text)
-      // If backend returns a saved contract ID, capture it
+      setGeneratedText(res.data.content || res.data.contract_text || '')
       if (res.data.contract_id) setContractId(res.data.contract_id)
       setStep('preview')
     } catch (err: any) {
       const detail = err.response?.data?.detail || err.message || 'AI generation failed'
-      toast.error(detail.includes('API') ? 'Add your Anthropic API key in Railway to enable AI contracts.' : detail)
+      toast.error(detail.includes('API') || detail.includes('Anthropic')
+        ? 'Anthropic API key not configured. Add ANTHROPIC_API_KEY in Railway.'
+        : detail)
       setStep('form')
     }
   }
@@ -64,15 +77,10 @@ export default function NewContractPage() {
     if (!form.buyer_id) { toast.error('Select a buyer to save this contract'); return }
     setSaving(true)
     try {
-      const payload: any = {
-        buyer_id: form.buyer_id,
-        content: generatedText,
-        status: 'draft',
-      }
+      const payload: any = { buyer_id: form.buyer_id, content: generatedText, status: 'draft' }
       if (form.sale_price) payload.sale_price = Number(form.sale_price)
       if (form.litter_id) payload.litter_id = form.litter_id
       if (form.deposit_amount) payload.deposit_amount = Number(form.deposit_amount)
-
       const res = await contractsApi.create(payload)
       setContractId(res.data.id)
       qc.invalidateQueries({ queryKey: ['contracts'] })
@@ -84,10 +92,7 @@ export default function NewContractPage() {
   }
 
   const handleSend = async () => {
-    if (!contractId) {
-      toast.error('Save the contract first before sending')
-      return
-    }
+    if (!contractId) { toast.error('Save the contract first before sending'); return }
     setSending(true)
     try {
       await contractsApi.send(contractId)
@@ -122,12 +127,8 @@ export default function NewContractPage() {
         </div>
         <div className="topbar-right">
           <button onClick={()=>setStep('form')} className="btn-ghost">← Edit Details</button>
-          <button onClick={handleSave} disabled={saving} className="btn-ghost">
-            {saving?'Saving…':'Save Draft'}
-          </button>
-          <button onClick={handleSend} disabled={sending||!contractId} className="btn-primary">
-            {sending?'Sending…':'Save & Send →'}
-          </button>
+          <button onClick={handleSave} disabled={saving} className="btn-ghost">{saving?'Saving…':'Save Draft'}</button>
+          <button onClick={handleSend} disabled={sending||!contractId} className="btn-primary">{sending?'Sending…':'Save & Send →'}</button>
         </div>
       </div>
       <div className="page-body">
@@ -140,12 +141,8 @@ export default function NewContractPage() {
             <pre style={{fontFamily:'var(--sans)',fontSize:13.5,lineHeight:1.8,color:'var(--ink-2)',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{generatedText}</pre>
           </div>
           <div style={{display:'flex',gap:10,marginTop:16}}>
-            <button onClick={handleSave} disabled={saving} className="btn-primary">
-              {saving?'Saving…':'Save as Draft'}
-            </button>
-            <button onClick={handleSend} disabled={sending||!contractId} className="btn-primary" style={{background:'linear-gradient(135deg,#1e4d7a,#2563eb)'}}>
-              {sending?'Sending…':'Send to Buyer →'}
-            </button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary">{saving?'Saving…':'Save as Draft'}</button>
+            <button onClick={handleSend} disabled={sending||!contractId} className="btn-primary" style={{background:'linear-gradient(135deg,#1e4d7a,#2563eb)'}}>{sending?'Sending…':'Send to Buyer →'}</button>
           </div>
         </div>
       </div>
@@ -166,16 +163,11 @@ export default function NewContractPage() {
       </div>
       <div className="page-body">
         <div style={{maxWidth:640}}>
+
+          {/* Buyer + Litter */}
           <div className="card" style={{padding:24,marginBottom:16}}>
-            <div className="section-label" style={{marginBottom:16}}>Contract Details</div>
+            <div className="section-label" style={{marginBottom:16}}>Transaction</div>
             <div className="two-col">
-              <div className="field">
-                <label className="label">Litter <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label>
-                <select className="input" value={form.litter_id} onChange={e=>set('litter_id',e.target.value)}>
-                  <option value="">Select litter…</option>
-                  {litters?.map((l:any)=><option key={l.id} value={l.id}>{l.name??l.breed}</option>)}
-                </select>
-              </div>
               <div className="field">
                 <label className="label">Buyer *</label>
                 <select className="input" value={form.buyer_id} onChange={e=>set('buyer_id',e.target.value)} required>
@@ -183,13 +175,59 @@ export default function NewContractPage() {
                   {buyers?.map((b:any)=><option key={b.id} value={b.id}>{b.full_name}</option>)}
                 </select>
               </div>
+              <div className="field">
+                <label className="label">Litter <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label>
+                <select className="input" value={form.litter_id} onChange={e=>set('litter_id',e.target.value)}>
+                  <option value="">Select litter…</option>
+                  {litters?.map((l:any)=><option key={l.id} value={l.id}>{l.name??l.breed}</option>)}
+                </select>
+              </div>
             </div>
             <div className="two-col">
-              <div className="field"><label className="label">Sale price ($) *</label><input type="number" className="input" placeholder="2800" value={form.sale_price} onChange={e=>set('sale_price',e.target.value)} /></div>
-              <div className="field"><label className="label">Deposit ($)</label><input type="number" className="input" placeholder="500" value={form.deposit_amount} onChange={e=>set('deposit_amount',e.target.value)} /></div>
+              <div className="field"><label className="label">Sale price ($) *</label><input type="number" className="input" placeholder="2800" value={form.sale_price} onChange={e=>set('sale_price',e.target.value)} required /></div>
+              <div className="field"><label className="label">Deposit paid ($)</label><input type="number" className="input" placeholder="500" value={form.deposit_amount} onChange={e=>set('deposit_amount',e.target.value)} /></div>
             </div>
-            <div className="field"><label className="label">Puppy description</label><input className="input" placeholder="e.g. Female golden, red collar, born April 3" value={form.puppy_description} onChange={e=>set('puppy_description',e.target.value)} /></div>
-            <div className="field"><label className="label">Special terms <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label><textarea className="input" rows={2} placeholder="e.g. Breeding rights retained, limited registration" value={form.special_terms} onChange={e=>set('special_terms',e.target.value)} style={{resize:'vertical'}}/></div>
+          </div>
+
+          {/* Puppy Details */}
+          <div className="card" style={{padding:24,marginBottom:16}}>
+            <div className="section-label" style={{marginBottom:16}}>Puppy Details</div>
+            <div className="two-col">
+              <div className="field"><label className="label">Puppy name <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label><input className="input" placeholder="e.g. Rosie" value={form.puppy_name} onChange={e=>set('puppy_name',e.target.value)} /></div>
+              <div className="field">
+                <label className="label">Sex *</label>
+                <select className="input" value={form.puppy_sex} onChange={e=>set('puppy_sex',e.target.value)}>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                </select>
+              </div>
+            </div>
+            <div className="two-col">
+              <div className="field"><label className="label">Date of birth *</label><input type="date" className="input" value={form.dob} onChange={e=>set('dob',e.target.value)} required /></div>
+              <div className="field"><label className="label">Go-home date *</label><input type="date" className="input" value={form.go_home_date} onChange={e=>set('go_home_date',e.target.value)} required /></div>
+            </div>
+            <div className="two-col">
+              <div className="field"><label className="label">Balance due date</label><input type="date" className="input" value={form.balance_due_date} onChange={e=>set('balance_due_date',e.target.value)} /><p style={{fontSize:11.5,color:'var(--ink-4)',marginTop:4}}>Defaults to go-home date if blank</p></div>
+              <div className="field"><label className="label">Health guarantee</label>
+                <select className="input" value={form.health_guarantee_months} onChange={e=>set('health_guarantee_months',e.target.value)}>
+                  <option value="12">12 months</option>
+                  <option value="24">24 months</option>
+                  <option value="36">36 months</option>
+                </select>
+              </div>
+            </div>
+            <div className="field">
+              <label className="label" style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+                <input type="checkbox" checked={form.spay_neuter_required} onChange={e=>set('spay_neuter_required',e.target.checked)} style={{width:15,height:15,accentColor:'var(--forest)',cursor:'pointer'}}/>
+                Spay/neuter required (limited registration)
+              </label>
+            </div>
+          </div>
+
+          {/* Special terms */}
+          <div className="card" style={{padding:24,marginBottom:16}}>
+            <div className="section-label" style={{marginBottom:16}}>Special Terms <span style={{fontSize:11,fontWeight:400,color:'var(--ink-4)',textTransform:'none'}}>optional</span></div>
+            <textarea className="input" rows={3} placeholder="e.g. Breeding rights included, AKC full registration, specific diet requirements…" value={form.special_terms} onChange={e=>set('special_terms',e.target.value)} style={{resize:'vertical'}}/>
           </div>
 
           {!user?.subscription_active && (
