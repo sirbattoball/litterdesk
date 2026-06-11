@@ -45,6 +45,8 @@ export default function OnboardingPage() {
     finally { setSaving(false) }
   }
 
+  const handleFinish = () => router.push('/dashboard')
+
   const progress = (step / (STEPS.length - 1)) * 100
 
   return (

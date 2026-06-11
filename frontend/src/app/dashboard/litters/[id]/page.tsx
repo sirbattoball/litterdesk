@@ -29,6 +29,7 @@ export default function LitterDetailPage() {
   const [showAddBuyer, setShowAddBuyer] = useState(false)
   const [addingBuyerId, setAddingBuyerId] = useState('')
   const [adding, setAdding] = useState(false)
+  const [announcement, setAnnouncement] = useState<{email:string,social:string}|null>(null)
 
   const { data: litter, isLoading } = useQuery({
     queryKey: ['litter', id],
@@ -50,7 +51,8 @@ export default function LitterDetailPage() {
     setAnnouncing(true)
     try {
       const res = await aiApi.litterAnnouncement(id)
-      toast.success('Announcement drafted! Check your email.')
+      setAnnouncement(res.data)
+      toast.success('Announcement drafted!')
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'AI announcement requires Pro plan')
     } finally { setAnnouncing(false) }
