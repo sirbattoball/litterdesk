@@ -1,0 +1,23 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/login/page": "app/login/page.js",
+  "/register/page": "app/register/page.js",
+  "/route": "app/route.js",
+  "/sign/[token]/page": "app/sign/[token]/page.js",
+  "/dashboard/buyers/page": "app/dashboard/buyers/page.js",
+  "/dashboard/buyers/new/page": "app/dashboard/buyers/new/page.js",
+  "/dashboard/buyers/[id]/page": "app/dashboard/buyers/[id]/page.js",
+  "/dashboard/contracts/new/page": "app/dashboard/contracts/new/page.js",
+  "/dashboard/contracts/page": "app/dashboard/contracts/page.js",
+  "/dashboard/dogs/[id]/page": "app/dashboard/dogs/[id]/page.js",
+  "/dashboard/dogs/new/page": "app/dashboard/dogs/new/page.js",
+  "/dashboard/dogs/page": "app/dashboard/dogs/page.js",
+  "/dashboard/litters/new/page": "app/dashboard/litters/new/page.js",
+  "/dashboard/litters/[id]/page": "app/dashboard/litters/[id]/page.js",
+  "/dashboard/litters/page": "app/dashboard/litters/page.js",
+  "/dashboard/onboarding/page": "app/dashboard/onboarding/page.js",
+  "/dashboard/payments/page": "app/dashboard/payments/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/upgrade/page": "app/dashboard/upgrade/page.js"
+}
