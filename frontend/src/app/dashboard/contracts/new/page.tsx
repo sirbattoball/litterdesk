@@ -240,17 +240,10 @@ export default function NewContractPage() {
             </div>
           )}
 
-          {user?.subscription_active ? (
-            <button onClick={handleGenerate} className="btn-primary" style={{fontSize:15,padding:'12px 28px'}}>
+          <button onClick={handleGenerate} className="btn-primary" style={{fontSize:15,padding:'12px 28px'}}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
               Generate with Claude
             </button>
-          ) : (
-            <Link href="/dashboard/upgrade" className="btn-primary" style={{fontSize:15,padding:'12px 28px',textDecoration:'none'}}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              Upgrade to Pro to Generate
-            </Link>
-          )}
         </div>
       </div>
     </>
