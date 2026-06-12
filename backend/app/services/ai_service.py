@@ -71,7 +71,7 @@ Generate a complete contract including:
 Format as a proper legal document with clear section headings. Include signature lines at the end."""
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5",
         max_tokens=4000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}]
@@ -117,7 +117,7 @@ Respond ONLY with valid JSON in this exact format:
 }}"""
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5",
         max_tokens=600,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}]
@@ -174,7 +174,7 @@ Respond in JSON:
 }}"""
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5",
         max_tokens=800,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}]
@@ -227,7 +227,7 @@ Respond in JSON as a list of matches:
 ]"""
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5",
         max_tokens=1000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}]
@@ -273,7 +273,7 @@ Format as JSON:
 }}"""
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5",
         max_tokens=800,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}]
