@@ -222,6 +222,26 @@ export default function LitterDetailPage() {
           </div>
         </div>
       </div>
+
+        {announcement && (
+          <div className="card" style={{padding:24,marginTop:20}}>
+            <div className="section-label" style={{marginBottom:16}}>AI Announcement</div>
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:13,fontWeight:600,color:'var(--ink-3)',marginBottom:8}}>📧 Email version</div>
+              <p style={{fontSize:14,color:'var(--ink-2)',lineHeight:1.7,whiteSpace:'pre-wrap'}}>{announcement.email}</p>
+            </div>
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:'var(--ink-3)',marginBottom:8}}>📱 Social caption</div>
+              <p style={{fontSize:14,color:'var(--ink-2)',lineHeight:1.7,whiteSpace:'pre-wrap'}}>{announcement.social}</p>
+            </div>
+            <button onClick={()=>{navigator.clipboard.writeText(announcement.email+'
+
+---
+
+'+announcement.social);toast.success('Copied!')}} className="btn-ghost" style={{marginTop:16}}>📋 Copy all</button>
+          </div>
+        )}
+      </div>
     </>
   )
 }
