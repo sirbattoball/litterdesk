@@ -10,7 +10,7 @@ const PLANS = [
   { key:'pro', name:'Pro', price:89, desc:'For serious breeding programs', popular:true,
     features:['Unlimited litters','Everything in Starter','AI contract generation','AI buyer scoring & email drafting','Contract e-signing for buyers','Priority support'], cta:'Start Pro trial' },
   { key:'kennel', name:'Kennel', price:179, desc:'Multi-breed & team operations',
-    features:['Everything in Pro','Up to 5 team members','Public kennel listing page','Buyer-facing inquiry portal','Revenue analytics & reporting'], cta:'Contact us' },
+    features:['Everything in Pro','Up to 5 team members','Public kennel listing page','Buyer-facing inquiry portal','Revenue analytics & reporting'], cta:'Build my kennel →' },
 ]
 
 export default function UpgradePage() {
