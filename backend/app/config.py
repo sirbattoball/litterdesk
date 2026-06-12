@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "https://litterdesk.com"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "https://litterdesk.vercel.app", "https://litterdesk.com"]
 
     # App
     APP_URL: str = "https://litterdesk.com"
