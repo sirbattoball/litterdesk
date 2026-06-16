@@ -5,6 +5,7 @@ import { littersApi, buyersApi, contractsApi, aiApi } from '@/lib/api'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
+import ReactMarkdown from 'react-markdown'
 import { useAuthStore } from '@/lib/store'
 
 export default function NewContractPage() {
@@ -135,7 +136,7 @@ export default function NewContractPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--forest)"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
               <span style={{fontSize:13,color:'var(--forest)',fontWeight:500}}>AI-generated draft. Review all terms before sending to buyer.</span>
             </div>
-            <pre style={{fontFamily:'var(--sans)',fontSize:13.5,lineHeight:1.8,color:'var(--ink-2)',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{generatedText}</pre>
+            <div style={{fontSize:13.5,lineHeight:1.8,color:'var(--ink-2)'}}><ReactMarkdown>{generatedText}</ReactMarkdown></div>
           </div>
           <div style={{display:'flex',gap:10,marginTop:16}}>
             <button onClick={handleSave} disabled={saving} className="btn-primary">{saving?'Saving…':'Save as Draft'}</button>
