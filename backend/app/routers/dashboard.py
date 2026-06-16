@@ -86,7 +86,7 @@ def get_recent_activity(
     for litter in recent_litters:
         activity.append({
             "type": "litter_updated",
-            "description": f"{litter.name or litter.breed + ' litter'} — {litter.status}",
+            "description": f"{litter.name or litter.breed + ' litter'} — {litter.status.replace('_', ' ').title() if litter.status else ''}",
             "timestamp": litter.updated_at,
         })
 
