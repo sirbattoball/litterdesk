@@ -35,6 +35,15 @@ export default function PaymentsPage() {
     }
   }
 
+  const handleStripeConnect = async () => {
+    try {
+      const res = await paymentsApi.stripeConnectOnboard()
+      window.location.href = res.data.onboard_url
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Could not start bank connection')
+    }
+  }
+
 
   return (
     <>
@@ -71,6 +80,25 @@ export default function PaymentsPage() {
               <Link href="/dashboard/upgrade" className="btn-primary" style={{ textDecoration: 'none' }}>
                 Upgrade to Pro →
               </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Bank Account / Stripe Connect */}
+        <div style={{ marginBottom: 24, maxWidth: 540 }}>
+          <div className="card" style={{ padding: 24 }}>
+            <div className="section-label" style={{ marginBottom: 12 }}>Bank Account</div>
+            {user?.stripe_onboarded ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, color: 'var(--forest-ll)', fontWeight: 500 }}>✓ Connected — you can collect deposits</span>
+              </div>
+            ) : (
+              <>
+                <p style={{ fontSize: 13, color: 'var(--ink-4)', marginBottom: 16, lineHeight: 1.5 }}>
+                  Connect your bank account via Stripe to start collecting deposits directly from buyers.
+                </p>
+                <button onClick={handleStripeConnect} className="btn-primary">Connect bank account →</button>
+              </>
             )}
           </div>
         </div>
