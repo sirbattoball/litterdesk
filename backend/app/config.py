@@ -23,7 +23,7 @@ class Settings(BaseSettings):
 
     # Email (Resend)
     RESEND_API_KEY: str = ""
-    FROM_EMAIL: str = "noreply@litterdesk.com"
+    FROM_EMAIL: str = "onboarding@resend.dev"
 
     # Redis (for Celery)
     REDIS_URL: str = "redis://localhost:6379/0"
