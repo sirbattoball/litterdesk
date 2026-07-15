@@ -344,6 +344,89 @@ body::before {
 .pain-bar-rich .pain-stat-num { color: var(--cream) !important; }
 .pain-bar-rich .pain-stat-label { color: rgba(250,248,243,0.6) !important; }
 
+
+/* AURORA HERO */
+.hero-aurora {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper);
+}
+.hero-aurora::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse at 10% 60%, rgba(61,140,96,.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 10%, rgba(200,117,26,.13) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 90%, rgba(26,71,48,.1) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 50%, rgba(196,217,200,.2) 0%, transparent 40%),
+    radial-gradient(ellipse at 20% 20%, rgba(200,117,26,.07) 0%, transparent 35%);
+  animation: auroraShift 12s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+.hero-aurora::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(ellipse at center, rgba(196,217,200,.06) 0%, transparent 60%);
+  animation: auroraRotate 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.hero-aurora .hero,
+.hero-aurora .anim,
+.hero-aurora .calc-card {
+  position: relative;
+  z-index: 1;
+}
+@keyframes auroraShift {
+  0% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 0.9; transform: scale(1.01); }
+}
+@keyframes auroraRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* FLOATING NOTIFICATION CARDS */
+.float-card {
+  position: absolute;
+  background: white;
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1), 0 1px 4px rgba(0,0,0,.06);
+  border: 1px solid rgba(230,223,212,.6);
+  z-index: 2;
+  animation: floatBob 4s ease-in-out infinite;
+  white-space: nowrap;
+}
+.float-card-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.float-card-title { font-size: 12px; font-weight: 700; color: var(--ink); }
+.float-card-sub { font-size: 11px; color: var(--ink-4); margin-top: 1px; }
+
+.float-card-1 { top: 12%; right: -5%; animation-delay: 0s; }
+.float-card-2 { bottom: 28%; right: -3%; animation-delay: 1.5s; }
+.float-card-3 { top: 45%; left: 52%; animation-delay: 0.8s; }
+
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Make calc-card relative for float cards */
+.calc-card { position: relative; overflow: visible !important; }
+
 </style>
 </head>
 <body>
@@ -363,7 +446,7 @@ body::before {
 </nav>
 
 <!-- HERO + CALCULATOR -->
-<section style="background:radial-gradient(ellipse at 15% 70%,rgba(196,217,200,.35) 0%,transparent 55%),radial-gradient(ellipse at 85% 20%,rgba(200,117,26,.1) 0%,transparent 50%),radial-gradient(ellipse at 50% 100%,rgba(26,71,48,.06) 0%,transparent 60%),var(--paper)">
+<section class="hero-aurora">
   <div class="hero">
     <div class="anim" style="animation-delay:0ms">
       <div class="hero-badge">
@@ -391,6 +474,28 @@ body::before {
 
     <!-- ROI CALCULATOR -->
     <div class="calc-card anim" style="animation-delay:150ms">
+      <!-- FLOATING NOTIFICATION CARDS -->
+      <div class="float-card float-card-1">
+        <div class="float-card-icon" style="background:#e8f5ee">✓</div>
+        <div>
+          <div class="float-card-title">Contract signed</div>
+          <div class="float-card-sub">Emma R. just signed her contract</div>
+        </div>
+      </div>
+      <div class="float-card float-card-2">
+        <div class="float-card-icon" style="background:#fdf4e4">💰</div>
+        <div>
+          <div class="float-card-title">Deposit received</div>
+          <div class="float-card-sub">$500 from Sarah M. · 2 min ago</div>
+        </div>
+      </div>
+      <div class="float-card float-card-3">
+        <div class="float-card-icon" style="background:#e8f5ee">🐾</div>
+        <div>
+          <div class="float-card-title">New inquiry</div>
+          <div class="float-card-sub">Golden Retriever · scored 87/100</div>
+        </div>
+      </div>
       <div class="calc-title">Your ROI Calculator</div>
       <div class="calc-sub">Drag to match your kennel. See your savings instantly.</div>
 
