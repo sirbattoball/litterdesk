@@ -48,8 +48,8 @@ def generate_contract(
     current_user: User = Depends(get_current_user)
 ):
     """Generate an AI-written puppy sale contract."""
-    # if not current_user.subscription_active and current_user.subscription_plan not in ["pro", "kennel"]:
-    #     raise HTTPException(403, "Contract generation requires Pro plan")
+    if not current_user.subscription_active and current_user.subscription_plan not in ["pro", "kennel"]:
+        raise HTTPException(403, "Contract generation requires Pro plan")
 
     buyer = db.query(Buyer).filter(
         Buyer.id == req.buyer_id,

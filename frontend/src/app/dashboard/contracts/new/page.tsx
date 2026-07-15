@@ -38,7 +38,10 @@ export default function NewContractPage() {
   const { data: buyers } = useQuery({ queryKey:['buyers'], queryFn:()=>buyersApi.list().then(r=>r.data) })
 
   const handleGenerate = async () => {
-    // subscription check bypassed for testing
+    if (!user?.subscription_active) {
+      toast.error('AI contract generation requires a Pro plan.')
+      return
+    }
     if (!form.buyer_id) { toast.error('Please select a buyer'); return }
     if (!form.sale_price) { toast.error('Please enter the sale price'); return }
     if (!form.dob) { toast.error('Please enter the puppy\'s date of birth'); return }
@@ -238,10 +241,17 @@ export default function NewContractPage() {
             </div>
           )}
 
-          <button onClick={handleGenerate} className="btn-primary" style={{fontSize:15,padding:'12px 28px'}}>
+          {user?.subscription_active ? (
+            <button onClick={handleGenerate} className="btn-primary" style={{fontSize:15,padding:'12px 28px'}}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
               Generate with Claude
             </button>
+          ) : (
+            <Link href="/dashboard/upgrade" className="btn-primary" style={{fontSize:15,padding:'12px 28px',textDecoration:'none'}}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              Upgrade to Pro to Generate
+            </Link>
+          )}
         </div>
       </div>
     </>
