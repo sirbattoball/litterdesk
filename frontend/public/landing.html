@@ -415,12 +415,13 @@ body::before {
 .float-card-title { font-size: 12px; font-weight: 700; color: var(--ink); }
 .float-card-sub { font-size: 11px; color: var(--ink-4); margin-top: 1px; }
 
-.float-card-1 { top: 8%; left: 38%; animation-delay: 0s; }
-.float-card-2 { bottom: 12%; left: 35%; animation-delay: 1.5s; }
-.float-card-3 { top: 52%; left: 33%; animation-delay: 0.8s; }
+.float-card-1 { top: -20px; right: -10px; animation-delay: 0s; }
+.float-card-2 { bottom: 60px; right: -20px; animation-delay: 1.5s; }
+.float-card-3 { top: 40%; left: -20px; animation-delay: 0.8s; }
 
-/* Hero needs relative positioning for float cards */
+/* Hero and calc wrapper need relative positioning */
 .hero { position: relative; }
+.calc-card { position: relative !important; overflow: visible !important; }
 
 @keyframes floatBob {
   0%, 100% { transform: translateY(0px); }
@@ -475,6 +476,8 @@ body::before {
       </div>
     </div>
 
+    <!-- ROI CALCULATOR -->
+    <div class="calc-card anim" style="animation-delay:150ms;position:relative;overflow:visible;">
     <!-- FLOATING NOTIFICATION CARDS -->
     <div class="float-card float-card-1">
       <div class="float-card-icon" style="background:#e8f5ee">✓</div>
@@ -497,9 +500,6 @@ body::before {
         <div class="float-card-sub">Golden Retriever · scored 87/100</div>
       </div>
     </div>
-
-    <!-- ROI CALCULATOR -->
-    <div class="calc-card anim" style="animation-delay:150ms">
       <div class="calc-title">Your ROI Calculator</div>
       <div class="calc-sub">Drag to match your kennel. See your savings instantly.</div>
 
