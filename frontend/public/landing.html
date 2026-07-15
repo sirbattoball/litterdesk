@@ -391,40 +391,7 @@ body::before {
   to { transform: rotate(360deg); }
 }
 
-/* FLOATING NOTIFICATION CARDS */
-.float-card {
-  position: absolute;
-  background: white;
-  border-radius: 12px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.1), 0 1px 4px rgba(0,0,0,.06);
-  border: 1px solid rgba(230,223,212,.6);
-  z-index: 2;
-  animation: floatBob 4s ease-in-out infinite;
-  white-space: nowrap;
-}
-.float-card-icon {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; flex-shrink: 0;
-}
-.float-card-title { font-size: 12px; font-weight: 700; color: var(--ink); }
-.float-card-sub { font-size: 11px; color: var(--ink-4); margin-top: 1px; }
 
-.float-card-1 { top: -20px; right: -10px; animation-delay: 0s; }
-.float-card-2 { bottom: 60px; right: -20px; animation-delay: 1.5s; }
-.float-card-3 { top: 40%; left: -20px; animation-delay: 0.8s; }
-
-/* Hero and calc wrapper need relative positioning */
-.hero { position: relative; }
-.calc-card { position: relative !important; overflow: visible !important; }
-
-@keyframes floatBob {
-  0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-6px); }
 }
 
