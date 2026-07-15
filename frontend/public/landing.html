@@ -296,6 +296,54 @@ footer{background:var(--ink);padding:48px 40px 32px;color:var(--cream)}
   .nav-links{display:none}
   .section{padding:56px 20px}
 }
+
+/* GRAIN TEXTURE */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* RICHER SECTION BACKGROUNDS */
+.section-sage {
+  background: linear-gradient(180deg, var(--sage-l) 0%, rgba(228,237,230,0.4) 100%);
+  border-top: 1px solid rgba(196,217,200,0.5);
+  border-bottom: 1px solid rgba(196,217,200,0.5);
+}
+
+.section-dark {
+  background: linear-gradient(135deg, var(--forest) 0%, #0f2d1e 100%);
+  color: var(--cream);
+}
+
+.section-warm {
+  background: linear-gradient(180deg, #fdf4e4 0%, var(--paper) 100%);
+  border-top: 1px solid rgba(200,117,26,0.12);
+  border-bottom: 1px solid rgba(200,117,26,0.12);
+}
+
+/* HERO RICHER GRADIENT */
+.hero-section-bg {
+  background: 
+    radial-gradient(ellipse at 15% 70%, rgba(196,217,200,.35) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 20%, rgba(200,117,26,.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(26,71,48,.06) 0%, transparent 60%),
+    var(--paper);
+}
+
+/* PAIN BAR RICHER */
+.pain-bar-rich {
+  background: linear-gradient(90deg, var(--forest) 0%, #1f5a38 50%, var(--forest) 100%) !important;
+  border: none !important;
+}
+.pain-bar-rich .pain-stat-num { color: var(--cream) !important; }
+.pain-bar-rich .pain-stat-label { color: rgba(250,248,243,0.6) !important; }
+
 </style>
 </head>
 <body>
@@ -315,7 +363,7 @@ footer{background:var(--ink);padding:48px 40px 32px;color:var(--cream)}
 </nav>
 
 <!-- HERO + CALCULATOR -->
-<section style="background:radial-gradient(ellipse at 15% 70%,rgba(196,217,200,.2) 0%,transparent 55%),radial-gradient(ellipse at 85% 20%,rgba(200,117,26,.07) 0%,transparent 50%),var(--paper)">
+<section style="background:radial-gradient(ellipse at 15% 70%,rgba(196,217,200,.35) 0%,transparent 55%),radial-gradient(ellipse at 85% 20%,rgba(200,117,26,.1) 0%,transparent 50%),radial-gradient(ellipse at 50% 100%,rgba(26,71,48,.06) 0%,transparent 60%),var(--paper)">
   <div class="hero">
     <div class="anim" style="animation-delay:0ms">
       <div class="hero-badge">
@@ -424,7 +472,7 @@ footer{background:var(--ink);padding:48px 40px 32px;color:var(--cream)}
 </div>
 
 <!-- FEATURES -->
-<section class="section" id="features">
+<section class="section section-sage" id="features">
   <div class="section-center anim">
     <div class="section-label">Platform Features</div>
     <h2 class="section-title">Built for how breeders actually work</h2>
@@ -526,7 +574,7 @@ footer{background:var(--ink);padding:48px 40px 32px;color:var(--cream)}
 </section>
 
 <!-- PRICING -->
-<section class="section" id="pricing">
+<section class="section section-warm" id="pricing">
   <div class="section-center anim">
     <div class="section-label">Pricing</div>
     <h2 class="section-title">Less than one puppy's deposit</h2>
@@ -599,7 +647,7 @@ footer{background:var(--ink);padding:48px 40px 32px;color:var(--cream)}
 </div>
 
 <!-- FAQ -->
-<section class="section">
+<section class="section" style="background:var(--cream);border-top:1px solid var(--paper-3);">
   <div class="section-center anim">
     <div class="section-label">FAQ</div>
     <h2 class="section-title">Common questions</h2>
