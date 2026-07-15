@@ -415,9 +415,12 @@ body::before {
 .float-card-title { font-size: 12px; font-weight: 700; color: var(--ink); }
 .float-card-sub { font-size: 11px; color: var(--ink-4); margin-top: 1px; }
 
-.float-card-1 { top: 12%; right: -5%; animation-delay: 0s; }
-.float-card-2 { bottom: 28%; right: -3%; animation-delay: 1.5s; }
-.float-card-3 { top: 45%; left: 52%; animation-delay: 0.8s; }
+.float-card-1 { top: 8%; left: 38%; animation-delay: 0s; }
+.float-card-2 { bottom: 12%; left: 35%; animation-delay: 1.5s; }
+.float-card-3 { top: 52%; left: 33%; animation-delay: 0.8s; }
+
+/* Hero needs relative positioning for float cards */
+.hero { position: relative; }
 
 @keyframes floatBob {
   0%, 100% { transform: translateY(0px); }
@@ -472,30 +475,31 @@ body::before {
       </div>
     </div>
 
+    <!-- FLOATING NOTIFICATION CARDS -->
+    <div class="float-card float-card-1">
+      <div class="float-card-icon" style="background:#e8f5ee">✓</div>
+      <div>
+        <div class="float-card-title">Contract signed</div>
+        <div class="float-card-sub">Emma R. just signed her contract</div>
+      </div>
+    </div>
+    <div class="float-card float-card-2">
+      <div class="float-card-icon" style="background:#fdf4e4">💰</div>
+      <div>
+        <div class="float-card-title">Deposit received</div>
+        <div class="float-card-sub">$500 from Sarah M. · 2 min ago</div>
+      </div>
+    </div>
+    <div class="float-card float-card-3">
+      <div class="float-card-icon" style="background:#e8f5ee">🐾</div>
+      <div>
+        <div class="float-card-title">New inquiry</div>
+        <div class="float-card-sub">Golden Retriever · scored 87/100</div>
+      </div>
+    </div>
+
     <!-- ROI CALCULATOR -->
     <div class="calc-card anim" style="animation-delay:150ms">
-      <!-- FLOATING NOTIFICATION CARDS -->
-      <div class="float-card float-card-1">
-        <div class="float-card-icon" style="background:#e8f5ee">✓</div>
-        <div>
-          <div class="float-card-title">Contract signed</div>
-          <div class="float-card-sub">Emma R. just signed her contract</div>
-        </div>
-      </div>
-      <div class="float-card float-card-2">
-        <div class="float-card-icon" style="background:#fdf4e4">💰</div>
-        <div>
-          <div class="float-card-title">Deposit received</div>
-          <div class="float-card-sub">$500 from Sarah M. · 2 min ago</div>
-        </div>
-      </div>
-      <div class="float-card float-card-3">
-        <div class="float-card-icon" style="background:#e8f5ee">🐾</div>
-        <div>
-          <div class="float-card-title">New inquiry</div>
-          <div class="float-card-sub">Golden Retriever · scored 87/100</div>
-        </div>
-      </div>
       <div class="calc-title">Your ROI Calculator</div>
       <div class="calc-sub">Drag to match your kennel. See your savings instantly.</div>
 
