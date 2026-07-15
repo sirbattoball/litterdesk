@@ -344,60 +344,6 @@ body::before {
 .pain-bar-rich .pain-stat-num { color: var(--cream) !important; }
 .pain-bar-rich .pain-stat-label { color: rgba(250,248,243,0.6) !important; }
 
-
-/* AURORA HERO */
-.hero-aurora {
-  position: relative;
-  overflow: hidden;
-  background: var(--paper);
-}
-.hero-aurora::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background:
-    radial-gradient(ellipse at 10% 60%, rgba(61,140,96,.18) 0%, transparent 50%),
-    radial-gradient(ellipse at 90% 10%, rgba(200,117,26,.13) 0%, transparent 45%),
-    radial-gradient(ellipse at 50% 90%, rgba(26,71,48,.1) 0%, transparent 55%),
-    radial-gradient(ellipse at 70% 50%, rgba(196,217,200,.2) 0%, transparent 40%),
-    radial-gradient(ellipse at 20% 20%, rgba(200,117,26,.07) 0%, transparent 35%);
-  animation: auroraShift 12s ease-in-out infinite alternate;
-  pointer-events: none;
-  z-index: 0;
-}
-.hero-aurora::after {
-  content: '';
-  position: absolute;
-  top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background: radial-gradient(ellipse at center, rgba(196,217,200,.06) 0%, transparent 60%);
-  animation: auroraRotate 20s linear infinite;
-  pointer-events: none;
-  z-index: 0;
-}
-.hero-aurora .hero,
-.hero-aurora .anim,
-.hero-aurora .calc-card {
-  position: relative;
-  z-index: 1;
-}
-@keyframes auroraShift {
-  0% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.03); }
-  100% { opacity: 0.9; transform: scale(1.01); }
-}
-@keyframes auroraRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-
-  50% { transform: translateY(-6px); }
-}
-
-/* Make calc-card relative for float cards */
-.calc-card { position: relative; overflow: visible !important; }
-
 </style>
 </head>
 <body>
@@ -442,6 +388,13 @@ body::before {
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg> Cancel anytime</span>
       </div>
     </div>
+
+    <!-- ROI CALCULATOR -->
+    <div class="calc-card anim" style="animation-delay:150ms">
+      <div class="calc-title">Your ROI Calculator</div>
+      <div class="calc-sub">Drag to match your kennel. See your savings instantly.</div>
+
+      <div class="calc-row">
         <div class="calc-label">Litters per year <span id="littersVal">3</span></div>
         <input type="range" class="calc-slider" id="littersSlider" min="1" max="10" value="3">
       </div>
