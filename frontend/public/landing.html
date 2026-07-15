@@ -762,5 +762,151 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 document.querySelectorAll('.anim').forEach(el => observer.observe(el));
 </script>
+
+<script>
+const PAW_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <ellipse cx="50" cy="70" rx="22" ry="18" fill="currentColor"/>
+  <ellipse cx="25" cy="48" rx="10" ry="13" fill="currentColor"/>
+  <ellipse cx="75" cy="48" rx="10" ry="13" fill="currentColor"/>
+  <ellipse cx="35" cy="30" rx="8" ry="10" fill="currentColor"/>
+  <ellipse cx="65" cy="30" rx="8" ry="10" fill="currentColor"/>
+</svg>`;
+
+(function() {
+  const container = document.createElement('div');
+  container.id = 'pawTrailContainer';
+  document.body.appendChild(container);
+  const COLORS = ['#1a4730','#2d6b4a','#3d8c60','#c8751a'];
+  let step = 0, lastX = 0, lastY = 0;
+  const MIN_DIST = 45;
+
+  function createPaw(x, y) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:26px;height:26px;transform:translate(-50%,-50%) rotate(${Math.random()*40-20}deg);pointer-events:none;z-index:9999;opacity:0.65;transition:opacity 0.9s ease;color:${COLORS[step%COLORS.length]};`;
+    el.innerHTML = PAW_SVG;
+    container.appendChild(el);
+    step++;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ el.style.opacity='0'; }));
+    setTimeout(()=>el.remove(), 1000);
+  }
+
+  document.addEventListener('mousemove', (e) => {
+    const dx = e.clientX-lastX, dy = e.clientY-lastY;
+    if (Math.sqrt(dx*dx+dy*dy) > MIN_DIST) {
+      createPaw(e.clientX, e.clientY);
+      lastX = e.clientX; lastY = e.clientY;
+    }
+  });
+})();
+
+// BACKGROUND PAW PATTERN
+(function() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.04;';
+  document.body.insertBefore(canvas, document.body.firstChild);
+  const ctx = canvas.getContext('2d');
+
+  function draw() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.fillStyle = '#1a4730';
+    const sp = 110;
+    const cols = Math.ceil(canvas.width/sp)+1;
+    const rows = Math.ceil(canvas.height/sp)+1;
+    for (let r=0;r<rows;r++) {
+      for (let c=0;c<cols;c++) {
+        const x = c*sp + (r%2===0?0:sp/2);
+        const y = r*sp;
+        ctx.save();
+        ctx.translate(x,y);
+        ctx.rotate(((r*37+c*53)%360)*Math.PI/180);
+        ctx.scale(0.17,0.17);
+        ctx.translate(-50,-50);
+        ctx.beginPath(); ctx.ellipse(50,70,22,18,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(25,48,10,13,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(75,48,10,13,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(35,30,8,10,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(65,30,8,10,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+  draw();
+  window.addEventListener('resize', draw);
+})();
+</script>
+
+<script>
+const PAW_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <ellipse cx="50" cy="70" rx="22" ry="18" fill="currentColor"/>
+  <ellipse cx="25" cy="48" rx="10" ry="13" fill="currentColor"/>
+  <ellipse cx="75" cy="48" rx="10" ry="13" fill="currentColor"/>
+  <ellipse cx="35" cy="30" rx="8" ry="10" fill="currentColor"/>
+  <ellipse cx="65" cy="30" rx="8" ry="10" fill="currentColor"/>
+</svg>`;
+
+(function() {
+  const container = document.createElement('div');
+  container.id = 'pawTrailContainer';
+  document.body.appendChild(container);
+  const COLORS = ['#1a4730','#2d6b4a','#3d8c60','#c8751a'];
+  let step = 0, lastX = 0, lastY = 0;
+  const MIN_DIST = 45;
+
+  function createPaw(x, y) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:26px;height:26px;transform:translate(-50%,-50%) rotate(${Math.random()*40-20}deg);pointer-events:none;z-index:9999;opacity:0.65;transition:opacity 0.9s ease;color:${COLORS[step%COLORS.length]};`;
+    el.innerHTML = PAW_SVG;
+    container.appendChild(el);
+    step++;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ el.style.opacity='0'; }));
+    setTimeout(()=>el.remove(), 1000);
+  }
+
+  document.addEventListener('mousemove', (e) => {
+    const dx = e.clientX-lastX, dy = e.clientY-lastY;
+    if (Math.sqrt(dx*dx+dy*dy) > MIN_DIST) {
+      createPaw(e.clientX, e.clientY);
+      lastX = e.clientX; lastY = e.clientY;
+    }
+  });
+})();
+
+// BACKGROUND PAW PATTERN
+(function() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.04;';
+  document.body.insertBefore(canvas, document.body.firstChild);
+  const ctx = canvas.getContext('2d');
+
+  function draw() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.fillStyle = '#1a4730';
+    const sp = 110;
+    const cols = Math.ceil(canvas.width/sp)+1;
+    const rows = Math.ceil(canvas.height/sp)+1;
+    for (let r=0;r<rows;r++) {
+      for (let c=0;c<cols;c++) {
+        const x = c*sp + (r%2===0?0:sp/2);
+        const y = r*sp;
+        ctx.save();
+        ctx.translate(x,y);
+        ctx.rotate(((r*37+c*53)%360)*Math.PI/180);
+        ctx.scale(0.17,0.17);
+        ctx.translate(-50,-50);
+        ctx.beginPath(); ctx.ellipse(50,70,22,18,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(25,48,10,13,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(75,48,10,13,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(35,30,8,10,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(65,30,8,10,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+  draw();
+  window.addEventListener('resize', draw);
+})();
+</script>
 </body>
 </html>
