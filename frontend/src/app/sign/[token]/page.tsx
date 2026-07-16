@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
-const API = 'https://litterdesk-production.up.railway.app/api'
+const API = 'https://litterdesk.onrender.com/api'
 
 type ContractData = {
   contract_id: string; title: string; content: string; buyer_name: string
