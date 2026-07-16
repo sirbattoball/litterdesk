@@ -321,6 +321,7 @@ class Contract(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     buyer = relationship("Buyer", back_populates="contracts")
+    breeder = relationship("User")
 
 
 # ─── Health Record ────────────────────────────────────────────────────────────
