@@ -199,12 +199,18 @@ nav{
 .feature-card:nth-child(6){
   background:linear-gradient(135deg,var(--sage-l) 0%,rgba(228,237,230,.4) 100%);
   border:1px solid rgba(196,217,200,.5);
-  flex-direction:row;align-items:center;gap:40px;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  align-items:start;
+  gap:24px;
+  padding:36px;
 }
-.feature-card:nth-child(6) .feature-icon{flex-shrink:0;width:56px;height:56px;margin-bottom:0;}
+.feature-card:nth-child(6) .feature-icon{width:56px;height:56px;margin-bottom:0;flex-shrink:0;}
 .feature-card:nth-child(6) .feature-icon svg{width:26px;height:26px;}
-.feature-card:nth-child(6) .feature-content{flex:1;}
-.feature-card:nth-child(6) .feature-title{font-size:20px;margin-bottom:6px;}
+.feature-card:nth-child(6) .feature-content{display:flex;flex-direction:column;}
+.feature-card:nth-child(6) .feature-tag{margin-bottom:6px;}
+.feature-card:nth-child(6) .feature-title{font-size:22px;margin-bottom:8px;}
+.feature-card:nth-child(6) .feature-body{font-size:15px;color:var(--ink-2);}
 .feature-icon{
   width:48px;height:48px;border-radius:14px;margin-bottom:18px;
   display:flex;align-items:center;justify-content:center;
