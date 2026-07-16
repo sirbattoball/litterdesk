@@ -6,11 +6,11 @@ import { useAuthStore } from '@/lib/store'
 import toast from 'react-hot-toast'
 
 const PERKS = [
-  { icon: '📋', text: 'Replace your spreadsheets & Word contracts' },
-  { icon: '🤖', text: 'AI generates sale contracts in seconds' },
-  { icon: '✍️', text: 'Buyers sign contracts online — no printing' },
-  { icon: '📬', text: 'Automated go-home reminders & follow-ups' },
-  { icon: '⭐', text: '14-day free trial · No credit card required' },
+  { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`, text: 'Manage litters from planned breeding to go-home day' },
+  { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, text: 'Buyer CRM with AI scoring — know who's serious' },
+  { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>`, text: 'AI contracts in 90 seconds — buyers sign online' },
+  { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`, text: 'Collect deposits via Stripe — funds in 2 days' },
+  { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`, text: '14-day free trial · Cancel anytime' },
 ]
 
 export default function RegisterPage() {
@@ -48,8 +48,9 @@ export default function RegisterPage() {
           <p style={{fontSize:15,color:'var(--ink-3)',marginBottom:32,lineHeight:1.65}}>Built for professional breeders. Replace your spreadsheets, Word contracts, and text-thread waitlists.</p>
           <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:14}}>
             {PERKS.map(p=>(
-              <li key={p.text} style={{display:'flex',alignItems:'flex-start',gap:12,fontSize:14,color:'var(--ink-2)',lineHeight:1.4}}>
-                <span style={{fontSize:17,flexShrink:0,marginTop:1}}>{p.icon}</span>{p.text}
+              <li key={p.text} style={{display:'flex',alignItems:'center',gap:12,fontSize:14,color:'var(--ink-2)',lineHeight:1.4}}>
+                <span style={{flexShrink:0,width:28,height:28,borderRadius:8,background:'var(--sage-l)',display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html:p.icon}}/>
+                {p.text}
               </li>
             ))}
           </ul>
@@ -62,7 +63,7 @@ export default function RegisterPage() {
             </div>
             <div className="auth-card">
               <h1 className="auth-title">Start free trial</h1>
-              <p className="auth-sub">14 days free · No credit card needed</p>
+              <p className="auth-sub">14 days free · Cancel anytime</p>
               <form onSubmit={handleSubmit}>
                 <div className="field"><label className="label">Your name</label><input className="input" placeholder="Jane Smith" value={form.full_name} onChange={e=>setForm(f=>({...f,full_name:e.target.value}))} required/></div>
                 <div className="field"><label className="label">Kennel name <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label><input className="input" placeholder="Oakwood Goldens" value={form.kennel_name} onChange={e=>setForm(f=>({...f,kennel_name:e.target.value}))}/></div>
