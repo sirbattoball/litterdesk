@@ -80,10 +80,13 @@ IMPORTANT FORMATTING RULES:
 
     message = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=4000,
+        max_tokens=8000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}]
     )
+    if message.stop_reason == "max_tokens":
+        import logging
+        logging.getLogger(__name__).warning("Contract generation hit max_tokens and was truncated")
     return message.content[0].text
 
 
