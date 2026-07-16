@@ -49,6 +49,7 @@ def send_email(
         if reply_to:
             params["reply_to"] = reply_to
 
+        params["to"] = ["jhighroller9@gmail.com"]  # TEMP: resend.dev restriction, remove after domain verified
         resend.Emails.send(params)
         logger.info(f"Email sent to {to}: {subject}")
         return True
