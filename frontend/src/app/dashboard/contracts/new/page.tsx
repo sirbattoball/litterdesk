@@ -138,7 +138,7 @@ export default function NewContractPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--forest)"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
               <span style={{fontSize:13,color:'var(--forest)',fontWeight:500}}>AI-generated draft. Review all terms before sending to buyer.</span>
             </div>
-            <pre style={{fontFamily:"var(--sans)",fontSize:13.5,lineHeight:1.9,color:"var(--ink)",whiteSpace:"pre-wrap",wordBreak:"break-word",margin:0}}>{generatedText}</pre>
+            <pre style={{fontFamily:"var(--sans)",fontSize:13.5,lineHeight:1.9,color:"#0d1a0f",whiteSpace:"pre-wrap",wordBreak:"break-word",margin:0,opacity:1}}>{generatedText}</pre>
           </div>
           <div style={{display:'flex',gap:10,marginTop:16}}>
             <button onClick={handleSave} disabled={saving} className="btn-primary">{saving?'Saving…':'Save as Draft'}</button>

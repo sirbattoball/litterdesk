@@ -68,7 +68,15 @@ Generate a complete contract including:
 9. Liability limitations
 10. Governing law and signatures section
 
-Format as a proper legal document with clear section headings. Include signature lines at the end."""
+Format as a proper legal document with clear section headings. Include signature lines at the end.
+
+IMPORTANT FORMATTING RULES:
+- Do NOT use markdown tables (no | characters)
+- Do NOT use markdown bold (**text**) or italic (*text*)
+- Do NOT use emoji or special symbols
+- Use plain numbered sections and paragraphs only
+- Use simple dashes for lists (- item)
+- Keep all text plain and consistent throughout"""
 
     message = client.messages.create(
         model="claude-sonnet-4-6",
