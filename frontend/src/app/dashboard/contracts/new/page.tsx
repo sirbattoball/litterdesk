@@ -5,7 +5,6 @@ import { littersApi, buyersApi, contractsApi, aiApi } from '@/lib/api'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
-import ReactMarkdown from 'react-markdown'
 import { useAuthStore } from '@/lib/store'
 
 export default function NewContractPage() {
@@ -139,19 +138,7 @@ export default function NewContractPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--forest)"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
               <span style={{fontSize:13,color:'var(--forest)',fontWeight:500}}>AI-generated draft. Review all terms before sending to buyer.</span>
             </div>
-            <div style={{fontSize:13.5,lineHeight:1.8,color:'var(--ink)',fontStyle:'normal'}} className="contract-preview"><ReactMarkdown>{generatedText}</ReactMarkdown></div>
-<style>{`
-  .contract-preview * { color: var(--ink) !important; font-style: normal !important; }
-  .contract-preview h1, .contract-preview h2, .contract-preview h3 { font-weight: 700; margin: 16px 0 8px; }
-  .contract-preview p { margin-bottom: 8px; }
-  .contract-preview ul, .contract-preview ol { padding-left: 20px; margin-bottom: 8px; }
-  .contract-preview li { margin-bottom: 4px; }
-  .contract-preview strong { font-weight: 700; }
-  .contract-preview em { font-style: normal !important; }
-  .contract-preview blockquote { font-style: normal !important; border-left: 3px solid var(--sage); padding-left: 12px; }
-  .contract-preview table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-  .contract-preview td, .contract-preview th { border: 1px solid var(--paper-3); padding: 6px 10px; text-align: left; }
-`}</style>
+            <pre style={{fontFamily:"var(--sans)",fontSize:13.5,lineHeight:1.9,color:"var(--ink)",whiteSpace:"pre-wrap",wordBreak:"break-word",margin:0}}>{generatedText}</pre>
           </div>
           <div style={{display:'flex',gap:10,marginTop:16}}>
             <button onClick={handleSave} disabled={saving} className="btn-primary">{saving?'Saving…':'Save as Draft'}</button>
