@@ -72,6 +72,7 @@ export const buyersApi = {
   // FIX: litter_id is required by backend
   addToWaitlist: (buyerId: string, litterId: string) =>
     api.post(`/buyers/${buyerId}/add-to-waitlist`, null, { params: { litter_id: litterId } }),
+  delete: (id: string) => api.delete(`/buyers/${id}`),
   communications: (id: string) => api.get(`/buyers/${id}/communications`),
   logContact: (id: string, data: any) =>
     api.post(`/buyers/${id}/log-contact`, null, { params: data }),

@@ -47,6 +47,15 @@ export default function BuyersPage() {
     finally { setScoringId(null) }
   }
 
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Delete ${name}? This cannot be undone.`)) return
+    try {
+      await buyersApi.delete(id)
+      toast.success('Buyer deleted')
+      qc.invalidateQueries({ queryKey: ['buyers'] })
+    } catch { toast.error('Failed to delete buyer') }
+  }
+
   return (
     <>
       <div className="topbar">
@@ -97,13 +106,13 @@ export default function BuyersPage() {
               <div className="th"></div>
             </div>
             {buyers.map((b: any, i: number) => (
-              <div key={b.id} className="table-row" style={{ gridTemplateColumns: '2fr 1.2fr 1fr 90px 80px' }}>
+              <Link key={b.id} href={`/dashboard/buyers/${b.id}`} className="table-row" style={{ gridTemplateColumns: '2fr 1.2fr 1fr 90px 100px', textDecoration:'none', cursor:'pointer' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                   <div className="avatar avatar-sm" style={{ background: `linear-gradient(135deg, ${COLORS[i%COLORS.length]}, ${COLORS[(i+2)%COLORS.length]})` }}>
                     {b.full_name?.charAt(0)?.toUpperCase() ?? '?'}
                   </div>
                   <div>
-                    <Link href={`/dashboard/buyers/${b.id}`} style={{ fontSize:14, fontWeight:500, color:'var(--ink)', textDecoration:'none' }}>{b.full_name}</Link>
+                    <div style={{ fontSize:14, fontWeight:500, color:'var(--ink)' }}>{b.full_name}</div>
                     <div style={{ fontSize:12, color:'var(--ink-4)' }}>{b.email}</div>
                   </div>
                 </div>
@@ -116,13 +125,16 @@ export default function BuyersPage() {
                     </span>
                   )}
                 </div>
-                <div>
-                  <button onClick={() => handleScore(b)} disabled={scoringId===b.id} className="ai-pill">
+                <div style={{display:'flex',gap:6}} onClick={e=>e.preventDefault()}>
+                  <button onClick={(e) => { e.preventDefault(); handleScore(b) }} disabled={scoringId===b.id} className="ai-pill">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     {scoringId===b.id ? '…' : 'Score'}
                   </button>
+                  <button onClick={(e) => { e.preventDefault(); handleDelete(b.id, b.full_name) }} style={{background:'none',border:'none',cursor:'pointer',color:'var(--ink-4)',padding:'4px',display:'flex',alignItems:'center'}} title="Delete buyer">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                  </button>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

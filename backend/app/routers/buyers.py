@@ -188,3 +188,18 @@ def log_contact(
     db.add(comm)
     db.commit()
     return {"message": "Contact logged"}
+
+@router.delete("/{buyer_id}", status_code=204)
+def delete_buyer(
+    buyer_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    buyer = db.query(Buyer).filter(
+        Buyer.id == buyer_id,
+        Buyer.breeder_id == current_user.id
+    ).first()
+    if not buyer:
+        raise HTTPException(404, "Buyer not found")
+    db.delete(buyer)
+    db.commit()
