@@ -153,31 +153,72 @@ nav{
 .pain-lbl{font-size:13px;color:var(--ink-4);margin-top:4px;line-height:1.4}
 
 /* FEATURES */
-.features-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-/* REPLACED BY UPGRADED FEATURE CARDS */
-  border-radius:20px;padding:24px;
-  box-shadow:0 2px 4px rgba(13,26,15,.04),0 4px 16px rgba(13,26,15,.05);
-  transition:all .2s var(--ease-out);position:relative;overflow:hidden;
+.features-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:auto;gap:16px}
+.feature-card:nth-child(1){grid-column:span 3;grid-row:span 1;}
+.feature-card:nth-child(2){grid-column:span 3;grid-row:span 1;}
+.feature-card:nth-child(3){grid-column:span 2;grid-row:span 1;}
+.feature-card:nth-child(4){grid-column:span 2;grid-row:span 1;}
+.feature-card:nth-child(5){grid-column:span 2;grid-row:span 1;}
+.feature-card:nth-child(6){grid-column:span 6;grid-row:span 1;}
+.feature-card{
+  background:var(--white);
+  border:1px solid rgba(196,217,200,.4);
+  border-radius:20px;padding:28px;
+  box-shadow:0 2px 12px rgba(13,26,15,.06);
+  transition:all .25s var(--ease-out);
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
 }
-.feature-card::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
-  background:transparent;transition:background .2s;
+.feature-card::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--forest-l),var(--sage));
+  opacity:0;transition:opacity .25s;
 }
-.feature-card:hover{transform:translateY(-3px);box-shadow:0 4px 8px rgba(13,26,15,.06),0 12px 32px rgba(13,26,15,.1)}
-.feature-card:hover::after{background:linear-gradient(90deg,var(--forest-l),var(--sage))}
+.feature-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 32px rgba(13,26,15,.12);
+  border-color:rgba(196,217,200,.8);
+}
+.feature-card:hover::before{opacity:1;}
+.feature-card:nth-child(1){
+  background:linear-gradient(135deg,var(--forest) 0%,#1f5a38 100%);
+  border:none;color:var(--cream);
+}
+.feature-card:nth-child(1) .feature-tag{color:rgba(196,217,200,.7);}
+.feature-card:nth-child(1) .feature-title{color:var(--cream);font-size:22px;}
+.feature-card:nth-child(1) .feature-body{color:rgba(250,248,243,.7);font-size:15px;}
+.feature-card:nth-child(1) .feature-roi{background:rgba(255,255,255,.15);color:var(--cream);border:1px solid rgba(255,255,255,.2);}
+.feature-card:nth-child(1) .feature-icon{background:rgba(255,255,255,.12);}
+.feature-card:nth-child(1) .feature-icon svg{stroke:#c4d9c8;}
+.feature-card:nth-child(2){
+  background:linear-gradient(135deg,#fdf4e4 0%,#fef9f0 100%);
+  border:1px solid rgba(200,117,26,.15);
+}
+.feature-card:nth-child(2) .feature-title{font-size:20px;}
+.feature-card:nth-child(6){
+  background:linear-gradient(135deg,var(--sage-l) 0%,rgba(228,237,230,.4) 100%);
+  border:1px solid rgba(196,217,200,.5);
+  flex-direction:row;align-items:center;gap:40px;
+}
+.feature-card:nth-child(6) .feature-icon{flex-shrink:0;width:56px;height:56px;margin-bottom:0;}
+.feature-card:nth-child(6) .feature-icon svg{width:26px;height:26px;}
+.feature-card:nth-child(6) .feature-content{flex:1;}
+.feature-card:nth-child(6) .feature-title{font-size:20px;margin-bottom:6px;}
 .feature-icon{
-  width:44px;height:44px;border-radius:12px;margin-bottom:16px;
+  width:48px;height:48px;border-radius:14px;margin-bottom:18px;
   display:flex;align-items:center;justify-content:center;
 }
-.feature-icon svg{width:21px;height:21px}
-.feature-tag{font-size:11px;font-weight:700;color:var(--forest-ll);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-.feature-title{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px}
-.feature-body{font-size:13.5px;color:var(--ink-3);line-height:1.6}
+.feature-icon svg{width:22px;height:22px;}
+.feature-tag{font-size:10.5px;font-weight:700;color:var(--forest-ll);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+.feature-title{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:10px;line-height:1.3;}
+.feature-body{font-size:13.5px;color:var(--ink-3);line-height:1.65;flex:1;}
 .feature-roi{
   display:inline-flex;align-items:center;gap:5px;
   background:var(--sage-l);color:var(--forest);
-  font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
-  margin-top:12px;
+  font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;
+  margin-top:16px;border:1px solid rgba(196,217,200,.5);
+  align-self:flex-start;
 }
 
 /* TESTIMONIALS */
@@ -610,19 +651,21 @@ body::before {
       <div class="feature-roi">Same-day signatures</div>
     </div>
 
-    <!-- Feature 6: Analytics -->
+    <!-- Feature 6: Announcements -->
     <div class="feature-card anim" style="animation-delay:120ms">
-      <div class="feature-icon" style="background:rgba(13,26,15,.07)">
+      <div class="feature-icon" style="background:rgba(13,26,15,.1)">
         <svg viewBox="0 0 24 24" fill="none" stroke="#1a4730" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="20" x2="18" y2="10"/>
           <line x1="12" y1="20" x2="12" y2="4"/>
           <line x1="6" y1="20" x2="6" y2="14"/>
         </svg>
       </div>
-      <div class="feature-tag">Litter Announcements</div>
-      <div class="feature-title">AI-written announcements for email and social</div>
-      <div class="feature-body">Claude writes your litter announcement in your voice — email version and social caption. Share to your waitlist and socials in one click. Never stare at a blank page again.</div>
-      <div class="feature-roi">Done in 30 seconds</div>
+      <div class="feature-content">
+        <div class="feature-tag">Litter Announcements</div>
+        <div class="feature-title">AI-written announcements for email and social</div>
+        <div class="feature-body">Claude writes your litter announcement in your voice — email version and social caption. Share to your waitlist and socials in one click. Never stare at a blank page again.</div>
+        <div class="feature-roi">Done in 30 seconds</div>
+      </div>
     </div>
   </div>
 </section>
