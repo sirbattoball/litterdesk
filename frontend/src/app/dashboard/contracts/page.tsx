@@ -55,8 +55,11 @@ export default function ContractsPage() {
     } finally { setActionId(null) }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Permanently delete this contract? This cannot be undone.')) return
+  const handleDelete = async (id: string, status?: string) => {
+    const msg = status === 'signed'
+      ? 'This contract is SIGNED. Deleting it permanently removes the legal record. Are you absolutely sure?'
+      : 'Permanently delete this contract? This cannot be undone.'
+    if (!confirm(msg)) return
     setActionId(id)
     try {
       await contractsApi.deletePermanently(id)
@@ -146,14 +149,12 @@ export default function ContractsPage() {
                       Void
                     </button>
                   )}
-                  {c.status === 'voided' && (
-                    <button
-                      disabled={actionId===c.id}
-                      onClick={()=>handleDelete(c.id)}
-                      style={{border:'none',background:'none',cursor:'pointer',fontSize:12,color:'var(--red)',padding:'6px 8px'}}>
-                      Delete
-                    </button>
-                  )}
+                  <button
+                    disabled={actionId===c.id}
+                    onClick={()=>handleDelete(c.id, c.status)}
+                    style={{border:'none',background:'none',cursor:'pointer',fontSize:12,color:'var(--red)',padding:'6px 8px'}}>
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}

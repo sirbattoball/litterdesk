@@ -114,8 +114,8 @@ def delete_contract(contract_id: str, db: Session = Depends(get_db), current_use
     contract = db.query(Contract).filter(Contract.id == contract_id, Contract.breeder_id == current_user.id).first()
     if not contract:
         raise HTTPException(404, "Contract not found")
-    if contract.status not in ["voided", "draft"]:
-        raise HTTPException(400, "Only voided or draft contracts can be permanently deleted")
+    if contract.status not in ["voided", "draft", "signed", "sent"]:
+        raise HTTPException(400, f"Cannot delete a contract with status '{contract.status}'")
     db.delete(contract)
     db.commit()
 
