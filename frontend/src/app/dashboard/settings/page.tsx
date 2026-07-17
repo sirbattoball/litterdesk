@@ -10,6 +10,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState({
     full_name: user?.full_name ?? '',
     kennel_name: user?.kennel_name ?? '',
+    email: user?.email ?? '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -47,8 +48,8 @@ export default function SettingsPage() {
                 </div>
                 <div className="field">
                   <label className="label">Email address</label>
-                  <input className="input" value={user?.email ?? ''} disabled style={{opacity:.6,cursor:'not-allowed'}}/>
-                  <p style={{fontSize:12,color:'var(--ink-4)',marginTop:4}}>Email cannot be changed. Contact support if needed.</p>
+                  <input type="email" className="input" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} required/>
+                  <p style={{fontSize:12,color:'var(--ink-4)',marginTop:4}}>Used for login and contract notifications.</p>
                 </div>
                 <button type="submit" disabled={saving} className="btn-primary">
                   {saving ? 'Saving…' : 'Save profile'}
