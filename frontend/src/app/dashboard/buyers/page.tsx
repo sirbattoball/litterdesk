@@ -89,7 +89,7 @@ export default function BuyersPage() {
 
         {!isLoading && buyers?.length === 0 && (
           <div className="empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <div className="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
             <div className="empty-title">No buyers yet</div>
             <div className="empty-sub">Add buyers manually or share your inquiry page</div>
             <Link href="/dashboard/buyers/new" className="btn-primary">Add First Buyer</Link>
