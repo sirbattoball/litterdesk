@@ -201,5 +201,13 @@ def delete_buyer(
     ).first()
     if not buyer:
         raise HTTPException(404, "Buyer not found")
+    from app.models import Contract
+    contract_count = db.query(Contract).filter(Contract.buyer_id == buyer_id).count()
+    if contract_count > 0:
+        raise HTTPException(
+            400,
+            f"Cannot delete buyer with {contract_count} contract(s) on file. "
+            "Void or delete the associated contract(s) first."
+        )
     db.delete(buyer)
     db.commit()
