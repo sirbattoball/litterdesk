@@ -109,6 +109,17 @@ def void_contract(contract_id: str, db: Session = Depends(get_db), current_user:
     db.commit()
 
 
+@router.delete("/{contract_id}/permanent", status_code=204)
+def delete_contract(contract_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    contract = db.query(Contract).filter(Contract.id == contract_id, Contract.breeder_id == current_user.id).first()
+    if not contract:
+        raise HTTPException(404, "Contract not found")
+    if contract.status not in ["voided", "draft"]:
+        raise HTTPException(400, "Only voided or draft contracts can be permanently deleted")
+    db.delete(contract)
+    db.commit()
+
+
 @router.post("/", response_model=ContractOut)
 def create_contract(data: ContractCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     buyer = db.query(Buyer).filter(Buyer.id == data.buyer_id, Buyer.breeder_id == current_user.id).first()

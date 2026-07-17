@@ -55,6 +55,18 @@ export default function ContractsPage() {
     } finally { setActionId(null) }
   }
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Permanently delete this contract? This cannot be undone.')) return
+    setActionId(id)
+    try {
+      await contractsApi.deletePermanently(id)
+      toast.success('Contract deleted')
+      qc.invalidateQueries({ queryKey: ['contracts'] })
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to delete contract')
+    } finally { setActionId(null) }
+  }
+
   return (
     <>
       <div className="topbar">
@@ -132,6 +144,14 @@ export default function ContractsPage() {
                       onClick={()=>handleVoid(c.id)}
                       style={{border:'none',background:'none',cursor:'pointer',fontSize:12,color:'var(--red)',padding:'6px 8px'}}>
                       Void
+                    </button>
+                  )}
+                  {c.status === 'voided' && (
+                    <button
+                      disabled={actionId===c.id}
+                      onClick={()=>handleDelete(c.id)}
+                      style={{border:'none',background:'none',cursor:'pointer',fontSize:12,color:'var(--red)',padding:'6px 8px'}}>
+                      Delete
                     </button>
                   )}
                 </div>

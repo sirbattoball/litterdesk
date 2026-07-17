@@ -85,6 +85,7 @@ export const contractsApi = {
   create: (data: any) => api.post('/contracts/', data),  // FIX: was missing
   send: (id: string) => api.post(`/contracts/${id}/send`),
   void: (id: string) => api.delete(`/contracts/${id}`),
+  deletePermanently: (id: string) => api.delete(`/contracts/${id}/permanent`),
   getForSigning: (token: string) => api.get(`/contracts/sign/${token}`),
   sign: (token: string, data: any) => api.post(`/contracts/sign/${token}`, null, { params: data }),
 }
