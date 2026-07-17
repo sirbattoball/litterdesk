@@ -1,9 +1,11 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { littersApi } from '@/lib/api'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import toast from 'react-hot-toast'
+import { useState } from 'react'
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   planned:  { label: 'Planned',      cls: 'badge-planned' },
@@ -14,9 +16,25 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   complete: { label: 'Complete',     cls: 'badge-complete' },
 }
 
-function LitterCard({ litter }: { litter: any }) {
+function LitterCard({ litter, onDeleted }: { litter: any; onDeleted: () => void }) {
   const s = STATUS_MAP[litter.status] ?? STATUS_MAP.planned
   const total = (litter.num_males ?? 0) + (litter.num_females ?? 0)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm('Delete this litter? This cannot be undone.')) return
+    setDeleting(true)
+    try {
+      await littersApi.delete(litter.id)
+      toast.success('Litter deleted')
+      onDeleted()
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to delete litter')
+    } finally { setDeleting(false) }
+  }
+
   return (
     <Link href={`/dashboard/litters/${litter.id}`} style={{ textDecoration: 'none' }}>
       <div className="litter-card">
@@ -25,7 +43,16 @@ function LitterCard({ litter }: { litter: any }) {
             <div className="litter-name">{litter.name ?? `${litter.breed} Litter`}</div>
             <div className="litter-breed">{litter.breed}</div>
           </div>
-          <span className={`badge ${s.cls}`}>{s.label}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className={`badge ${s.cls}`}>{s.label}</span>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              title="Delete litter"
+              style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, color: 'var(--red)', display: 'flex', alignItems: 'center' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
         </div>
         <div className="litter-stats">
           <div><div className="litter-stat-val">{total || '—'}</div><div className="litter-stat-key">Puppies</div></div>
@@ -44,9 +71,11 @@ function LitterCard({ litter }: { litter: any }) {
 }
 
 export default function LittersPage() {
+  const qc = useQueryClient()
   const { data: litters, isLoading } = useQuery({ queryKey: ['litters'], queryFn: () => littersApi.list().then(r => r.data) })
   const active = litters?.filter((l: any) => l.status !== 'complete') ?? []
   const done = litters?.filter((l: any) => l.status === 'complete') ?? []
+  const refresh = () => qc.invalidateQueries({ queryKey: ['litters'] })
 
   return (
     <>
@@ -76,7 +105,7 @@ export default function LittersPage() {
           <div style={{ marginBottom: 32 }}>
             <div className="section-label">Active — {active.length} litter{active.length !== 1 ? 's' : ''}</div>
             <div className="litter-grid">
-              {active.map((l: any) => <LitterCard key={l.id} litter={l} />)}
+              {active.map((l: any) => <LitterCard key={l.id} litter={l} onDeleted={refresh} />)}
             </div>
           </div>
         )}
@@ -85,7 +114,7 @@ export default function LittersPage() {
           <div style={{ opacity: .65 }}>
             <div className="section-label">Completed — {done.length}</div>
             <div className="litter-grid">
-              {done.map((l: any) => <LitterCard key={l.id} litter={l} />)}
+              {done.map((l: any) => <LitterCard key={l.id} litter={l} onDeleted={refresh} />)}
             </div>
           </div>
         )}
