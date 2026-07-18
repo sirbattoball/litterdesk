@@ -9,7 +9,7 @@ import uuid
 
 from app.database import get_db
 from app.models import User
-from app.schemas import UserRegister, UserLogin, Token, UserOut, UserUpdate, ChangePasswordRequest
+from app.schemas import UserRegister, UserLogin, Token, UserOut, UserUpdate, ChangePasswordRequest, ForgotPasswordRequest, ResetPasswordRequest
 from app.config import settings
 
 router = APIRouter()
@@ -109,6 +109,37 @@ def change_password(
     if len(data.new_password) < 8:
         raise HTTPException(400, "New password must be at least 8 characters")
     current_user.hashed_password = hash_password(data.new_password)
+    db.commit()
+
+
+@router.post("/forgot-password", status_code=204)
+def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
+    if user:
+        from app.services import email_service
+        reset_token = str(uuid.uuid4())
+        user.reset_token = reset_token
+        user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+        db.commit()
+        reset_url = f"https://litterdesk.vercel.app/reset-password/{reset_token}"
+        email_service.send_email(
+            to=user.email,
+            subject="Reset your LitterDesk password",
+            body=f"Click the link below to reset your password. This link expires in 1 hour.\n\n{reset_url}\n\nIf you didn't request this, you can safely ignore this email.",
+        )
+    return
+
+
+@router.post("/reset-password", status_code=204)
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.reset_token == data.token).first()
+    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
+        raise HTTPException(400, "Invalid or expired reset link")
+    if len(data.new_password) < 8:
+        raise HTTPException(400, "New password must be at least 8 characters")
+    user.hashed_password = hash_password(data.new_password)
+    user.reset_token = None
+    user.reset_token_expires = None
     db.commit()
 
 

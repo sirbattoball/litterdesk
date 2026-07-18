@@ -76,6 +76,10 @@ class User(Base):
     breeds = Column(JSON, default=list)  # ["Golden Retriever", "Labrador"]
     bio = Column(Text)
 
+    # Password reset
+    reset_token = Column(String, unique=True, nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)
+
     # Subscription
     subscription_plan = Column(Enum(SubscriptionPlan), default=SubscriptionPlan.free)
     stripe_customer_id = Column(String)

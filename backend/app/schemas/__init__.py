@@ -54,6 +54,15 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
 # ─── Dog Schemas ──────────────────────────────────────────────────────────────
 
 class DogCreate(BaseModel):
