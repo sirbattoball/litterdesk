@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { authApi } from '@/lib/api'
 import Link from 'next/link'
@@ -13,6 +13,17 @@ export default function SettingsPage() {
     email: user?.email ?? '',
   })
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    authApi.me().then(res => {
+      setUser(res.data)
+      setForm({
+        full_name: res.data.full_name ?? '',
+        kennel_name: res.data.kennel_name ?? '',
+        email: res.data.email ?? '',
+      })
+    }).catch(() => {})
+  }, [])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
