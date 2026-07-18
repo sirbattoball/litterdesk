@@ -34,6 +34,8 @@ export const authApi = {
   login: (data: any) => api.post('/auth/login', data),
   me: () => api.get('/auth/me'),
   updateMe: (data: any) => api.put('/auth/me', data),
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    api.post('/auth/change-password', data),
 }
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────

@@ -13,6 +13,31 @@ export default function SettingsPage() {
     email: user?.email ?? '',
   })
   const [saving, setSaving] = useState(false)
+  const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm_password: '' })
+  const [changingPw, setChangingPw] = useState(false)
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (pwForm.new_password !== pwForm.confirm_password) {
+      toast.error('New passwords do not match')
+      return
+    }
+    if (pwForm.new_password.length < 8) {
+      toast.error('New password must be at least 8 characters')
+      return
+    }
+    setChangingPw(true)
+    try {
+      await authApi.changePassword({
+        current_password: pwForm.current_password,
+        new_password: pwForm.new_password,
+      })
+      toast.success('Password changed!')
+      setPwForm({ current_password: '', new_password: '', confirm_password: '' })
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to change password')
+    } finally { setChangingPw(false) }
+  }
 
   useEffect(() => {
     authApi.me().then(res => {
@@ -64,6 +89,30 @@ export default function SettingsPage() {
                 </div>
                 <button type="submit" disabled={saving} className="btn-primary">
                   {saving ? 'Saving…' : 'Save profile'}
+                </button>
+              </form>
+            </div>
+
+            <div className="section-label" style={{marginTop:20}}>Change Password</div>
+            <div className="card" style={{padding:24}}>
+              <form onSubmit={handleChangePassword}>
+                <div className="field">
+                  <label className="label">Current password</label>
+                  <input type="password" className="input" value={pwForm.current_password}
+                    onChange={e=>setPwForm(f=>({...f,current_password:e.target.value}))} required/>
+                </div>
+                <div className="field">
+                  <label className="label">New password</label>
+                  <input type="password" className="input" value={pwForm.new_password}
+                    onChange={e=>setPwForm(f=>({...f,new_password:e.target.value}))} required minLength={8}/>
+                </div>
+                <div className="field">
+                  <label className="label">Confirm new password</label>
+                  <input type="password" className="input" value={pwForm.confirm_password}
+                    onChange={e=>setPwForm(f=>({...f,confirm_password:e.target.value}))} required minLength={8}/>
+                </div>
+                <button type="submit" disabled={changingPw} className="btn-primary">
+                  {changingPw ? 'Changing…' : 'Change password'}
                 </button>
               </form>
             </div>
