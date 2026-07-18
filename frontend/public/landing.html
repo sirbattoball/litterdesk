@@ -684,7 +684,27 @@ body::before {
     <p class="section-sub">No mockups, no filler. This is the real product.</p>
   </div>
 
-  <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:24px;position:relative;">
+
+    <div class="anim" style="position:absolute;top:-18px;right:24px;z-index:2;background:var(--white);border:1px solid rgba(230,223,212,.9);border-radius:12px;padding:12px 16px;box-shadow:var(--sh-md);display:flex;align-items:center;gap:10px;max-width:260px;">
+      <div style="width:32px;height:32px;border-radius:8px;background:var(--sage-l);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <div>
+        <div style="font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.3;">Buyer scored — 94</div>
+        <div style="font-size:11.5px;color:var(--ink-4);">Chen · Autumn Litter</div>
+      </div>
+    </div>
+
+    <div class="anim" style="position:absolute;bottom:-18px;left:24px;z-index:2;background:var(--white);border:1px solid rgba(230,223,212,.9);border-radius:12px;padding:12px 16px;box-shadow:var(--sh-md);display:flex;align-items:center;gap:10px;max-width:260px;animation-delay:120ms;">
+      <div style="width:32px;height:32px;border-radius:8px;background:var(--green-f);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        <div style="font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.3;">Contract signed</div>
+        <div style="font-size:11.5px;color:var(--ink-4);">Ferreira · 2 min ago</div>
+      </div>
+    </div>
 
     <div class="anim" style="background:var(--white);border:1px solid rgba(230,223,212,.7);border-radius:16px;padding:28px;box-shadow:var(--sh-sm);">
       <div style="font-size:12px;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px;">Today's Dashboard</div>
