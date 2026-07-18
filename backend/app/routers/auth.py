@@ -9,7 +9,7 @@ import uuid
 
 from app.database import get_db
 from app.models import User
-from app.schemas import UserRegister, UserLogin, Token, UserOut, UserUpdate
+from app.schemas import UserRegister, UserLogin, Token, UserOut, UserUpdate, ChangePasswordRequest
 from app.config import settings
 
 router = APIRouter()
@@ -96,6 +96,20 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/change-password", status_code=204)
+def change_password(
+    data: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(400, "Current password is incorrect")
+    if len(data.new_password) < 8:
+        raise HTTPException(400, "New password must be at least 8 characters")
+    current_user.hashed_password = hash_password(data.new_password)
+    db.commit()
 
 
 @router.put("/me", response_model=UserOut)

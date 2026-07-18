@@ -49,6 +49,11 @@ class UserUpdate(BaseModel):
     bio: Optional[str] = None
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
 # ─── Dog Schemas ──────────────────────────────────────────────────────────────
 
 class DogCreate(BaseModel):
