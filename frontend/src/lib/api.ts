@@ -53,6 +53,9 @@ export const dogsApi = {
   create: (data: any) => api.post('/dogs/', data),
   update: (id: string, data: any) => api.put(`/dogs/${id}`, data),
   delete: (id: string) => api.delete(`/dogs/${id}`),
+  listHealthRecords: (dogId: string) => api.get(`/dogs/${dogId}/health-records`),
+  createHealthRecord: (dogId: string, data: any) => api.post(`/dogs/${dogId}/health-records`, data),
+  deleteHealthRecord: (dogId: string, recordId: string) => api.delete(`/dogs/${dogId}/health-records/${recordId}`),
 }
 
 // ─── Litters ─────────────────────────────────────────────────────────────────

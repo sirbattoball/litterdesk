@@ -3,9 +3,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { dogsApi } from '@/lib/api'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import { format, isPast } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useState, useEffect } from 'react'
+
+const RECORD_TYPES = ['vaccination', 'deworming', 'vet-visit', 'test']
 
 const HEALTH_OPTIONS = ['OFA Excellent','OFA Good','OFA Fair','CAER Clear','Embark Clear','DM Clear','EIC Clear','PRA Clear','vWD Clear']
 
@@ -17,11 +19,61 @@ export default function DogDetailPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [editForm, setEditForm] = useState<any>(null)
+  const [showRecordForm, setShowRecordForm] = useState(false)
+  const [savingRecord, setSavingRecord] = useState(false)
+  const [recordForm, setRecordForm] = useState({
+    record_type: 'vaccination',
+    description: '',
+    administered_by: '',
+    administered_at: '',
+    next_due: '',
+    notes: '',
+  })
 
   const { data: dog, isLoading } = useQuery({
     queryKey: ['dog', id],
     queryFn: () => dogsApi.get(id).then(r => r.data),
   })
+
+  const { data: healthRecords, refetch: refetchRecords } = useQuery({
+    queryKey: ['dog-health-records', id],
+    queryFn: () => dogsApi.listHealthRecords(id).then(r => r.data),
+    enabled: !!id,
+  })
+
+  const handleAddRecord = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!recordForm.description || !recordForm.administered_at) {
+      toast.error('Description and date administered are required')
+      return
+    }
+    setSavingRecord(true)
+    try {
+      await dogsApi.createHealthRecord(id, {
+        ...recordForm,
+        next_due: recordForm.next_due || null,
+        administered_by: recordForm.administered_by || null,
+        notes: recordForm.notes || null,
+      })
+      toast.success('Health record added')
+      setRecordForm({ record_type: 'vaccination', description: '', administered_by: '', administered_at: '', next_due: '', notes: '' })
+      setShowRecordForm(false)
+      refetchRecords()
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to add record')
+    } finally { setSavingRecord(false) }
+  }
+
+  const handleDeleteRecord = async (recordId: string) => {
+    if (!confirm('Delete this health record?')) return
+    try {
+      await dogsApi.deleteHealthRecord(id, recordId)
+      toast.success('Record deleted')
+      refetchRecords()
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to delete record')
+    }
+  }
 
   // Populate edit form when dog loads
   useEffect(() => {
@@ -187,6 +239,78 @@ export default function DogDetailPage() {
               </Link>
             </div>
           </div>
+        </div>
+
+        <div className="card" style={{padding:24,marginTop:24}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+            <h3 style={{fontSize:15,fontWeight:700}}>Health Records</h3>
+            <button onClick={()=>setShowRecordForm(!showRecordForm)} className="btn-ghost" style={{fontSize:13}}>
+              {showRecordForm ? 'Cancel' : '+ Add Record'}
+            </button>
+          </div>
+
+          {showRecordForm && (
+            <form onSubmit={handleAddRecord} style={{background:'var(--paper-2)',borderRadius:12,padding:20,marginBottom:20}}>
+              <div className="two-col">
+                <div className="field">
+                  <label className="label">Type</label>
+                  <select className="input" value={recordForm.record_type} onChange={e=>setRecordForm({...recordForm,record_type:e.target.value})}>
+                    {RECORD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="field">
+                  <label className="label">Description</label>
+                  <input className="input" placeholder="e.g. Rabies vaccine" value={recordForm.description} onChange={e=>setRecordForm({...recordForm,description:e.target.value})} required/>
+                </div>
+              </div>
+              <div className="two-col">
+                <div className="field">
+                  <label className="label">Date administered</label>
+                  <input type="date" className="input" value={recordForm.administered_at} onChange={e=>setRecordForm({...recordForm,administered_at:e.target.value})} required/>
+                </div>
+                <div className="field">
+                  <label className="label">Next due (optional)</label>
+                  <input type="date" className="input" value={recordForm.next_due} onChange={e=>setRecordForm({...recordForm,next_due:e.target.value})}/>
+                </div>
+              </div>
+              <div className="field">
+                <label className="label">Administered by (optional)</label>
+                <input className="input" placeholder="Vet or clinic name" value={recordForm.administered_by} onChange={e=>setRecordForm({...recordForm,administered_by:e.target.value})}/>
+              </div>
+              <button type="submit" disabled={savingRecord} className="btn-primary" style={{marginTop:4}}>
+                {savingRecord ? 'Saving…' : 'Save Record'}
+              </button>
+            </form>
+          )}
+
+          {healthRecords && healthRecords.length > 0 ? (
+            <div>
+              {healthRecords.map((r: any) => {
+                const overdue = r.next_due && isPast(new Date(r.next_due))
+                return (
+                  <div key={r.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--paper-3)'}}>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:600,color:'var(--ink)'}}>{r.description}</div>
+                      <div style={{fontSize:12,color:'var(--ink-4)',marginTop:2}}>
+                        {r.record_type} · {format(new Date(r.administered_at),'MMM d, yyyy')}
+                        {r.administered_by ? ` · ${r.administered_by}` : ''}
+                      </div>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:12}}>
+                      {r.next_due && (
+                        <span className={`badge ${overdue ? 'badge-complete' : 'badge-ready'}`} style={overdue ? {background:'var(--red-f)',color:'var(--red)'} : {}}>
+                          {overdue ? 'Overdue' : `Due ${format(new Date(r.next_due),'MMM d')}`}
+                        </span>
+                      )}
+                      <button onClick={()=>handleDeleteRecord(r.id)} style={{border:'none',background:'none',cursor:'pointer',color:'var(--red)',fontSize:12,padding:4}}>Delete</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p style={{fontSize:14,color:'var(--ink-4)'}}>No health records yet. Add vaccinations, vet visits, or test results to keep a full history for {dog.name}.</p>
+          )}
         </div>
       </div>
     </>
