@@ -63,6 +63,34 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 
+class HealthRecordCreate(BaseModel):
+    record_type: str
+    description: str
+    administered_by: Optional[str] = None
+    administered_at: date
+    next_due: Optional[date] = None
+    result: Optional[str] = None
+    document_url: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class HealthRecordOut(BaseModel):
+    id: str
+    dog_id: str
+    record_type: str
+    description: str
+    administered_by: Optional[str] = None
+    administered_at: date
+    next_due: Optional[date] = None
+    result: Optional[str] = None
+    document_url: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # ─── Dog Schemas ──────────────────────────────────────────────────────────────
 
 class DogCreate(BaseModel):

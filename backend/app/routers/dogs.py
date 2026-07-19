@@ -5,8 +5,8 @@ import uuid
 
 from app.database import get_db
 from app.models import User
-from app.models import Dog
-from app.schemas import DogCreate, DogOut
+from app.models import Dog, HealthRecord
+from app.schemas import DogCreate, DogOut, HealthRecordCreate, HealthRecordOut
 from app.routers.auth import get_current_user
 
 router = APIRouter()
@@ -79,4 +79,51 @@ def delete_dog(
     if not dog:
         raise HTTPException(404, "Dog not found")
     dog.is_active = False  # Soft delete
+    db.commit()
+
+
+def _get_owned_dog(dog_id: str, current_user: User, db: Session) -> Dog:
+    dog = db.query(Dog).filter(Dog.id == dog_id, Dog.owner_id == current_user.id).first()
+    if not dog:
+        raise HTTPException(404, "Dog not found")
+    return dog
+
+
+@router.get("/{dog_id}/health-records", response_model=List[HealthRecordOut])
+def list_health_records(
+    dog_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    _get_owned_dog(dog_id, current_user, db)
+    return db.query(HealthRecord).filter(HealthRecord.dog_id == dog_id).order_by(HealthRecord.administered_at.desc()).all()
+
+
+@router.post("/{dog_id}/health-records", response_model=HealthRecordOut, status_code=201)
+def create_health_record(
+    dog_id: str,
+    data: HealthRecordCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    _get_owned_dog(dog_id, current_user, db)
+    record = HealthRecord(id=str(uuid.uuid4()), dog_id=dog_id, **data.model_dump())
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+@router.delete("/{dog_id}/health-records/{record_id}", status_code=204)
+def delete_health_record(
+    dog_id: str,
+    record_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    _get_owned_dog(dog_id, current_user, db)
+    record = db.query(HealthRecord).filter(HealthRecord.id == record_id, HealthRecord.dog_id == dog_id).first()
+    if not record:
+        raise HTTPException(404, "Health record not found")
+    db.delete(record)
     db.commit()
