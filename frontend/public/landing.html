@@ -397,14 +397,14 @@ body::before {
 
 
 
-@keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-25px) scale(1.08)}}
+@keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(80px,-60px) scale(1.15)}66%{transform:translate(-50px,40px) scale(0.9)}}
 .section-blobs{position:relative;overflow:hidden}
 .section-blobs::before,.section-blobs::after{
-  content:'';position:absolute;border-radius:50%;filter:blur(70px);
-  pointer-events:none;z-index:0;animation:blobFloat 18s ease-in-out infinite;
+  content:'';position:absolute;border-radius:50%;filter:blur(55px);
+  pointer-events:none;z-index:0;animation:blobFloat 11s ease-in-out infinite;
 }
-.section-blobs::before{width:360px;height:360px;background:rgba(61,140,96,.16);top:-100px;left:-80px}
-.section-blobs::after{width:300px;height:300px;background:rgba(200,117,26,.12);bottom:-90px;right:-60px;animation-delay:-9s}
+.section-blobs::before{width:440px;height:440px;background:rgba(61,140,96,.32);top:-120px;left:-100px}
+.section-blobs::after{width:380px;height:380px;background:rgba(200,117,26,.26);bottom:-110px;right:-80px;animation-delay:-6s}
 .section-blobs > *{position:relative;z-index:1}
 </style>
 </head>
