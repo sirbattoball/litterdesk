@@ -24,6 +24,7 @@
 }
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:16px;line-height:1.6}
+*{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 100 100'><ellipse cx='50' cy='70' rx='22' ry='18' fill='%231a4730'/><ellipse cx='25' cy='48' rx='10' ry='13' fill='%231a4730'/><ellipse cx='75' cy='48' rx='10' ry='13' fill='%231a4730'/><ellipse cx='35' cy='30' rx='8' ry='10' fill='%231a4730'/><ellipse cx='65' cy='30' rx='8' ry='10' fill='%231a4730'/></svg>") 15 26, auto !important;}
 a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 
@@ -1136,33 +1137,6 @@ const PAW_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <ellipse cx="35" cy="30" rx="8" ry="10" fill="currentColor"/>
   <ellipse cx="65" cy="30" rx="8" ry="10" fill="currentColor"/>
 </svg>`;
-
-(function() {
-  const container = document.createElement('div');
-  container.id = 'pawTrailContainer';
-  document.body.appendChild(container);
-  const COLORS = ['#1a4730','#2d6b4a','#3d8c60','#c8751a'];
-  let step = 0, lastX = 0, lastY = 0;
-  const MIN_DIST = 45;
-
-  function createPaw(x, y) {
-    const el = document.createElement('div');
-    el.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:26px;height:26px;transform:translate(-50%,-50%) rotate(${Math.random()*40-20}deg);pointer-events:none;z-index:9999;opacity:0.65;transition:opacity 0.9s ease;color:${COLORS[step%COLORS.length]};`;
-    el.innerHTML = PAW_SVG;
-    container.appendChild(el);
-    step++;
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ el.style.opacity='0'; }));
-    setTimeout(()=>el.remove(), 1000);
-  }
-
-  document.addEventListener('mousemove', (e) => {
-    const dx = e.clientX-lastX, dy = e.clientY-lastY;
-    if (Math.sqrt(dx*dx+dy*dy) > MIN_DIST) {
-      createPaw(e.clientX, e.clientY);
-      lastX = e.clientX; lastY = e.clientY;
-    }
-  });
-})();
 
 // BACKGROUND PAW PATTERN
 (function() {
