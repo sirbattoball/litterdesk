@@ -14,6 +14,7 @@
   --paper:#f8f6f1;--paper-2:#f1ede4;--paper-3:#e6dfd4;--cream:#faf8f3;
   --forest:#1a4730;--forest-l:#2d6b4a;--forest-ll:#3d8c60;
   --sage:#c4d9c8;--sage-l:#e4ede6;--amber:#c8751a;--amber-f:#fdf4e4;--green:#16a34a;--green-f:#dcfce7;--red:#c44040;--red-f:#fef2f2;
+  --sh-xs:0 1px 2px rgba(13,26,15,.04);
   --sh-sm:0 1px 3px rgba(13,26,15,.05),0 2px 8px rgba(13,26,15,.04);
   --sh-md:0 2px 4px rgba(13,26,15,.04),0 4px 16px rgba(13,26,15,.06),0 8px 32px rgba(13,26,15,.04);
   --white:#ffffff;
@@ -882,34 +883,35 @@ body::before {
 </section>
 
 <!-- QUICK HITS -->
-<section class="section" style="background:var(--paper);padding-top:64px;padding-bottom:64px;">
-  <div class="section-center anim" style="max-width:620px;margin:0 auto 48px;text-align:center;">
-    <h2 style="font-family:var(--serif);font-size:28px;color:var(--ink);">And the rest of the job, too</h2>
+<section class="section" style="background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);padding-top:80px;padding-bottom:80px;">
+  <div class="section-center anim" style="max-width:620px;margin:0 auto 56px;text-align:center;">
+    <div class="section-label">More Under The Hood</div>
+    <h2 style="font-family:var(--serif);font-size:34px;color:var(--ink);">And the rest of the job, too</h2>
   </div>
-  <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+  <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
 
-    <div class="anim" style="background:var(--white);border:1px solid rgba(230,223,212,.7);border-radius:16px;padding:24px;">
-      <div style="width:40px;height:40px;border-radius:10px;background:var(--sage-l);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
+    <div class="anim" style="background:linear-gradient(160deg,rgba(196,217,200,.4) 0%,var(--white) 45%);border:1px solid rgba(196,217,200,.6);border-top:3px solid var(--forest-l);border-radius:16px;padding:28px;box-shadow:var(--sh-sm);transition:transform .2s;">
+      <div style="width:44px;height:44px;border-radius:11px;background:var(--white);box-shadow:var(--sh-xs);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
       </div>
-      <div style="font-weight:700;font-size:15px;color:var(--ink);margin-bottom:6px;">Dog profiles</div>
-      <div style="font-size:13.5px;color:var(--ink-3);line-height:1.6;">Sires and dams with health-test badges, AKC numbers, and every litter they've produced, all in one profile.</div>
+      <div style="font-weight:700;font-size:16px;color:var(--ink);margin-bottom:8px;">Dog profiles</div>
+      <div style="font-size:14px;color:var(--ink-3);line-height:1.65;">Sires and dams with health-test badges, AKC numbers, and every litter they've produced, all in one profile.</div>
     </div>
 
-    <div class="anim" style="background:var(--white);border:1px solid rgba(230,223,212,.7);border-radius:16px;padding:24px;">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(37,99,235,.08);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <div class="anim" style="background:linear-gradient(160deg,rgba(37,99,235,.07) 0%,var(--white) 45%);border:1px solid rgba(37,99,235,.18);border-top:3px solid #2563eb;border-radius:16px;padding:28px;box-shadow:var(--sh-sm);transition:transform .2s;">
+      <div style="width:44px;height:44px;border-radius:11px;background:var(--white);box-shadow:var(--sh-xs);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       </div>
-      <div style="font-weight:700;font-size:15px;color:var(--ink);margin-bottom:6px;">Buyer pipeline</div>
-      <div style="font-size:13.5px;color:var(--ink-3);line-height:1.6;">Every buyer moves through five stages — inquiry, waitlisted, deposit paid, matched, complete — so you always know who's next.</div>
+      <div style="font-weight:700;font-size:16px;color:var(--ink);margin-bottom:8px;">Buyer pipeline</div>
+      <div style="font-size:14px;color:var(--ink-3);line-height:1.65;">Every buyer moves through five stages — inquiry, waitlisted, deposit paid, matched, complete — so you always know who's next.</div>
     </div>
 
-    <div class="anim" style="background:var(--white);border:1px solid rgba(230,223,212,.7);border-radius:16px;padding:24px;">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(124,58,237,.08);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <div class="anim" style="background:linear-gradient(160deg,rgba(124,58,237,.07) 0%,var(--white) 45%);border:1px solid rgba(124,58,237,.18);border-top:3px solid #7c3aed;border-radius:16px;padding:28px;box-shadow:var(--sh-sm);transition:transform .2s;">
+      <div style="width:44px;height:44px;border-radius:11px;background:var(--white);box-shadow:var(--sh-xs);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </div>
-      <div style="font-weight:700;font-size:15px;color:var(--ink);margin-bottom:6px;">Secure account access</div>
-      <div style="font-size:13.5px;color:var(--ink-3);line-height:1.6;">Change your password anytime, or reset it by email if you're ever locked out. Your kennel data stays yours.</div>
+      <div style="font-weight:700;font-size:16px;color:var(--ink);margin-bottom:8px;">Secure account access</div>
+      <div style="font-size:14px;color:var(--ink-3);line-height:1.65;">Change your password anytime, or reset it by email if you're ever locked out. Your kennel data stays yours.</div>
     </div>
 
   </div>
