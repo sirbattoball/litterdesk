@@ -397,15 +397,25 @@ body::before {
 
 
 
-@keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(80px,-60px) scale(1.15)}66%{transform:translate(-50px,40px) scale(0.9)}}
-.section-blobs{position:relative;overflow:hidden}
-.section-blobs::before,.section-blobs::after{
-  content:'';position:absolute;border-radius:50%;filter:blur(55px);
-  pointer-events:none;z-index:0;animation:blobFloat 11s ease-in-out infinite;
+
+/* QUIET AMBIENT GLOW — single static soft light per section, no motion */
+.section-glow{position:relative}
+.section-glow::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:70%;max-width:900px;height:340px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(196,217,200,.5) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
 }
-.section-blobs::before{width:440px;height:440px;background:rgba(61,140,96,.32);top:-120px;left:-100px}
-.section-blobs::after{width:380px;height:380px;background:rgba(200,117,26,.26);bottom:-110px;right:-80px;animation-delay:-6s}
-.section-blobs > *{position:relative;z-index:1}
+.section-glow > *{position:relative;z-index:1}
+
+/* HOVER SHEEN — subtle diagonal light sweep on hover */
+.feature-card,.btn-hero,.pricing-cta{position:relative;overflow:hidden}
+.feature-card::after,.btn-hero::after,.pricing-cta::after{
+  content:'';position:absolute;top:0;left:-75%;width:50%;height:100%;
+  background:linear-gradient(115deg,transparent 0%,rgba(255,255,255,.35) 50%,transparent 100%);
+  transform:skewX(-20deg);transition:left .6s ease;pointer-events:none;
+}
+.feature-card:hover::after,.btn-hero:hover::after,.pricing-cta:hover::after{left:125%}
 </style>
 </head>
 <body>
@@ -636,7 +646,7 @@ body::before {
 </section>
 
 <!-- PRODUCT IN ACTION -->
-<section class="section-blobs" style="background:var(--paper);padding:96px 40px;">
+<section class="section-glow" style="background:var(--paper);padding:96px 40px;">
   <div class="section-center anim" style="max-width:620px;margin:0 auto 56px;text-align:center;">
     <div class="section-label">See It In Action</div>
     <h2 class="section-title">This is what running your kennel actually looks like</h2>
@@ -735,7 +745,7 @@ body::before {
 </section>
 
 <!-- HEALTH RECORDS -->
-<section class="section section-blobs" style="background:var(--cream);">
+<section class="section section-glow" style="background:var(--cream);">
   <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;">
 
     <div class="anim">
@@ -795,7 +805,7 @@ body::before {
 </section>
 
 <!-- TESTIMONIALS -->
-<section class="section-blobs" style="background:var(--paper-2);border-top:1px solid var(--paper-3);border-bottom:1px solid var(--paper-3);padding:80px 40px;">
+<section class="section-glow" style="background:var(--paper-2);border-top:1px solid var(--paper-3);border-bottom:1px solid var(--paper-3);padding:80px 40px;">
   <div class="section-center anim" style="max-width:620px;margin:0 auto 56px;text-align:center;">
     <div class="section-label">What Breeders Are Saying</div>
     <h2 class="section-title">Breeders love what LitterDesk does for their business</h2>
@@ -839,7 +849,7 @@ body::before {
 </section>
 
 <!-- COMPARISON -->
-<section class="section section-blobs" style="background:var(--cream);">
+<section class="section section-glow" style="background:var(--cream);">
   <div class="section-center anim" style="max-width:620px;margin:0 auto 48px;text-align:center;">
     <div class="section-label">The Old Way vs. LitterDesk</div>
     <h2 class="section-title">You already have a system. It's just held together with tape.</h2>
