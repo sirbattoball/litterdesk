@@ -69,8 +69,8 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
         subscription_plan="free",
         subscription_active=False,
     )
-    # Give 14-day trial on registration
-    user.trial_ends_at = datetime.utcnow() + timedelta(days=14)
+    # Give 7-day trial on registration
+    user.trial_ends_at = datetime.utcnow() + timedelta(days=7)
 
     db.add(user)
     db.commit()
