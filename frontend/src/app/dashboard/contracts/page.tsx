@@ -123,6 +123,9 @@ export default function ContractsPage() {
                 </div>
                 <span className={`badge ${BADGE[c.status] ?? 'badge-draft'}`}>{c.status}</span>
                 <div style={{display:'flex',gap:8}}>
+                  <Link href={`/dashboard/contracts/${c.id}`} className="btn-ghost" style={{fontSize:12,padding:'6px 14px'}}>
+                    View
+                  </Link>
                   {c.status === 'draft' && (
                     <button
                       disabled={actionId===c.id}
