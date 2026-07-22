@@ -214,31 +214,3 @@ def check_trial_expiry(self):
         db.close()
 
 
-@celery_app.task
-def score_buyer_async(buyer_id: str):
-    """Score a buyer in the background after they're added."""
-    from app.models import Buyer
-    db = SessionLocal()
-    try:
-        buyer = db.query(Buyer).filter(Buyer.id == buyer_id).first()
-        if not buyer:
-            return
-
-        result = ai_service.score_buyer(
-            breed=buyer.breed_preference or "any",
-            buyer_name=buyer.full_name,
-            lifestyle_notes=buyer.lifestyle_notes or "No details provided",
-            experience_level=buyer.experience_level or "unknown",
-            sex_preference=buyer.sex_preference or "no preference",
-            color_preference=buyer.color_preference,
-            city=buyer.city or "Unknown",
-            state=buyer.state or "Unknown",
-        )
-        buyer.priority_score = result["score"]
-        buyer.ai_notes = result["summary"]
-        db.commit()
-        logger.info(f"Async scored buyer {buyer_id}: {result['score']}/100")
-    except Exception as e:
-        logger.error(f"Failed to async score buyer {buyer_id}: {e}")
-    finally:
-        db.close()

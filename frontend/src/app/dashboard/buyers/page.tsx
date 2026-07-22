@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { buyersApi, aiApi } from '@/lib/api'
+import { buyersApi } from '@/lib/api'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useAuthStore } from '@/lib/store'
@@ -28,24 +28,12 @@ export default function BuyersPage() {
   const { user } = useAuthStore()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
-  const [scoringId, setScoringId] = useState<string|null>(null)
   const qc = useQueryClient()
 
   const { data: buyers, isLoading } = useQuery({
     queryKey: ['buyers', search, status],
     queryFn: () => buyersApi.list({ search: search || undefined, status: status || undefined }).then(r => r.data),
   })
-
-  const handleScore = async (b: any) => {
-    // Scoring available on all plans
-    setScoringId(b.id)
-    try {
-      await aiApi.scoreBuyer(b.id)
-      toast.success('Buyer scored!')
-      qc.invalidateQueries({ queryKey: ['buyers'] })
-    } catch { toast.error('Scoring failed') }
-    finally { setScoringId(null) }
-  }
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Delete ${name}? This cannot be undone.`)) return
@@ -98,15 +86,14 @@ export default function BuyersPage() {
 
         {buyers && buyers.length > 0 && (
           <div className="data-table">
-            <div className="table-head" style={{ gridTemplateColumns: '2fr 1.2fr 1fr 90px 80px' }}>
+            <div className="table-head" style={{ gridTemplateColumns: '2fr 1.2fr 1fr 80px' }}>
               <div className="th">Buyer</div>
               <div className="th">Preference</div>
               <div className="th">Status</div>
-              <div className="th">AI Score</div>
               <div className="th"></div>
             </div>
             {buyers.map((b: any, i: number) => (
-              <Link key={b.id} href={`/dashboard/buyers/${b.id}`} className="table-row" style={{ gridTemplateColumns: '2fr 1.2fr 1fr 90px 100px', textDecoration:'none', cursor:'pointer' }}>
+              <Link key={b.id} href={`/dashboard/buyers/${b.id}`} className="table-row" style={{ gridTemplateColumns: '2fr 1.2fr 1fr 100px', textDecoration:'none', cursor:'pointer' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                   <div className="avatar avatar-sm" style={{ background: `linear-gradient(135deg, ${COLORS[i%COLORS.length]}, ${COLORS[(i+2)%COLORS.length]})` }}>
                     {b.full_name?.charAt(0)?.toUpperCase() ?? '?'}
@@ -118,18 +105,7 @@ export default function BuyersPage() {
                 </div>
                 <div style={{ fontSize:13, color:'var(--ink-3)' }}>{b.breed_preference ?? '—'}{b.sex_preference ? ` · ${b.sex_preference}` : ''}</div>
                 <div><span className={`badge ${BADGE[b.status] ?? 'badge-inquiry'}`}>{b.status?.replace('_',' ')}</span></div>
-                <div>
-                  {b.priority_score > 0 && (
-                    <span className={`badge ${b.priority_score>=70?'score-high':b.priority_score>=40?'score-mid':'score-low'}`}>
-                      ★ {b.priority_score}
-                    </span>
-                  )}
-                </div>
                 <div style={{display:'flex',gap:6}} onClick={e=>e.preventDefault()}>
-                  <button onClick={(e) => { e.preventDefault(); handleScore(b) }} disabled={scoringId===b.id} className="ai-pill">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    {scoringId===b.id ? '…' : 'Score'}
-                  </button>
                   <button onClick={(e) => { e.preventDefault(); handleDelete(b.id, b.full_name) }} style={{background:'none',border:'none',cursor:'pointer',color:'var(--ink-4)',padding:'4px',display:'flex',alignItems:'center'}} title="Delete buyer">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
                   </button>

@@ -33,10 +33,6 @@ class FollowupRequest(BaseModel):
     context: str
 
 
-class BuyerScoreRequest(BaseModel):
-    buyer_id: str
-
-
 class MatchRequest(BaseModel):
     litter_id: str
 
@@ -110,39 +106,6 @@ def generate_contract(
         "sign_token": sign_token,
         "message": "Contract generated successfully"
     }
-
-
-@router.post("/score-buyer")
-def score_buyer(
-    req: BuyerScoreRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """AI-score a buyer's fit and generate qualification notes."""
-    buyer = db.query(Buyer).filter(
-        Buyer.id == req.buyer_id,
-        Buyer.breeder_id == current_user.id
-    ).first()
-    if not buyer:
-        raise HTTPException(404, "Buyer not found")
-
-    result = ai_service.score_buyer(
-        breed=buyer.breed_preference or "any breed",
-        buyer_name=buyer.full_name,
-        lifestyle_notes=buyer.lifestyle_notes or "No details provided",
-        experience_level=buyer.experience_level or "unknown",
-        sex_preference=buyer.sex_preference or "no preference",
-        color_preference=buyer.color_preference,
-        city=buyer.city or "Unknown",
-        state=buyer.state or "Unknown",
-    )
-
-    # Update buyer record with AI score and notes
-    buyer.priority_score = result["score"]
-    buyer.ai_notes = result["summary"]
-    db.commit()
-
-    return result
 
 
 @router.post("/draft-email")

@@ -100,7 +100,6 @@ export const contractsApi = {
 // ─── AI ──────────────────────────────────────────────────────────────────────
 export const aiApi = {
   generateContract: (data: any) => api.post('/ai/generate-contract', data),
-  scoreBuyer: (buyerId: string) => api.post('/ai/score-buyer', { buyer_id: buyerId }),
   draftEmail: (data: any) => api.post('/ai/draft-email', data),
   matchLitter: (litterId: string) => api.post(`/ai/match-litter/${litterId}`),
   litterAnnouncement: (litterId: string) => api.post(`/ai/litter-announcement/${litterId}`),

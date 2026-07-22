@@ -1,5 +1,5 @@
 'use client'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { buyersApi, aiApi, littersApi } from '@/lib/api'
 import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -46,15 +46,6 @@ export default function BuyerDetailPage() {
     queryKey: ['litters'],
     queryFn: () => littersApi.list().then(r => r.data),
     enabled: showAddLitter,
-  })
-
-  const scoreMutation = useMutation({
-    mutationFn: () => aiApi.scoreBuyer(id),
-    onSuccess: (res) => {
-      toast.success(`AI Score: ${res.data.score}/100 — ${res.data.reasoning?.slice(0,80) ?? ''}`)
-      qc.invalidateQueries({ queryKey: ['buyer', id] })
-    },
-    onError: (err: any) => toast.error(err.response?.data?.detail || 'Scoring failed. Check your Anthropic API key.'),
   })
 
   const handleStatusChange = async (newStatus: string) => {
@@ -124,19 +115,10 @@ export default function BuyerDetailPage() {
             <div className="topbar-title">{buyer.full_name}</div>
             <div style={{display:'flex',alignItems:'center',gap:10,marginTop:2}}>
               <span className={`badge ${BADGE[buyer.status] ?? 'badge-inquiry'}`}>{buyer.status?.replace('_',' ')}</span>
-              {buyer.priority_score > 0 && (
-                <span className={`badge ${buyer.priority_score>=70?'score-high':buyer.priority_score>=40?'score-mid':'score-low'}`}>
-                  ★ {buyer.priority_score}
-                </span>
-              )}
             </div>
           </div>
         </div>
         <div className="topbar-right">
-          <button onClick={()=>scoreMutation.mutate()} disabled={scoreMutation.isPending} className="ai-pill" style={{padding:'6px 14px',fontSize:13}}>
-            <svg viewBox="0 0 24 24" fill="currentColor" style={{width:12,height:12}}><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            {scoreMutation.isPending ? 'Scoring…' : 'AI Score'}
-          </button>
           <button onClick={()=>setShowEmailPanel(!showEmailPanel)} className="btn-ghost">
             ✉ Draft Email
           </button>
@@ -211,12 +193,6 @@ export default function BuyerDetailPage() {
                 <p style={{fontSize:14,color:'var(--ink-2)',lineHeight:1.7,background:'var(--paper)',padding:14,borderRadius:'var(--r-lg)'}}>{buyer.notes}</p>
               ) : (
                 <p style={{fontSize:14,color:'var(--ink-4)'}}>No notes on file.</p>
-              )}
-              {buyer.ai_notes && (
-                <div className="ai-result" style={{marginTop:12}}>
-                  <div className="ai-result-label">AI Assessment</div>
-                  <p style={{fontSize:13.5,color:'var(--ink-2)',lineHeight:1.6}}>{buyer.ai_notes}</p>
-                </div>
               )}
             </div>
 

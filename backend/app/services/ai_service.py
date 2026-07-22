@@ -90,60 +90,6 @@ IMPORTANT FORMATTING RULES:
     return message.content[0].text
 
 
-def score_buyer(
-    breed: str,
-    buyer_name: str,
-    lifestyle_notes: str,
-    experience_level: str,
-    sex_preference: str,
-    color_preference: str,
-    city: str,
-    state: str,
-) -> dict:
-    """Score a buyer 0-100 and generate AI notes about their fit."""
-
-    prompt = f"""Evaluate this puppy buyer for a {breed} puppy and provide a score from 0-100.
-
-BUYER: {buyer_name}
-LOCATION: {city}, {state}
-EXPERIENCE: {experience_level}
-SEX PREFERENCE: {sex_preference}
-COLOR PREFERENCE: {color_preference or 'No preference'}
-LIFESTYLE/HOME NOTES: {lifestyle_notes}
-
-Scoring criteria (respond in JSON):
-- Experience with the breed
-- Appropriate home environment for this breed
-- Realistic expectations
-- Commitment signals
-- Red flags (if any)
-
-Respond ONLY with valid JSON in this exact format:
-{{
-  "score": 75,
-  "summary": "Two-sentence summary of buyer fit",
-  "strengths": ["strength 1", "strength 2"],
-  "concerns": ["concern 1"],
-  "recommended_questions": ["What question to ask them?"]
-}}"""
-
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=600,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    import json
-    text = message.content[0].text.strip()
-    # Strip markdown code fences if present
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
-    return json.loads(text.strip())
-
-
 def draft_followup_email(
     buyer_name: str,
     breeder_name: str,
