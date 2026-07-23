@@ -9,9 +9,10 @@ These run on schedule via Celery Beat and handle:
 """
 from app.worker import celery_app
 from app.database import SessionLocal
-from app.models import User, Buyer, Litter, BuyerLitterMatch
+from app.models import User, Buyer, Litter, BuyerLitterMatch, Lead
 from app.services import ai_service
 from app.services.email_service import send_email
+from app.services.nurture_emails import NURTURE_SCHEDULE, NURTURE_EMAILS
 from datetime import datetime, timedelta
 import logging
 
@@ -213,4 +214,50 @@ def check_trial_expiry(self):
     finally:
         db.close()
 
+
+@celery_app.task(bind=True)
+def send_lead_nurture_emails(self):
+    """
+    Daily: send the next nurture email to landing-page leads who haven't
+    signed up yet, based on days since capture. See app/services/nurture_emails.py
+    for the schedule and content.
+    """
+    db = SessionLocal()
+    try:
+        now = datetime.utcnow()
+        leads = db.query(Lead).filter(
+            Lead.converted_to_signup == False,
+            Lead.nurture_step < len(NURTURE_SCHEDULE),
+        ).all()
+
+        for lead in leads:
+            # Stop nurturing anyone who already signed up as a real user
+            existing_user = db.query(User).filter(User.email == lead.email).first()
+            if existing_user:
+                lead.converted_to_signup = True
+                continue
+
+            step_index = lead.nurture_step
+            if step_index >= len(NURTURE_SCHEDULE):
+                continue
+
+            threshold_days, step_key = NURTURE_SCHEDULE[step_index]
+            days_since = (now - lead.created_at).days
+
+            if days_since >= threshold_days:
+                email_content = NURTURE_EMAILS[step_key]
+                sent = send_email(
+                    to=lead.email,
+                    subject=email_content["subject"],
+                    body="",
+                    html=email_content["html"],
+                )
+                if sent:
+                    lead.nurture_step += 1
+                else:
+                    logger.error(f"Failed to send nurture step {step_key} to lead {lead.id}")
+
+        db.commit()
+    finally:
+        db.close()
 

@@ -35,6 +35,11 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.check_trial_expiry",
         "schedule": crontab(hour=10, minute=0),
     },
+    # Daily — send next nurture email to landing-page leads who haven't signed up
+    "lead-nurture": {
+        "task": "app.tasks.send_lead_nurture_emails",
+        "schedule": crontab(hour=11, minute=0),
+    },
 }
 
 celery_app.conf.timezone = "America/New_York"
