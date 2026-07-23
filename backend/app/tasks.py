@@ -199,7 +199,7 @@ def check_trial_expiry(self):
                 to=user.email,
                 subject=f"Your LitterDesk trial ends in {days_left} day{'s' if days_left != 1 else ''}",
                 body=f"Hi {user.full_name},\n\n"
-                     f"Your 14-day free trial of LitterDesk ends in {days_left} day{'s' if days_left != 1 else ''}.\n\n"
+                     f"Your 7-day free trial of LitterDesk ends in {days_left} day{'s' if days_left != 1 else ''}.\n\n"
                      f"To keep access to all features, upgrade to a paid plan:\n\n"
                      f"• Starter — $29/month (2 litters)\n"
                      f"• Pro — $79/month (unlimited + AI features) ⭐\n"

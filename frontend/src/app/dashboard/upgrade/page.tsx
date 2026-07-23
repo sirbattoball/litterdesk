@@ -33,7 +33,7 @@ export default function UpgradePage() {
   return (
     <div className="page-enter">
       <div className="topbar">
-        <div><div className="topbar-title">Upgrade Plan</div><div className="topbar-sub">Every plan includes a 14-day free trial</div></div>
+        <div><div className="topbar-title">Upgrade Plan</div><div className="topbar-sub">Every plan includes a 7-day free trial</div></div>
         <div className="topbar-right"><Link href="/dashboard" className="btn-ghost">← Back</Link></div>
       </div>
       <div className="page-body">
@@ -42,7 +42,7 @@ export default function UpgradePage() {
           <p style={{fontSize:16,color:'var(--ink-4)',lineHeight:1.6}}>Built for professional breeders who want to run a tighter operation.</p>
         </div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:28,marginBottom:36,flexWrap:'wrap'}}>
-          {['🔒 SSL secured','💳 Cancel anytime','14-day free trial'].map(t=>(
+          {['🔒 SSL secured','💳 Cancel anytime','7-day free trial'].map(t=>(
             <span key={t} style={{fontSize:13,color:'var(--ink-4)',fontWeight:500}}>{t}</span>
           ))}
         </div>
