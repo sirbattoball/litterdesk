@@ -14,7 +14,7 @@ class LeadCaptureRequest(BaseModel):
     source: str = "buyer_agreement_template"
 
 
-TEMPLATE_DOWNLOAD_URL = "https://litterdesk.com/downloads/puppy-buyer-agreement-deposit-terms-template.docx"
+TEMPLATE_DOWNLOAD_URL = "https://litterdesk.vercel.app/downloads/puppy-buyer-agreement-deposit-terms-template.docx"
 
 WELCOME_EMAIL_HTML = f"""
 <!DOCTYPE html>
