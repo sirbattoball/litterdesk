@@ -366,3 +366,18 @@ class Communication(Base):
     ai_generated = Column(Boolean, default=False)
 
     buyer = relationship("Buyer", back_populates="communications")
+
+
+# ─── Marketing Leads ───────────────────────────────────────────────────────────
+
+class Lead(Base):
+    """Emails captured from landing-page lead magnets (not app users)."""
+    __tablename__ = "leads"
+
+    id = Column(String, primary_key=True, default=gen_uuid)
+    email = Column(String, nullable=False, index=True)
+    source = Column(String)  # e.g. "buyer_agreement_template"
+    nurture_step = Column(Integer, default=0)  # which sequence email they're on
+    converted_to_signup = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+

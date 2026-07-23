@@ -906,6 +906,70 @@ body::before {
   </div>
 </section>
 
+<!-- LEAD MAGNET -->
+<section class="section" style="background:linear-gradient(160deg,rgba(196,217,200,.22) 0%,var(--cream) 60%);padding:80px 40px;">
+  <div style="max-width:720px;margin:0 auto;text-align:center;">
+    <div class="section-label">Free For Breeders</div>
+    <h2 style="font-family:var(--serif);font-size:32px;line-height:1.2;color:var(--ink);margin-bottom:16px;">Not ready to try LitterDesk yet? Take the contract.</h2>
+    <p style="font-size:16px;color:var(--ink-3);line-height:1.7;margin-bottom:32px;max-width:560px;margin-left:auto;margin-right:auto;">
+      A free Puppy Buyer Agreement & Deposit Terms template — the same kind of document most breeders wish they'd had before their first difficult buyer. Yours free, no strings attached.
+    </p>
+
+    <form id="leadMagnetForm" style="display:flex;gap:10px;max-width:440px;margin:0 auto;flex-wrap:wrap;justify-content:center;">
+      <input type="email" id="leadMagnetEmail" required placeholder="you@yourkennel.com"
+        style="flex:1;min-width:220px;padding:14px 18px;border-radius:10px;border:1px solid rgba(230,223,212,.9);font-size:15px;font-family:inherit;background:var(--white);color:var(--ink);">
+      <button type="submit" id="leadMagnetBtn" class="btn-hero" style="padding:14px 26px;font-size:15px;white-space:nowrap;">Send me the template →</button>
+    </form>
+    <div id="leadMagnetMsg" style="margin-top:14px;font-size:13.5px;color:var(--ink-4);min-height:18px;"></div>
+
+    <p style="font-size:12.5px;color:var(--ink-4);margin-top:8px;">No credit card. No trial. Just the template, straight to your inbox.</p>
+  </div>
+</section>
+
+<script>
+(function(){
+  var LEADS_API = "https://litterdesk.onrender.com/api/leads/capture";
+  var form = document.getElementById('leadMagnetForm');
+  if (!form) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var emailInput = document.getElementById('leadMagnetEmail');
+    var btn = document.getElementById('leadMagnetBtn');
+    var msg = document.getElementById('leadMagnetMsg');
+    var email = emailInput.value.trim();
+    if (!email) return;
+
+    btn.disabled = true;
+    var originalText = btn.textContent;
+    btn.textContent = 'Sending…';
+    msg.style.color = 'var(--ink-4)';
+    msg.textContent = '';
+
+    fetch(LEADS_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, source: 'buyer_agreement_template' })
+    })
+    .then(function(res){
+      if (!res.ok) throw new Error('failed');
+      return res.json();
+    })
+    .then(function(){
+      form.style.display = 'none';
+      msg.style.color = 'var(--forest)';
+      msg.style.fontWeight = '600';
+      msg.textContent = "Check your inbox — the template's on its way.";
+    })
+    .catch(function(){
+      btn.disabled = false;
+      btn.textContent = originalText;
+      msg.style.color = '#b91c1c';
+      msg.textContent = "Something went wrong — mind trying again?";
+    });
+  });
+})();
+</script>
+
 <!-- PRICING -->
 <section class="section section-warm" id="pricing">
   <div class="section-center anim">
