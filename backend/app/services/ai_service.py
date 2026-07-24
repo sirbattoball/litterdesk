@@ -1,7 +1,7 @@
 """
 LitterDesk AI Agent Service
 Powered by Claude (Anthropic) for contract generation,
-buyer scoring, follow-up drafting, and match recommendations.
+follow-up drafting, and match recommendations.
 """
 import anthropic
 from app.config import settings
@@ -17,8 +17,7 @@ You help professional dog breeders manage their operations. You understand:
 - Buyer qualification and waitlist management
 - The emotional and business dynamics of dog breeding
 
-Always be professional, warm, and precise. When generating contracts, be thorough.
-When scoring buyers, be fair and based on stated criteria."""
+Always be professional, warm, and precise. When generating contracts, be thorough."""
 
 
 def generate_contract(

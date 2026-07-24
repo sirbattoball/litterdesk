@@ -133,11 +133,11 @@ export default function DashboardPage() {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--forest)"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                   <span style={{fontSize:12,fontWeight:700,color:'var(--forest)',textTransform:'uppercase',letterSpacing:'.4px'}}>AI features active</span>
                 </div>
-                <p style={{fontSize:13,color:'var(--ink-3)',lineHeight:1.5}}>Generate contracts, score buyers, and draft emails with Claude from any buyer or litter page.</p>
+                <p style={{fontSize:13,color:'var(--ink-3)',lineHeight:1.5}}>Generate contracts, draft litter announcements, and write buyer emails with Claude from any buyer or litter page.</p>
               </div>
             ) : (
               <div style={{background:'var(--paper)',border:'1px solid var(--paper-3)',borderRadius:'var(--r-lg)',padding:14}}>
-                <p style={{fontSize:13,color:'var(--ink-4)',lineHeight:1.5,marginBottom:10}}>Unlock AI contracts, buyer scoring, and automated follow-ups.</p>
+                <p style={{fontSize:13,color:'var(--ink-4)',lineHeight:1.5,marginBottom:10}}>Unlock AI contracts, litter announcements, and automated follow-ups.</p>
                 <Link href="/dashboard/upgrade" style={{fontSize:13,color:'var(--forest)',fontWeight:600,textDecoration:'none'}}>Upgrade to Pro →</Link>
               </div>
             )}

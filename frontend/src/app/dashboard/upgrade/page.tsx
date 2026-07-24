@@ -8,7 +8,7 @@ const PLANS = [
   { key:'starter', name:'Starter', price:39, desc:'For dedicated hobby breeders',
     features:['2 active litters','Unlimited buyer CRM','Dog health records','Go-home reminders','Email support'], cta:'Get started' },
   { key:'pro', name:'Pro', price:89, desc:'For serious breeding programs', popular:true,
-    features:['Unlimited litters','Everything in Starter','AI contract generation','AI buyer scoring & email drafting','Contract e-signing for buyers','Priority support'], cta:'Start Pro trial' },
+    features:['Unlimited litters','Everything in Starter','AI contract generation','AI litter announcements & email drafting','Contract e-signing for buyers','Priority support'], cta:'Start Pro trial' },
   { key:'kennel', name:'Kennel', price:179, desc:'Multi-breed & team operations',
     features:['Everything in Pro','Up to 5 team members','Public kennel listing page','Buyer-facing inquiry portal','Revenue analytics & reporting'], cta:'Build my kennel →' },
 ]
