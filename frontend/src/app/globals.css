@@ -601,6 +601,22 @@ body {
   .page-header { flex-direction: column; gap: 12px; align-items: flex-start; }
 }
 
+@media (max-width: 640px) {
+  /* Data table rows (buyers, contracts) use inline gridTemplateColumns
+     per-instance, which beats these rules unless !important — they were
+     staying multi-column on phones and getting crushed/unreadable. */
+  .table-head { display: none !important; }
+  .table-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding: 14px 16px !important;
+  }
+  .table-row > div[style*="display:flex"],
+  .table-row > div[style*="display: flex"] {
+    flex-wrap: wrap;
+  }
+}
+
 /* ─── PHASE 5: SMOOTH PAGE TRANSITIONS ─── */
 .page-enter { animation: fade-in-up var(--t-slow) var(--ease-out); }
 
