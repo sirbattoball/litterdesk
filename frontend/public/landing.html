@@ -13,7 +13,7 @@
   --ink:#0d1a0f;--ink-2:#2a3a2c;--ink-3:#4a5e4c;--ink-4:#7a9070;
   --paper:#f8f6f1;--paper-2:#f1ede4;--paper-3:#e6dfd4;--cream:#faf8f3;
   --forest:#1a4730;--forest-l:#2d6b4a;--forest-ll:#3d8c60;
-  --sage:#c4d9c8;--sage-l:#e4ede6;--amber:#c8751a;--amber-f:#fdf4e4;--green:#16a34a;--green-f:#dcfce7;--red:#c44040;--red-f:#fef2f2;
+  --sage:#c4d9c8;--sage-l:#e4ede6;--amber:#c8751a;--amber-f:#fdf4e4;--amber-l:#e8a94a;--green:#16a34a;--green-f:#dcfce7;--red:#c44040;--red-f:#fef2f2;
   --sh-xs:0 1px 2px rgba(13,26,15,.04);
   --sh-sm:0 1px 3px rgba(13,26,15,.05),0 2px 8px rgba(13,26,15,.04);
   --sh-md:0 2px 4px rgba(13,26,15,.04),0 4px 16px rgba(13,26,15,.06),0 8px 32px rgba(13,26,15,.04);
@@ -284,7 +284,7 @@ nav{
 .pricing-card.popular{
   background:linear-gradient(160deg,var(--forest-l) 0%,var(--forest) 100%);
   border-color:transparent;
-  box-shadow:0 8px 32px rgba(26,71,48,.35),0 2px 8px rgba(26,71,48,.2);
+  box-shadow:0 8px 32px rgba(26,71,48,.35),0 2px 8px rgba(26,71,48,.2),0 0 0 1px rgba(200,117,26,.15);
 }
 .pricing-popular-badge{
   position:absolute;top:-12px;left:50%;transform:translateX(-50%);
@@ -319,7 +319,7 @@ nav{
 .trust-bar p{font-size:16px;color:rgba(250,248,243,.65);margin-bottom:32px;line-height:1.6}
 .trust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:36px}
 .trust-item{text-align:center}
-.trust-num{font-family:var(--serif);font-size:32px;color:var(--cream);letter-spacing:-1px}
+.trust-num{font-family:var(--serif);font-size:32px;color:var(--amber-l);letter-spacing:-1px}
 .trust-lbl{font-size:12.5px;color:rgba(250,248,243,.5);margin-top:4px}
 
 /* FAQ */
@@ -503,7 +503,7 @@ body::before {
 </script>
 
 <!-- HERO + CALCULATOR -->
-<section style="background:radial-gradient(ellipse at 15% 70%,rgba(196,217,200,.35) 0%,transparent 55%),radial-gradient(ellipse at 85% 20%,rgba(200,117,26,.1) 0%,transparent 50%),radial-gradient(ellipse at 50% 100%,rgba(26,71,48,.06) 0%,transparent 60%),var(--paper)">
+<section style="background:radial-gradient(ellipse at 15% 70%,rgba(196,217,200,.5) 0%,transparent 55%),radial-gradient(ellipse at 85% 20%,rgba(200,117,26,.22) 0%,transparent 50%),radial-gradient(ellipse at 50% 100%,rgba(26,71,48,.1) 0%,transparent 60%),var(--paper)">
   <div class="hero">
     <div class="anim" style="animation-delay:0ms">
       <div class="hero-badge">
@@ -714,7 +714,7 @@ body::before {
 </section>
 
 <!-- PRODUCT IN ACTION -->
-<section style="background:var(--paper);padding:96px 40px;">
+<section style="background:radial-gradient(ellipse at 50% 0%,rgba(196,217,200,.4) 0%,transparent 60%),radial-gradient(ellipse at 80% 90%,rgba(200,117,26,.08) 0%,transparent 55%),var(--paper);padding:96px 40px;">
   <div class="section-center anim" style="max-width:620px;margin:0 auto 56px;text-align:center;">
     <div class="section-label">See It In Action</div>
     <h2 class="section-title">This is what running your kennel actually looks like</h2>
