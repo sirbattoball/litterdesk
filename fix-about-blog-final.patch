@@ -1,0 +1,266 @@
+diff --git a/frontend/public/landing.html b/frontend/public/landing.html
+index d7b3a9e..dadfcbf 100644
+--- a/frontend/public/landing.html
++++ b/frontend/public/landing.html
+@@ -371,7 +371,6 @@ html,body{overflow-x:hidden;max-width:100vw}
+ 
+ @media(max-width:640px){
+   .g2,.g3{grid-template-columns:1fr!important;gap:16px!important}
+-  .about-grid{grid-template-columns:1fr!important;gap:24px!important}
+   .g4{grid-template-columns:1fr 1fr!important;gap:12px!important}
+   .pricing-grid.g2{grid-template-columns:1fr!important;max-width:380px!important;margin:0 auto!important}
+   .float-badge{display:none!important}
+@@ -472,8 +471,6 @@ body::before {
+   <div class="nav-links">
+     <a href="#features">Features</a>
+     <a href="#pricing">Pricing</a>
+-    <a href="#about">About</a>
+-    <a href="#blog">Blog</a>
+     <a href="/login">Sign in</a>
+   </div>
+   <a href="/register" class="nav-cta">Start free trial →</a>
+@@ -484,8 +481,6 @@ body::before {
+ <div id="navMobilePanel" class="nav-mobile-panel">
+   <a href="#features">Features</a>
+   <a href="#pricing">Pricing</a>
+-  <a href="#about">About</a>
+-  <a href="#blog">Blog</a>
+   <a href="/login">Sign in</a>
+   <a href="/register" class="nav-mobile-cta">Start free trial →</a>
+ </div>
+@@ -1236,138 +1231,6 @@ body::before {
+   </div>
+ </section>
+ 
+-<!-- ABOUT / OUR STORY -->
+-<section class="section" id="about" style="background:linear-gradient(180deg,var(--cream) 0%,var(--paper) 100%);">
+-  <div class="section-center anim" style="max-width:680px;margin:0 auto 48px;text-align:center;">
+-    <div class="section-label">Our Story</div>
+-    <h2 class="section-title">Built for the breeders juggling it all themselves</h2>
+-    <p class="section-sub">Not a boarding tool with breeder features bolted on. Not enterprise software sized for a 40-litter operation.</p>
+-  </div>
+-  <div style="max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1.15fr 1fr;gap:40px;align-items:start;" class="about-grid">
+-    <div class="anim" style="font-size:15px;color:var(--ink-3);line-height:1.8;">
+-      <p style="margin-bottom:18px;">Most software built for dog breeders is really kennel or boarding software with a few breeder-shaped features added on afterward — or it's enterprise-grade and enterprise-priced, built for operations running dozens of litters a year with a staff to match.</p>
+-      <p style="margin-bottom:18px;">LitterDesk started somewhere else: with the breeder doing one to four litters a year, still tracking buyers in a group text, still drafting contracts in Word at midnight, still losing a $3,500 lead in a DM thread every once in a while. Every feature exists because that specific, everyday problem needed solving — not because it looked good on a features page.</p>
+-      <p>It's built and maintained by a small, independent team — no outside investors deciding the roadmap, no pressure to bolt on features that don't actually help you place puppies.</p>
+-    </div>
+-    <div class="anim" style="background:linear-gradient(160deg,var(--forest-l) 0%,var(--forest) 100%);border-radius:18px;padding:32px;color:#fff;">
+-      <div style="display:flex;flex-direction:column;gap:22px;">
+-        <div style="display:flex;gap:14px;align-items:flex-start;">
+-          <div style="flex-shrink:0;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;margin-top:2px;">
+-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+-          </div>
+-          <div>
+-            <div style="font-weight:700;font-size:15.5px;margin-bottom:4px;">Breeder-first</div>
+-            <div style="font-size:13.5px;color:rgba(255,255,255,.8);line-height:1.6;">Not a bolt-on — litters, buyers, and contracts are the whole product, not a side feature.</div>
+-          </div>
+-        </div>
+-        <div style="display:flex;gap:14px;align-items:flex-start;">
+-          <div style="flex-shrink:0;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;margin-top:2px;">
+-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+-          </div>
+-          <div>
+-            <div style="font-weight:700;font-size:15.5px;margin-bottom:4px;">Built for 1–4 litters/year</div>
+-            <div style="font-size:13.5px;color:rgba(255,255,255,.8);line-height:1.6;">Priced and designed for small-scale breeders, not commercial operations with an ops team.</div>
+-          </div>
+-        </div>
+-        <div style="display:flex;gap:14px;align-items:flex-start;">
+-          <div style="flex-shrink:0;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;margin-top:2px;">
+-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+-          </div>
+-          <div>
+-            <div style="font-weight:700;font-size:15.5px;margin-bottom:4px;">No contracts</div>
+-            <div style="font-size:13.5px;color:rgba(255,255,255,.8);line-height:1.6;">Month-to-month. Cancel anytime. No setup fees.</div>
+-          </div>
+-        </div>
+-      </div>
+-    </div>
+-  </div>
+-</section>
+-
+-<!-- BLOG -->
+-<section class="section" id="blog" style="background:var(--paper-2);border-top:1px solid var(--paper-3);border-bottom:1px solid var(--paper-3);">
+-  <div class="section-center anim" style="max-width:620px;margin:0 auto 48px;text-align:center;">
+-    <div class="section-label">From The Kennel</div>
+-    <h2 class="section-title">Guides for the 1–4 litter breeder</h2>
+-    <p class="section-sub">Practical, no-fluff advice on contracts, buyer chaos, and running a serious breeding program without an ops team.</p>
+-  </div>
+-  <div class="g3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1100px;margin:0 auto 40px;">
+-
+-    <div class="anim" style="background:linear-gradient(160deg,rgba(196,217,200,.4) 0%,var(--white) 45%);border:1px solid rgba(196,217,200,.6);border-top:3px solid var(--forest-l);border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:12px;">
+-      <span style="align-self:flex-start;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--forest);background:rgba(26,71,48,.08);padding:3px 10px;border-radius:20px;">Buyer Screening</span>
+-      <div style="font-weight:700;font-size:16px;color:var(--ink);line-height:1.4;">How to Vet a Buyer Before You Ever Meet Them</div>
+-      <p style="font-size:13.5px;color:var(--ink-3);line-height:1.6;flex:1;">What to ask in the first message so you're not guessing who's serious 40 inquiries in.</p>
+-      <span style="font-size:12px;font-weight:600;color:var(--ink-4);">Coming soon</span>
+-    </div>
+-
+-    <div class="anim" style="background:linear-gradient(160deg,rgba(200,117,26,.08) 0%,var(--white) 45%);border:1px solid rgba(200,117,26,.2);border-top:3px solid var(--amber);border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:12px;animation-delay:80ms;">
+-      <span style="align-self:flex-start;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--amber);background:var(--amber-f);padding:3px 10px;border-radius:20px;">Contracts</span>
+-      <div style="font-weight:700;font-size:16px;color:var(--ink);line-height:1.4;">What Actually Belongs in a Puppy Contract</div>
+-      <p style="font-size:13.5px;color:var(--ink-3);line-height:1.6;flex:1;">Health guarantees, spay/neuter terms, and return policy — the clauses that actually protect you.</p>
+-      <span style="font-size:12px;font-weight:600;color:var(--ink-4);">Coming soon</span>
+-    </div>
+-
+-    <div class="anim" style="background:linear-gradient(160deg,rgba(196,217,200,.4) 0%,var(--white) 45%);border:1px solid rgba(196,217,200,.6);border-top:3px solid var(--forest-l);border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:12px;animation-delay:160ms;">
+-      <span style="align-self:flex-start;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--forest);background:rgba(26,71,48,.08);padding:3px 10px;border-radius:20px;">Buyer Chaos</span>
+-      <div style="font-weight:700;font-size:16px;color:var(--ink);line-height:1.4;">The Real Cost of a Lead Lost in a Text Thread</div>
+-      <p style="font-size:13.5px;color:var(--ink-3);line-height:1.6;flex:1;">Why a scattered inbox quietly costs more than a software subscription ever will.</p>
+-      <span style="font-size:12px;font-weight:600;color:var(--ink-4);">Coming soon</span>
+-    </div>
+-
+-  </div>
+-  <div style="max-width:420px;margin:0 auto;text-align:center;">
+-    <form id="blogNotifyForm" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+-      <input type="email" id="blogNotifyEmail" required placeholder="you@yourkennel.com"
+-        style="flex:1;min-width:180px;padding:11px 16px;border-radius:10px;border:1px solid rgba(230,223,212,.9);font-size:14px;font-family:inherit;background:var(--white);color:var(--ink);box-sizing:border-box;">
+-      <button type="submit" id="blogNotifyBtn" class="pricing-cta" style="background:linear-gradient(135deg,var(--forest-l),var(--forest));color:#fff;margin-bottom:0;white-space:nowrap;padding:11px 20px;">Notify me →</button>
+-    </form>
+-    <div id="blogNotifyMsg" style="margin-top:12px;font-size:13px;color:var(--ink-4);min-height:16px;"></div>
+-  </div>
+-</section>
+-
+-<script>
+-(function(){
+-  var NOTIFY_API = "https://litterdesk.onrender.com/api/leads/capture";
+-  var form = document.getElementById('blogNotifyForm');
+-  if (!form) return;
+-  form.addEventListener('submit', function(e){
+-    e.preventDefault();
+-    var emailEl = document.getElementById('blogNotifyEmail');
+-    var btn = document.getElementById('blogNotifyBtn');
+-    var msg = document.getElementById('blogNotifyMsg');
+-    var email = emailEl.value.trim();
+-    if (!email) return;
+-
+-    btn.disabled = true;
+-    var originalText = btn.textContent;
+-    btn.textContent = 'Sending…';
+-    msg.style.color = 'var(--ink-4)';
+-    msg.textContent = '';
+-
+-    fetch(NOTIFY_API, {
+-      method: 'POST',
+-      headers: { 'Content-Type': 'application/json' },
+-      body: JSON.stringify({ email: email, source: 'blog_notify' })
+-    })
+-    .then(function(res){
+-      if (!res.ok) throw new Error('failed');
+-      return res.json();
+-    })
+-    .then(function(){
+-      form.style.display = 'none';
+-      msg.style.color = 'var(--forest)';
+-      msg.style.fontWeight = '600';
+-      msg.textContent = "You're on the list — we'll email you when we publish.";
+-    })
+-    .catch(function(){
+-      btn.disabled = false;
+-      btn.textContent = originalText;
+-      msg.style.color = '#b91c1c';
+-      msg.textContent = "Something went wrong — mind trying again?";
+-    });
+-  });
+-})();
+-</script>
+-
+ <!-- CONTACT -->
+ <section class="section" style="background:var(--paper);padding:80px 40px;">
+ 
+@@ -1457,8 +1320,8 @@ body::before {
+     </div>
+     <div class="footer-col">
+       <h4>Company</h4>
+-      <a href="#about">About</a>
+-      <a href="#blog">Blog</a>
++      <a href="#" onclick="openModal('about');return false;">About</a>
++      <a href="#" onclick="openModal('blog');return false;">Blog</a>
+       <a href="mailto:litterdesk.hello@gmail.com">Contact</a>
+     </div>
+     <div class="footer-col">
+@@ -1689,6 +1552,37 @@ const LEGAL = {
+ };
+ 
+ function openModal(type) {
++  if (type === 'about') {
++    document.getElementById('modalContent').innerHTML = `
++      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--forest-ll);margin-bottom:8px">Our Story</div>
++      <h2 style="font-family:var(--serif);font-size:32px;color:var(--ink);margin-bottom:20px">I was shopping for a puppy. I ended up building software instead.</h2>
++      <div style="font-size:14.5px;color:var(--ink-2);line-height:1.8;">
++        <p style="margin-bottom:14px;">I'm a software developer, not a breeder. A while back I started looking for a puppy, and the process was a mess — waitlists tracked in group texts, half-filled-out Word contracts, breeders juggling dozens of inquiries with no real system behind any of it. Not because they didn't care. They clearly did. They just didn't have the right tools for how small their operation actually was.</p>
++        <p style="margin-bottom:14px;">Everything I found built for breeders was either boarding/kennel software with a few fields relabeled, or enterprise-grade platforms priced and designed for operations running dozens of litters a year with a staff to match. Nothing was built for the breeder doing one to four litters a year — which, it turns out, is most of them.</p>
++        <p>So I built LitterDesk for that breeder specifically: litters, buyers, and contracts in one place, priced and sized for a small operation, not a commercial one. No outside investors, no roadmap decided by anyone but the people actually using it.</p>
++      </div>
++    `;
++    document.getElementById('legalModal').style.display = 'block';
++    document.body.style.overflow = 'hidden';
++    return;
++  }
++  if (type === 'blog') {
++    document.getElementById('modalContent').innerHTML = `
++      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--forest-ll);margin-bottom:8px">From The Kennel</div>
++      <h2 style="font-family:var(--serif);font-size:32px;color:var(--ink);margin-bottom:16px">The blog is coming soon</h2>
++      <p style="font-size:14.5px;color:var(--ink-2);line-height:1.8;margin-bottom:22px;">Practical, no-fluff guides for the 1–4 litter breeder — buyer screening, what actually belongs in a puppy contract, and running a serious breeding program without an ops team. First posts are in the works.</p>
++      <form id="blogNotifyForm" style="display:flex;gap:8px;flex-wrap:wrap;">
++        <input type="email" id="blogNotifyEmail" required placeholder="you@yourkennel.com"
++          style="flex:1;min-width:180px;padding:11px 16px;border-radius:10px;border:1px solid rgba(230,223,212,.9);font-size:14px;font-family:inherit;background:var(--white);color:var(--ink);box-sizing:border-box;">
++        <button type="submit" id="blogNotifyBtn" class="pricing-cta" style="background:linear-gradient(135deg,var(--forest-l),var(--forest));color:#fff;margin-bottom:0;white-space:nowrap;padding:11px 20px;">Notify me →</button>
++      </form>
++      <div id="blogNotifyMsg" style="margin-top:12px;font-size:13px;color:var(--ink-4);min-height:16px;"></div>
++    `;
++    document.getElementById('legalModal').style.display = 'block';
++    document.body.style.overflow = 'hidden';
++    wireBlogNotifyForm();
++    return;
++  }
+   const doc = LEGAL[type];
+   document.getElementById('modalContent').innerHTML = `
+     <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--forest-ll);margin-bottom:8px">${doc.date}</div>
+@@ -1699,6 +1593,47 @@ function openModal(type) {
+   document.body.style.overflow = 'hidden';
+ }
+ 
++function wireBlogNotifyForm() {
++  var form = document.getElementById('blogNotifyForm');
++  if (!form) return;
++  form.addEventListener('submit', function(e){
++    e.preventDefault();
++    var emailEl = document.getElementById('blogNotifyEmail');
++    var btn = document.getElementById('blogNotifyBtn');
++    var msg = document.getElementById('blogNotifyMsg');
++    var email = emailEl.value.trim();
++    if (!email) return;
++
++    btn.disabled = true;
++    var originalText = btn.textContent;
++    btn.textContent = 'Sending…';
++    msg.style.color = 'var(--ink-4)';
++    msg.textContent = '';
++
++    fetch('https://litterdesk.onrender.com/api/leads/capture', {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ email: email, source: 'blog_notify' })
++    })
++    .then(function(res){
++      if (!res.ok) throw new Error('failed');
++      return res.json();
++    })
++    .then(function(){
++      form.style.display = 'none';
++      msg.style.color = 'var(--forest)';
++      msg.style.fontWeight = '600';
++      msg.textContent = "You're on the list — we'll email you when we publish.";
++    })
++    .catch(function(){
++      btn.disabled = false;
++      btn.textContent = originalText;
++      msg.style.color = '#b91c1c';
++      msg.textContent = "Something went wrong — mind trying again?";
++    });
++  });
++}
++
+ function closeModal() {
+   document.getElementById('legalModal').style.display = 'none';
+   document.body.style.overflow = '';
