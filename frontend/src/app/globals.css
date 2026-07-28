@@ -200,12 +200,10 @@ body {
 
 .sidebar {
   width: 240px; flex-shrink: 0;
-  background: var(--white);
-  border-right: 1px solid rgba(230,223,212,.7);
+  background: linear-gradient(190deg, var(--forest) 0%, var(--ink) 100%);
+  border-right: 1px solid rgba(255,255,255,.06);
   display: flex; flex-direction: column;
   position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
-  /* WHY: Subtle gradient = depth without distraction */
-  background: linear-gradient(180deg, #ffffff 0%, #fdfcf9 100%);
 }
 
 .sidebar-logo {
@@ -263,6 +261,36 @@ body {
 }
 .nav-item.active svg { opacity: 1; }
 .nav-badge { margin-left: auto; font-size: 10.5px; background: var(--red-f); color: #b91c1c; padding: 1px 7px; border-radius: 20px; font-weight: 600; }
+
+/* ─── Dark-sidebar overrides (scoped so the light mobile topbar, which reuses .sidebar-logomark/.sidebar-name, is unaffected) ─── */
+.sidebar .sidebar-logo { border-bottom: 1px solid rgba(255,255,255,.08); }
+.sidebar .sidebar-logomark {
+  background: linear-gradient(135deg, #ffffff, var(--cream));
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+.sidebar .sidebar-logomark svg { fill: var(--forest); }
+.sidebar .sidebar-name { color: var(--cream); }
+.sidebar .sidebar-kennel { color: rgba(250,248,243,.5); }
+.sidebar .sidebar-plan { border-bottom: 1px solid rgba(255,255,255,.08); }
+.sidebar .nav-item { color: rgba(250,248,243,.68); }
+.sidebar .nav-item:hover { background: rgba(255,255,255,.07); color: rgba(250,248,243,.96); }
+.sidebar .nav-item:hover svg { opacity: .9; }
+.sidebar .nav-item.active {
+  background: rgba(255,255,255,.1);
+  color: #fff; font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--amber-l);
+}
+.sidebar .nav-item.active svg { opacity: 1; }
+.sidebar .sidebar-bottom { border-top: 1px solid rgba(255,255,255,.08); }
+.sidebar .upgrade-strip {
+  background: linear-gradient(135deg, var(--amber-l) 0%, var(--amber) 100%);
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.3);
+}
+.sidebar .upgrade-strip:hover {
+  background: linear-gradient(135deg, #f5da9a 0%, var(--amber-l) 100%);
+  box-shadow: 0 4px 12px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.35);
+}
 
 .sidebar-bottom { padding: 10px 10px var(--s5); border-top: 1px solid rgba(230,223,212,.5); }
 .upgrade-strip {

@@ -89,16 +89,16 @@ export function Sidebar() {
             </Link>
           )}
           <div style={{display:'flex',alignItems:'center',gap:9,padding:'6px 4px'}}>
-            <div style={{width:30,height:30,borderRadius:'50%',background:'linear-gradient(135deg,var(--forest-l),var(--forest))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11.5,fontWeight:700,color:'#fff',flexShrink:0}}>
+            <div style={{width:30,height:30,borderRadius:'50%',background:'linear-gradient(135deg,var(--forest-l),var(--forest))',border:'1.5px solid rgba(255,255,255,.18)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11.5,fontWeight:700,color:'#fff',flexShrink:0}}>
               {initials}
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12.5,fontWeight:600,color:'var(--ink-2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.full_name}</div>
-              <div style={{fontSize:11,color:'var(--ink-4)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.email}</div>
+              <div style={{fontSize:12.5,fontWeight:600,color:'rgba(250,248,243,.92)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.full_name}</div>
+              <div style={{fontSize:11,color:'rgba(250,248,243,.5)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.email}</div>
             </div>
-            <button onClick={logout} style={{border:'none',background:'none',cursor:'pointer',color:'var(--ink-4)',padding:4,borderRadius:6,transition:'all var(--t-fast)'}}
-              onMouseOver={e=>(e.currentTarget as HTMLElement).style.color='var(--red)'}
-              onMouseOut={e=>(e.currentTarget as HTMLElement).style.color='var(--ink-4)'}
+            <button onClick={logout} style={{border:'none',background:'none',cursor:'pointer',color:'rgba(250,248,243,.55)',padding:4,borderRadius:6,transition:'all var(--t-fast)'}}
+              onMouseOver={e=>(e.currentTarget as HTMLElement).style.color='#f5a3a3'}
+              onMouseOut={e=>(e.currentTarget as HTMLElement).style.color='rgba(250,248,243,.55)'}
               title="Sign out">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
