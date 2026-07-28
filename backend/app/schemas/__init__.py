@@ -34,6 +34,7 @@ class UserOut(BaseModel):
     subscription_plan: str
     subscription_active: bool
     stripe_onboarded: bool
+    trial_ends_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

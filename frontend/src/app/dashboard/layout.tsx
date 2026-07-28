@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { TrialBanner } from '@/components/layout/TrialBanner'
 import { useAuthStore } from '@/lib/store'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -35,7 +36,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="shell">
       <Sidebar />
-      <div className="main-content">{children}</div>
+      <div className="main-content">
+        <TrialBanner />
+        {children}
+      </div>
     </div>
   )
 }

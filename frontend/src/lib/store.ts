@@ -11,6 +11,7 @@ interface User {
   subscription_plan: string
   subscription_active: boolean
   stripe_onboarded: boolean
+  trial_ends_at?: string | null
 }
 
 interface AuthState {

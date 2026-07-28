@@ -1,0 +1,119 @@
+diff --git a/backend/app/schemas/__init__.py b/backend/app/schemas/__init__.py
+index d125428..c63365e 100644
+--- a/backend/app/schemas/__init__.py
++++ b/backend/app/schemas/__init__.py
+@@ -34,6 +34,7 @@ class UserOut(BaseModel):
+     subscription_plan: str
+     subscription_active: bool
+     stripe_onboarded: bool
++    trial_ends_at: Optional[datetime] = None
+ 
+     class Config:
+         from_attributes = True
+diff --git a/frontend/src/app/dashboard/layout.tsx b/frontend/src/app/dashboard/layout.tsx
+index 722b526..8ca011e 100644
+--- a/frontend/src/app/dashboard/layout.tsx
++++ b/frontend/src/app/dashboard/layout.tsx
+@@ -3,6 +3,7 @@
+ import { useEffect, useState } from 'react'
+ import { useRouter } from 'next/navigation'
+ import { Sidebar } from '@/components/layout/Sidebar'
++import { TrialBanner } from '@/components/layout/TrialBanner'
+ import { useAuthStore } from '@/lib/store'
+ 
+ export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+@@ -35,7 +36,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
+   return (
+     <div className="shell">
+       <Sidebar />
+-      <div className="main-content">{children}</div>
++      <div className="main-content">
++        <TrialBanner />
++        {children}
++      </div>
+     </div>
+   )
+ }
+diff --git a/frontend/src/components/layout/TrialBanner.tsx b/frontend/src/components/layout/TrialBanner.tsx
+new file mode 100644
+index 0000000..cbba3ac
+--- /dev/null
++++ b/frontend/src/components/layout/TrialBanner.tsx
+@@ -0,0 +1,65 @@
++'use client'
++
++import Link from 'next/link'
++import { useAuthStore } from '@/lib/store'
++
++export function TrialBanner() {
++  const { user } = useAuthStore()
++
++  // Paying customers never see this.
++  if (!user || user.subscription_active || !user.trial_ends_at) return null
++
++  const endsAt = new Date(user.trial_ends_at)
++  const now = new Date()
++  const msLeft = endsAt.getTime() - now.getTime()
++  const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24))
++
++  const expired = msLeft <= 0
++  const urgent = !expired && daysLeft <= 2
++
++  const bg = expired
++    ? 'var(--red-f)'
++    : urgent
++    ? 'var(--amber-f)'
++    : 'var(--paper-2)'
++  const fg = expired ? '#b91c1c' : urgent ? 'var(--amber)' : 'var(--ink-3)'
++  const border = expired ? '#f3caca' : urgent ? '#f0dcb0' : 'var(--paper-3)'
++
++  const message = expired
++    ? "Your free trial has ended. Upgrade to keep using LitterDesk — your data is safe and waiting."
++    : daysLeft === 1
++    ? "Your free trial ends tomorrow."
++    : urgent
++    ? `Your free trial ends in ${daysLeft} days.`
++    : `${daysLeft} days left in your free trial.`
++
++  return (
++    <div
++      style={{
++        display: 'flex',
++        alignItems: 'center',
++        justifyContent: 'space-between',
++        gap: 16,
++        padding: '10px 20px',
++        background: bg,
++        borderBottom: `1px solid ${border}`,
++        fontSize: 13.5,
++        color: fg,
++        flexWrap: 'wrap',
++      }}
++    >
++      <span style={{ fontWeight: 500 }}>{message}</span>
++      <Link
++        href="/dashboard/upgrade"
++        style={{
++          fontWeight: 600,
++          color: fg,
++          textDecoration: 'underline',
++          whiteSpace: 'nowrap',
++        }}
++      >
++        {expired ? 'Upgrade now →' : 'Add payment method →'}
++      </Link>
++    </div>
++  )
++}
+diff --git a/frontend/src/lib/store.ts b/frontend/src/lib/store.ts
+index d456234..b41d32b 100644
+--- a/frontend/src/lib/store.ts
++++ b/frontend/src/lib/store.ts
+@@ -11,6 +11,7 @@ interface User {
+   subscription_plan: string
+   subscription_active: boolean
+   stripe_onboarded: boolean
++  trial_ends_at?: string | null
+ }
+ 
+ interface AuthState {
