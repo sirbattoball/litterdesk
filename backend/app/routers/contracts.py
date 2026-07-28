@@ -36,7 +36,7 @@ def get_contract_for_signing(token: str, db: Session = Depends(get_db)):
     if not contract:
         raise HTTPException(404, "Contract not found")
     if contract.status in ["signed", "voided"]:
-        raise HTTPException(400, f"Contract is already {contract.status}")
+        raise HTTPException(400, f"Contract is already {contract.status.value}")
     return {
         "contract_id": contract.id,
         "title": contract.title,
@@ -115,7 +115,7 @@ def delete_contract(contract_id: str, db: Session = Depends(get_db), current_use
     if not contract:
         raise HTTPException(404, "Contract not found")
     if contract.status not in ["voided", "draft", "signed", "sent"]:
-        raise HTTPException(400, f"Cannot delete a contract with status '{contract.status}'")
+        raise HTTPException(400, f"Cannot delete a contract with status '{contract.status.value}'")
     db.delete(contract)
     db.commit()
 
