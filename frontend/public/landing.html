@@ -1364,10 +1364,18 @@ function updateCalc() {
   const contractTime = puppies * 0.75;       // 45 min per contract
   const paymentTime = puppies * 0.5;         // 30 min per payment
   const followupTime = puppies * 0.33;       // 20 min per follow-up
-  const totalHrsPerLitter = inquiryTime + contractTime + paymentTime + followupTime;
 
-  // LitterDesk saves ~80% of this
-  const hoursSavedPerLitter = totalHrsPerLitter * 0.82;
+  // Savings vary by task: contract drafting, payment collection, and follow-up
+  // reminders are genuinely near-automated (matches the "45 min -> 90 sec"
+  // contract claim elsewhere on the page). Inquiry handling isn't — LitterDesk
+  // organizes buyer messages into a pipeline, but a breeder still personally
+  // reads and replies to each one. That's organizational time saved, not
+  // response time saved, so it gets a much smaller, more honest reduction.
+  const inquirySavingsRate = 0.20;
+  const adminSavingsRate = 0.90;
+  const hoursSavedPerLitter =
+    (inquiryTime * inquirySavingsRate) +
+    ((contractTime + paymentTime + followupTime) * adminSavingsRate);
   const totalHoursSaved = Math.round(hoursSavedPerLitter * litters);
   const annualSavings = Math.round(totalHoursSaved * implicitHourlyRate);
   const proAnnualCost = 89 * 12;
