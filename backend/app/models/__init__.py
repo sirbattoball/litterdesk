@@ -383,3 +383,15 @@ class Lead(Base):
     converted_to_signup = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now())
 
+
+class ContactMessage(Base):
+    """General 'get in touch' inquiries from the landing page — separate
+    from the lead-magnet flow. Not tied to a Lead or User."""
+    __tablename__ = "contact_messages"
+
+    id = Column(String, primary_key=True, default=gen_uuid)
+    name = Column(String)
+    email = Column(String, nullable=False, index=True)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+

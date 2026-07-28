@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 
 from app.database import get_db
-from app.models import Lead
+from app.models import Lead, ContactMessage
 from app.services import email_service
 
 router = APIRouter()
@@ -84,3 +84,38 @@ def qualify_lead(req: LeadQualifyRequest, db: Session = Depends(get_db)):
             lead.biggest_headache = req.biggest_headache
         db.commit()
     return {"status": "ok"}
+
+
+class ContactRequest(BaseModel):
+    name: str | None = None
+    email: EmailStr
+    message: str
+
+
+@router.post("/contact")
+def submit_contact(req: ContactRequest, db: Session = Depends(get_db)):
+    """Public endpoint: standalone 'get in touch' form. No auth required."""
+    message = req.message.strip()[:5000]
+    if not message:
+        raise HTTPException(400, "Message can't be empty")
+    name = (req.name or "").strip()[:200] or None
+
+    entry = ContactMessage(name=name, email=req.email, message=message)
+    db.add(entry)
+    db.commit()
+
+    # NOTE: while the Resend test-inbox override is active in email_service,
+    # this lands in the founder's test inbox anyway, so it works pre-domain.
+    email_service.send_email(
+        to="jhighroller9@gmail.com",
+        subject=f"LitterDesk contact form — {name or req.email}",
+        body="",
+        html=(
+            "<p><strong>New contact form submission:</strong></p>"
+            f"<p>From: {name + ' — ' if name else ''}{req.email}</p>"
+            f"<p style='white-space:pre-wrap'>{message}</p>"
+            "<p>Reply to them directly at their email above.</p>"
+        ),
+    )
+
+    return {"status": "sent"}
