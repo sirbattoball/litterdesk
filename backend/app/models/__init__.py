@@ -377,6 +377,8 @@ class Lead(Base):
     id = Column(String, primary_key=True, default=gen_uuid)
     email = Column(String, nullable=False, index=True)
     source = Column(String)  # e.g. "buyer_agreement_template"
+    litters_per_year = Column(String)  # "1-2", "3-4", "5+"
+    biggest_headache = Column(String)  # "buyers", "contracts", "deposits", "records"
     nurture_step = Column(Integer, default=0)  # which sequence email they're on
     converted_to_signup = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now())

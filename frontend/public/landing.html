@@ -95,6 +95,13 @@ nav{
   transition:all .2s var(--ease-out);display:inline-flex;align-items:center;gap:8px;
 }
 .btn-hero:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(26,71,48,.32)}
+.qualify-pill{
+  padding:8px 16px;border-radius:999px;border:1px solid rgba(230,223,212,.9);
+  background:var(--paper);color:var(--ink-2);font-size:13px;font-family:inherit;
+  cursor:pointer;transition:all .15s;
+}
+.qualify-pill:hover{border-color:var(--forest-l);color:var(--forest)}
+.qualify-pill.selected{background:var(--forest);border-color:var(--forest);color:#fff}
 .btn-hero-ghost{
   font-size:15px;font-weight:500;color:var(--ink-3);
   display:inline-flex;align-items:center;gap:6px;
@@ -1001,6 +1008,33 @@ body::before {
     </form>
     <div id="leadMagnetMsg" style="margin-top:14px;font-size:13.5px;color:var(--ink-4);min-height:18px;"></div>
 
+    <!-- Step 2: optional qualification, shown after email capture -->
+    <div id="leadQualify" style="display:none;max-width:440px;margin:20px auto 0;text-align:left;background:var(--white);border:1px solid rgba(230,223,212,.9);border-radius:14px;padding:22px 24px;">
+      <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px;">Two quick questions? <span style="font-weight:400;color:var(--ink-4);">(optional)</span></div>
+      <div style="font-size:12.5px;color:var(--ink-4);margin-bottom:16px;">So we only send you stuff that's actually relevant.</div>
+
+      <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">How many litters a year?</div>
+      <div id="qLitters" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button type="button" data-v="1-2" class="qualify-pill">1–2</button>
+        <button type="button" data-v="3-4" class="qualify-pill">3–4</button>
+        <button type="button" data-v="5+" class="qualify-pill">5+</button>
+      </div>
+
+      <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Biggest headache right now?</div>
+      <div id="qHeadache" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+        <button type="button" data-v="buyers" class="qualify-pill">Buyer chaos</button>
+        <button type="button" data-v="contracts" class="qualify-pill">Contracts</button>
+        <button type="button" data-v="deposits" class="qualify-pill">Deposits</button>
+        <button type="button" data-v="records" class="qualify-pill">Records</button>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button type="button" id="qSubmit" class="btn-hero" style="padding:10px 20px;font-size:13.5px;">Done</button>
+        <button type="button" id="qSkip" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--ink-4);text-decoration:underline;">Skip</button>
+      </div>
+      <div id="qThanks" style="display:none;font-size:13.5px;color:var(--forest);font-weight:600;margin-top:4px;">Got it — thanks!</div>
+    </div>
+
     <p style="font-size:12.5px;color:var(--ink-4);margin-top:8px;">No credit card. No trial. Just the template, straight to your inbox.</p>
   </div>
 </section>
@@ -1008,8 +1042,11 @@ body::before {
 <script>
 (function(){
   var LEADS_API = "https://litterdesk.onrender.com/api/leads/capture";
+  var QUALIFY_API = "https://litterdesk.onrender.com/api/leads/qualify";
   var form = document.getElementById('leadMagnetForm');
   if (!form) return;
+  var capturedEmail = '';
+
   form.addEventListener('submit', function(e){
     e.preventDefault();
     var emailInput = document.getElementById('leadMagnetEmail');
@@ -1034,10 +1071,13 @@ body::before {
       return res.json();
     })
     .then(function(){
+      capturedEmail = email;
       form.style.display = 'none';
       msg.style.color = 'var(--forest)';
       msg.style.fontWeight = '600';
       msg.textContent = "Check your inbox — the template's on its way.";
+      var q = document.getElementById('leadQualify');
+      if (q) q.style.display = 'block';
     })
     .catch(function(){
       btn.disabled = false;
@@ -1046,6 +1086,53 @@ body::before {
       msg.textContent = "Something went wrong — mind trying again?";
     });
   });
+
+  // Step 2: qualification pills
+  function wirePills(groupId){
+    var group = document.getElementById(groupId);
+    if (!group) return;
+    group.querySelectorAll('.qualify-pill').forEach(function(p){
+      p.addEventListener('click', function(){
+        group.querySelectorAll('.qualify-pill').forEach(function(x){ x.classList.remove('selected'); });
+        p.classList.add('selected');
+      });
+    });
+  }
+  wirePills('qLitters');
+  wirePills('qHeadache');
+
+  function getSelected(groupId){
+    var el = document.querySelector('#'+groupId+' .qualify-pill.selected');
+    return el ? el.getAttribute('data-v') : null;
+  }
+
+  function finishQualify(send){
+    var box = document.getElementById('leadQualify');
+    if (send) {
+      var payload = { email: capturedEmail };
+      var lit = getSelected('qLitters');
+      var ha = getSelected('qHeadache');
+      if (lit) payload.litters_per_year = lit;
+      if (ha) payload.biggest_headache = ha;
+      fetch(QUALIFY_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(function(){ /* best-effort, never block the user */ });
+    }
+    var thanks = document.getElementById('qThanks');
+    var submit = document.getElementById('qSubmit');
+    var skip = document.getElementById('qSkip');
+    if (submit) submit.style.display = 'none';
+    if (skip) skip.style.display = 'none';
+    if (send && thanks) thanks.style.display = 'block';
+    if (!send && box) box.style.display = 'none';
+  }
+
+  var qSubmit = document.getElementById('qSubmit');
+  var qSkip = document.getElementById('qSkip');
+  if (qSubmit) qSubmit.addEventListener('click', function(){ finishQualify(true); });
+  if (qSkip) qSkip.addEventListener('click', function(){ finishQualify(false); });
 })();
 </script>
 

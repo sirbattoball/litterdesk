@@ -14,6 +14,12 @@ class LeadCaptureRequest(BaseModel):
     source: str = "buyer_agreement_template"
 
 
+class LeadQualifyRequest(BaseModel):
+    email: EmailStr
+    litters_per_year: str | None = None
+    biggest_headache: str | None = None
+
+
 TEMPLATE_DOWNLOAD_URL = "https://litterdesk.vercel.app/downloads/puppy-buyer-agreement-deposit-terms-template.docx"
 
 WELCOME_EMAIL_HTML = f"""
@@ -60,3 +66,21 @@ def capture_lead(req: LeadCaptureRequest, db: Session = Depends(get_db)):
         raise HTTPException(500, "Could not send the template email — please try again.")
 
     return {"status": "sent"}
+
+
+ALLOWED_LITTERS = {"1-2", "3-4", "5+"}
+ALLOWED_HEADACHES = {"buyers", "contracts", "deposits", "records"}
+
+
+@router.post("/qualify")
+def qualify_lead(req: LeadQualifyRequest, db: Session = Depends(get_db)):
+    """Public endpoint: optional step-2 qualification answers after email capture.
+    Silently no-ops on unknown email — this is best-effort enrichment, not auth."""
+    lead = db.query(Lead).filter(Lead.email == req.email).first()
+    if lead:
+        if req.litters_per_year in ALLOWED_LITTERS:
+            lead.litters_per_year = req.litters_per_year
+        if req.biggest_headache in ALLOWED_HEADACHES:
+            lead.biggest_headache = req.biggest_headache
+        db.commit()
+    return {"status": "ok"}
