@@ -78,6 +78,21 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def register(data: UserRegister, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
+        # An account exists, but if it never actually completed checkout
+        # (no active subscription, no trial ever granted), it's not a real
+        # account someone is using — it's a burned email from an abandoned
+        # signup. Treat this as a restart rather than a hard conflict:
+        # update it with the new details and let them try again.
+        if not existing.subscription_active and not existing.trial_ends_at:
+            existing.hashed_password = hash_password(data.password)
+            existing.full_name = data.full_name
+            existing.kennel_name = data.kennel_name
+            existing.breeds = data.breeds or []
+            db.commit()
+            db.refresh(existing)
+            token = create_access_token({"sub": existing.id})
+            return {"access_token": token, "token_type": "bearer", "user": UserOut.model_validate(existing)}
+
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
