@@ -88,7 +88,7 @@ export default function OnboardingPage() {
               We'll add your first litter and dog, then you're ready to go.
             </p>
             <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
-              {['Add your first litter to start tracking','Log your dam or sire with health testing','Invite buyers to your waitlist'].map((item, i) => (
+              {['Add your first litter to start tracking','Add your dam or sire','Then invite buyers from your dashboard'].map((item, i) => (
                 <div key={i} style={{display:'flex',alignItems:'center',gap:12,background:'var(--paper)',borderRadius:12,padding:'12px 16px',textAlign:'left'}}>
                   <div style={{width:24,height:24,borderRadius:'50%',background:'var(--sage-l)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:12,fontWeight:700,color:'var(--forest)'}}>
                     {i + 1}
