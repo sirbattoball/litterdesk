@@ -49,12 +49,7 @@ def create_litter(
     if current_user.subscription_plan == "free" and active_count >= 1:
         raise HTTPException(
             status_code=403,
-            detail="Free plan limited to 1 active litter. Upgrade to Pro for unlimited litters."
-        )
-    if current_user.subscription_plan == "starter" and active_count >= 2:
-        raise HTTPException(
-            status_code=403,
-            detail="Starter plan limited to 2 active litters. Upgrade to Pro for unlimited."
+            detail="Free plan limited to 1 active litter. Start a Starter or Pro trial for unlimited litters."
         )
 
     litter = Litter(id=str(uuid.uuid4()), breeder_id=current_user.id, **data.model_dump())

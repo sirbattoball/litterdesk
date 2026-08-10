@@ -5,7 +5,7 @@ from app.config import settings
 from app.database import get_db
 from app.models import User, BuyerLitterMatch, Litter
 from app.routers.auth import get_current_user
-from datetime import datetime
+from datetime import datetime, timezone
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -23,6 +23,7 @@ PLAN_PRICES = {
 @router.post("/create-subscription/{plan}")
 def create_subscription(
     plan: str,
+    new_signup: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -35,6 +36,17 @@ def create_subscription(
 
     if not settings.STRIPE_SECRET_KEY:
         raise HTTPException(400, "Stripe key not configured.")
+
+    # Brand-new registrations land in onboarding after checkout; existing
+    # accounts upgrading from the dashboard go straight back to it.
+    success_url = (
+        f"{FRONTEND_URL}/dashboard/onboarding?subscribed=true" if new_signup
+        else f"{FRONTEND_URL}/dashboard?subscribed=true"
+    )
+    cancel_url = (
+        f"{FRONTEND_URL}/register?plan={plan}&checkout_cancelled=true" if new_signup
+        else f"{FRONTEND_URL}/dashboard/upgrade"
+    )
 
     try:
         if not current_user.stripe_customer_id:
@@ -52,8 +64,8 @@ def create_subscription(
             line_items=[{"price": price_id, "quantity": 1}],
             mode="subscription",
             subscription_data={"trial_period_days": 7},
-            success_url=f"{FRONTEND_URL}/dashboard?subscribed=true",
-            cancel_url=f"{FRONTEND_URL}/dashboard/upgrade",
+            success_url=success_url,
+            cancel_url=cancel_url,
             metadata={"user_id": current_user.id, "plan": plan},
         )
         return {"checkout_url": session.url, "session_id": session.id}
@@ -88,6 +100,9 @@ def collect_deposit(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
+        raise HTTPException(403, "Deposit collection via Stripe requires Pro plan")
+
     if not current_user.stripe_onboarded:
         raise HTTPException(400, "Complete Stripe Connect setup first")
 
@@ -165,7 +180,21 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             if user:
                 user.subscription_plan = plan
                 user.subscription_active = True
-                user.stripe_subscription_id = session.get("subscription")
+                subscription_id = session.get("subscription")
+                user.stripe_subscription_id = subscription_id
+
+                # Pull the real trial end date from Stripe rather than
+                # guessing — this is what the trial countdown displays.
+                if subscription_id:
+                    try:
+                        sub = stripe.Subscription.retrieve(subscription_id)
+                        if sub.get("trial_end"):
+                            user.trial_ends_at = datetime.fromtimestamp(
+                                sub["trial_end"], tz=timezone.utc
+                            )
+                    except stripe.error.StripeError:
+                        pass  # non-fatal — subscription is still activated either way
+
                 db.commit()
 
     elif event["type"] == "customer.subscription.deleted":

@@ -46,6 +46,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   )
 
+  // Registrations no longer get a free trial automatically — they're sent
+  // straight to Stripe Checkout to start one. If someone has an account but
+  // never completed that (closed the tab, payment failed, etc.), they'll
+  // have no active subscription AND no trial_ends_at ever set. Send them
+  // back to pick a plan rather than letting them into a dashboard they
+  // never actually unlocked. (Doesn't affect earlier accounts that got the
+  // old automatic trial — they still have a trial_ends_at value.)
+  const isUpgradePage = pathname === '/dashboard/upgrade'
+  const neverActivated = !user.subscription_active && !user.trial_ends_at
+  if (neverActivated && !isUpgradePage) {
+    router.replace('/dashboard/upgrade')
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" style={{ width: 32, height: 32 }} />
+      </div>
+    )
+  }
+
   // Onboarding gets the full viewport, no sidebar — it's a focused setup flow,
   // not a normal dashboard screen, and the full nav shouldn't be clickable
   // before setup is done.

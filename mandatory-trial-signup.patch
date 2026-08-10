@@ -1,0 +1,337 @@
+diff --git a/backend/app/routers/ai_agent.py b/backend/app/routers/ai_agent.py
+index 3fcf48e..03eaa1d 100644
+--- a/backend/app/routers/ai_agent.py
++++ b/backend/app/routers/ai_agent.py
+@@ -44,7 +44,7 @@ def generate_contract(
+     current_user: User = Depends(get_current_user)
+ ):
+     """Generate an AI-written puppy sale contract."""
+-    if not current_user.subscription_active and current_user.subscription_plan not in ["pro", "kennel"]:
++    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
+         raise HTTPException(403, "Contract generation requires Pro plan")
+ 
+     buyer = db.query(Buyer).filter(
+@@ -115,7 +115,7 @@ def draft_email(
+     current_user: User = Depends(get_current_user)
+ ):
+     """Draft a follow-up email to a buyer."""
+-    if not current_user.subscription_active and current_user.subscription_plan not in ["pro", "kennel"]:
++    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
+         raise HTTPException(403, "Email drafting requires Pro plan")
+ 
+     buyer = db.query(Buyer).filter(
+@@ -142,8 +142,8 @@ def match_litter(
+     current_user: User = Depends(get_current_user)
+ ):
+     """AI-match buyers on waitlist to available puppies."""
+-    if not current_user.subscription_active:
+-        raise HTTPException(403, "AI matching requires active subscription")
++    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
++        raise HTTPException(403, "AI matching requires Pro plan")
+ 
+     litter = db.query(Litter).filter(
+         Litter.id == litter_id,
+diff --git a/backend/app/routers/auth.py b/backend/app/routers/auth.py
+index 7d32372..fd7883a 100644
+--- a/backend/app/routers/auth.py
++++ b/backend/app/routers/auth.py
+@@ -90,8 +90,12 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
+         subscription_plan="free",
+         subscription_active=False,
+     )
+-    # Give 7-day trial on registration
+-    user.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=7)
++    # No trial is granted here anymore. Registration just creates the
++    # account; the frontend immediately sends the user to Stripe Checkout
++    # to pick Starter or Pro and start their 7-day trial with a card on
++    # file. trial_ends_at gets set from the real Stripe subscription once
++    # checkout completes (see the webhook handler in payments.py) — that
++    # way Stripe's trial date is always the source of truth, not ours.
+ 
+     db.add(user)
+     db.commit()
+diff --git a/backend/app/routers/litters.py b/backend/app/routers/litters.py
+index b711040..65c9aa1 100644
+--- a/backend/app/routers/litters.py
++++ b/backend/app/routers/litters.py
+@@ -49,12 +49,7 @@ def create_litter(
+     if current_user.subscription_plan == "free" and active_count >= 1:
+         raise HTTPException(
+             status_code=403,
+-            detail="Free plan limited to 1 active litter. Upgrade to Pro for unlimited litters."
+-        )
+-    if current_user.subscription_plan == "starter" and active_count >= 2:
+-        raise HTTPException(
+-            status_code=403,
+-            detail="Starter plan limited to 2 active litters. Upgrade to Pro for unlimited."
++            detail="Free plan limited to 1 active litter. Start a Starter or Pro trial for unlimited litters."
+         )
+ 
+     litter = Litter(id=str(uuid.uuid4()), breeder_id=current_user.id, **data.model_dump())
+diff --git a/backend/app/routers/payments.py b/backend/app/routers/payments.py
+index 9373f90..4a69396 100644
+--- a/backend/app/routers/payments.py
++++ b/backend/app/routers/payments.py
+@@ -5,7 +5,7 @@ from app.config import settings
+ from app.database import get_db
+ from app.models import User, BuyerLitterMatch, Litter
+ from app.routers.auth import get_current_user
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ stripe.api_key = settings.STRIPE_SECRET_KEY
+ 
+@@ -23,6 +23,7 @@ PLAN_PRICES = {
+ @router.post("/create-subscription/{plan}")
+ def create_subscription(
+     plan: str,
++    new_signup: bool = False,
+     db: Session = Depends(get_db),
+     current_user: User = Depends(get_current_user)
+ ):
+@@ -36,6 +37,17 @@ def create_subscription(
+     if not settings.STRIPE_SECRET_KEY:
+         raise HTTPException(400, "Stripe key not configured.")
+ 
++    # Brand-new registrations land in onboarding after checkout; existing
++    # accounts upgrading from the dashboard go straight back to it.
++    success_url = (
++        f"{FRONTEND_URL}/dashboard/onboarding?subscribed=true" if new_signup
++        else f"{FRONTEND_URL}/dashboard?subscribed=true"
++    )
++    cancel_url = (
++        f"{FRONTEND_URL}/register?plan={plan}&checkout_cancelled=true" if new_signup
++        else f"{FRONTEND_URL}/dashboard/upgrade"
++    )
++
+     try:
+         if not current_user.stripe_customer_id:
+             customer = stripe.Customer.create(
+@@ -52,8 +64,8 @@ def create_subscription(
+             line_items=[{"price": price_id, "quantity": 1}],
+             mode="subscription",
+             subscription_data={"trial_period_days": 7},
+-            success_url=f"{FRONTEND_URL}/dashboard?subscribed=true",
+-            cancel_url=f"{FRONTEND_URL}/dashboard/upgrade",
++            success_url=success_url,
++            cancel_url=cancel_url,
+             metadata={"user_id": current_user.id, "plan": plan},
+         )
+         return {"checkout_url": session.url, "session_id": session.id}
+@@ -88,6 +100,9 @@ def collect_deposit(
+     db: Session = Depends(get_db),
+     current_user: User = Depends(get_current_user)
+ ):
++    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
++        raise HTTPException(403, "Deposit collection via Stripe requires Pro plan")
++
+     if not current_user.stripe_onboarded:
+         raise HTTPException(400, "Complete Stripe Connect setup first")
+ 
+@@ -165,7 +180,21 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+             if user:
+                 user.subscription_plan = plan
+                 user.subscription_active = True
+-                user.stripe_subscription_id = session.get("subscription")
++                subscription_id = session.get("subscription")
++                user.stripe_subscription_id = subscription_id
++
++                # Pull the real trial end date from Stripe rather than
++                # guessing — this is what the trial countdown displays.
++                if subscription_id:
++                    try:
++                        sub = stripe.Subscription.retrieve(subscription_id)
++                        if sub.get("trial_end"):
++                            user.trial_ends_at = datetime.fromtimestamp(
++                                sub["trial_end"], tz=timezone.utc
++                            )
++                    except stripe.error.StripeError:
++                        pass  # non-fatal — subscription is still activated either way
++
+                 db.commit()
+ 
+     elif event["type"] == "customer.subscription.deleted":
+diff --git a/frontend/public/landing.html b/frontend/public/landing.html
+index dadfcbf..69dd81e 100644
+--- a/frontend/public/landing.html
++++ b/frontend/public/landing.html
+@@ -1141,7 +1141,7 @@ body::before {
+       <div class="pricing-name" style="color:var(--ink-4)">Starter</div>
+       <div class="pricing-price"><span class="pricing-price-num" style="color:var(--ink)">$39</span><span class="pricing-price-period" style="color:var(--ink-4)">/mo</span></div>
+       <div class="pricing-anchor" style="color:var(--ink-4)">Everything you need to get organized</div>
+-      <button class="pricing-cta" onclick="window.location='/register'" style="background:linear-gradient(135deg,var(--forest-l),var(--forest));color:#fff">Start free trial</button>
++      <button class="pricing-cta" onclick="window.location='/register?plan=starter'" style="background:linear-gradient(135deg,var(--forest-l),var(--forest));color:#fff">Start free trial</button>
+       <ul class="pricing-features">
+         <li class="pricing-feature" style="color:var(--ink-2)"><div class="pricing-check" style="background:var(--sage-l)"><svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="var(--forest-l)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div>Unlimited litters</li>
+         <li class="pricing-feature" style="color:var(--ink-2)"><div class="pricing-check" style="background:var(--sage-l)"><svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="var(--forest-l)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div>Unlimited buyer CRM</li>
+@@ -1158,7 +1158,7 @@ body::before {
+       <div class="pricing-name" style="color:rgba(250,248,243,.6)">Pro</div>
+       <div class="pricing-price"><span class="pricing-price-num" style="color:var(--cream)">$89</span><span class="pricing-price-period" style="color:rgba(250,248,243,.5)">/mo</span></div>
+       <div class="pricing-anchor" style="color:rgba(250,248,243,.45)">Everything in Starter + automation</div>
+-      <button class="pricing-cta" onclick="window.location='/register'" style="background:var(--cream);color:var(--forest)">Start Pro trial</button>
++      <button class="pricing-cta" onclick="window.location='/register?plan=pro'" style="background:var(--cream);color:var(--forest)">Start Pro trial</button>
+       <ul class="pricing-features">
+         <li class="pricing-feature" style="color:rgba(250,248,243,.85)"><div class="pricing-check" style="background:rgba(255,255,255,.15)"><svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div>Everything in Starter</li>
+         <li class="pricing-feature" style="color:rgba(250,248,243,.85)"><div class="pricing-check" style="background:rgba(255,255,255,.15)"><svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div>Instant contract drafting</li>
+diff --git a/frontend/src/app/dashboard/layout.tsx b/frontend/src/app/dashboard/layout.tsx
+index ab2da25..97dfd31 100644
+--- a/frontend/src/app/dashboard/layout.tsx
++++ b/frontend/src/app/dashboard/layout.tsx
+@@ -46,6 +46,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
+     </div>
+   )
+ 
++  // Registrations no longer get a free trial automatically — they're sent
++  // straight to Stripe Checkout to start one. If someone has an account but
++  // never completed that (closed the tab, payment failed, etc.), they'll
++  // have no active subscription AND no trial_ends_at ever set. Send them
++  // back to pick a plan rather than letting them into a dashboard they
++  // never actually unlocked. (Doesn't affect earlier accounts that got the
++  // old automatic trial — they still have a trial_ends_at value.)
++  const isUpgradePage = pathname === '/dashboard/upgrade'
++  const neverActivated = !user.subscription_active && !user.trial_ends_at
++  if (neverActivated && !isUpgradePage) {
++    router.replace('/dashboard/upgrade')
++    return (
++      <div style={{ minHeight: '100vh', background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
++        <div className="spinner" style={{ width: 32, height: 32 }} />
++      </div>
++    )
++  }
++
+   // Onboarding gets the full viewport, no sidebar — it's a focused setup flow,
+   // not a normal dashboard screen, and the full nav shouldn't be clickable
+   // before setup is done.
+diff --git a/frontend/src/app/register/page.tsx b/frontend/src/app/register/page.tsx
+index 12480b0..e790b5b 100644
+--- a/frontend/src/app/register/page.tsx
++++ b/frontend/src/app/register/page.tsx
+@@ -1,8 +1,9 @@
+ 'use client'
+-import { useState } from 'react'
+-import { useRouter } from 'next/navigation'
++import { useState, Suspense } from 'react'
++import { useRouter, useSearchParams } from 'next/navigation'
+ import Link from 'next/link'
+ import { useAuthStore } from '@/lib/store'
++import { paymentsApi } from '@/lib/api'
+ import toast from 'react-hot-toast'
+ 
+ const PERKS = [
+@@ -13,22 +14,37 @@ const PERKS = [
+   { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`, text: '7-day free trial · Cancel anytime' },
+ ]
+ 
+-export default function RegisterPage() {
++const PLANS = {
++  starter: { name: 'Starter', price: '$39', blurb: 'Everything you need to get organized' },
++  pro: { name: 'Pro', price: '$89', blurb: 'Starter, plus AI contracts, announcements & deposit collection' },
++}
++
++function RegisterForm() {
++  const searchParams = useSearchParams()
++  const initialPlan = searchParams.get('plan') === 'pro' ? 'pro' : 'starter'
++  const wasCancelled = searchParams.get('checkout_cancelled') === 'true'
++
++  const [plan, setPlan] = useState<'starter' | 'pro'>(initialPlan)
+   const [form, setForm] = useState({ full_name:'', email:'', password:'', kennel_name:'' })
++  const [submitting, setSubmitting] = useState(false)
+   const { register, isLoading } = useAuthStore()
+   const router = useRouter()
+ 
+   const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault()
++    setSubmitting(true)
+     try {
+       await register(form)
+-      toast.success('Welcome to LitterDesk! 🐾')
+-      router.push('/dashboard/onboarding')
++      const res = await paymentsApi.createSubscription(plan, true)
++      window.location.href = res.data.checkout_url
+     } catch (err: any) {
++      setSubmitting(false)
+       toast.error(err.response?.data?.detail || 'Something went wrong')
+     }
+   }
+ 
++  const busy = isLoading || submitting
++
+   return (
+     <>
+       <style>{`
+@@ -36,6 +52,9 @@ export default function RegisterPage() {
+         .reg-left { flex:0 0 420px; display:flex; flex-direction:column; justify-content:center; padding:48px; border-right:1px solid rgba(230,223,212,.6); background:rgba(255,255,255,.5); backdrop-filter:blur(20px); }
+         .reg-right { flex:1; display:flex; align-items:center; justify-content:center; padding:32px 40px; }
+         .mobile-logo { display:none; }
++        .plan-toggle { display:flex; gap:8px; margin-bottom:20px; }
++        .plan-option { flex:1; border:1.5px solid rgba(230,223,212,.9); border-radius:12px; padding:12px 14px; cursor:pointer; transition:all .15s; background:var(--white); }
++        .plan-option.active { border-color:var(--forest-l); background:var(--sage-l); }
+         @media(max-width:768px) { .reg-left{display:none} .reg-right{padding:24px 20px 40px;align-items:flex-start} .mobile-logo{display:flex} }
+       `}</style>
+       <div className="reg-shell">
+@@ -62,15 +81,31 @@ export default function RegisterPage() {
+               <span style={{fontFamily:'var(--serif)',fontSize:20,color:'var(--ink)'}}>LitterDesk</span>
+             </div>
+             <div className="auth-card">
+-              <h1 className="auth-title">Start free trial</h1>
+-              <p className="auth-sub">7 days free · Cancel anytime</p>
++              <h1 className="auth-title">Start your free trial</h1>
++              <p className="auth-sub">7 days free, then {PLANS[plan].price}/mo · Card required · Cancel anytime</p>
++
++              {wasCancelled && (
++                <div style={{background:'var(--amber-f)',color:'var(--amber)',fontSize:13,fontWeight:600,padding:'10px 14px',borderRadius:10,marginBottom:16}}>
++                  Checkout was cancelled — pick a plan and try again whenever you're ready.
++                </div>
++              )}
++
++              <div className="plan-toggle">
++                {(['starter','pro'] as const).map(p => (
++                  <div key={p} className={`plan-option ${plan===p ? 'active' : ''}`} onClick={()=>setPlan(p)}>
++                    <div style={{fontSize:13,fontWeight:700,color:'var(--ink)'}}>{PLANS[p].name} — {PLANS[p].price}/mo</div>
++                    <div style={{fontSize:11.5,color:'var(--ink-4)',marginTop:2,lineHeight:1.4}}>{PLANS[p].blurb}</div>
++                  </div>
++                ))}
++              </div>
++
+               <form onSubmit={handleSubmit}>
+                 <div className="field"><label className="label">Your name</label><input className="input" placeholder="Jane Smith" value={form.full_name} onChange={e=>setForm(f=>({...f,full_name:e.target.value}))} required/></div>
+                 <div className="field"><label className="label">Kennel name <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label><input className="input" placeholder="Oakwood Goldens" value={form.kennel_name} onChange={e=>setForm(f=>({...f,kennel_name:e.target.value}))}/></div>
+                 <div className="field"><label className="label">Email address</label><input type="email" className="input" placeholder="you@kennel.com" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} required/></div>
+                 <div className="field"><label className="label">Password</label><input type="password" className="input" placeholder="Min. 8 characters" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} minLength={8} required/></div>
+-                <button type="submit" disabled={isLoading} className="btn-primary" style={{width:'100%',justifyContent:'center',padding:'13px',fontSize:15,marginTop:4}}>
+-                  {isLoading?<span style={{display:'flex',alignItems:'center',gap:8}}><span className="spinner" style={{width:14,height:14,borderColor:'rgba(255,255,255,.4)',borderTopColor:'#fff'}}/>Creating account…</span>:'Start free trial →'}
++                <button type="submit" disabled={busy} className="btn-primary" style={{width:'100%',justifyContent:'center',padding:'13px',fontSize:15,marginTop:4}}>
++                  {busy?<span style={{display:'flex',alignItems:'center',gap:8}}><span className="spinner" style={{width:14,height:14,borderColor:'rgba(255,255,255,.4)',borderTopColor:'#fff'}}/>Setting up your trial…</span>:`Continue to payment →`}
+                 </button>
+               </form>
+               <div className="divider"/>
+@@ -86,3 +121,15 @@ export default function RegisterPage() {
+     </>
+   )
+ }
++
++export default function RegisterPage() {
++  return (
++    <Suspense fallback={
++      <div style={{ minHeight: '100vh', background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
++        <div className="spinner" style={{ width: 32, height: 32 }} />
++      </div>
++    }>
++      <RegisterForm />
++    </Suspense>
++  )
++}
+diff --git a/frontend/src/lib/api.ts b/frontend/src/lib/api.ts
+index 79230ad..abff002 100644
+--- a/frontend/src/lib/api.ts
++++ b/frontend/src/lib/api.ts
+@@ -107,7 +107,8 @@ export const aiApi = {
+ 
+ // ─── Payments ────────────────────────────────────────────────────────────────
+ export const paymentsApi = {
+-  createSubscription: (plan: string) => api.post(`/payments/create-subscription/${plan}`),
++  createSubscription: (plan: string, newSignup: boolean = false) =>
++    api.post(`/payments/create-subscription/${plan}${newSignup ? '?new_signup=true' : ''}`),
+   createPortal: () => api.post('/payments/create-portal'),
+   collectDeposit: (data: any) => api.post('/payments/collect-deposit', null, { params: data }),
+   stripeConnectOnboard: () => api.post('/payments/stripe-connect/onboard'),

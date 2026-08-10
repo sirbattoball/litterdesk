@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/lib/store'
+import { paymentsApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 
 const PERKS = [
@@ -13,21 +14,36 @@ const PERKS = [
   { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`, text: '7-day free trial · Cancel anytime' },
 ]
 
-export default function RegisterPage() {
+const PLANS = {
+  starter: { name: 'Starter', price: '$39', blurb: 'Everything you need to get organized' },
+  pro: { name: 'Pro', price: '$89', blurb: 'Starter, plus AI contracts, announcements & deposit collection' },
+}
+
+function RegisterForm() {
+  const searchParams = useSearchParams()
+  const initialPlan = searchParams.get('plan') === 'pro' ? 'pro' : 'starter'
+  const wasCancelled = searchParams.get('checkout_cancelled') === 'true'
+
+  const [plan, setPlan] = useState<'starter' | 'pro'>(initialPlan)
   const [form, setForm] = useState({ full_name:'', email:'', password:'', kennel_name:'' })
+  const [submitting, setSubmitting] = useState(false)
   const { register, isLoading } = useAuthStore()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitting(true)
     try {
       await register(form)
-      toast.success('Welcome to LitterDesk! 🐾')
-      router.push('/dashboard/onboarding')
+      const res = await paymentsApi.createSubscription(plan, true)
+      window.location.href = res.data.checkout_url
     } catch (err: any) {
+      setSubmitting(false)
       toast.error(err.response?.data?.detail || 'Something went wrong')
     }
   }
+
+  const busy = isLoading || submitting
 
   return (
     <>
@@ -36,6 +52,9 @@ export default function RegisterPage() {
         .reg-left { flex:0 0 420px; display:flex; flex-direction:column; justify-content:center; padding:48px; border-right:1px solid rgba(230,223,212,.6); background:rgba(255,255,255,.5); backdrop-filter:blur(20px); }
         .reg-right { flex:1; display:flex; align-items:center; justify-content:center; padding:32px 40px; }
         .mobile-logo { display:none; }
+        .plan-toggle { display:flex; gap:8px; margin-bottom:20px; }
+        .plan-option { flex:1; border:1.5px solid rgba(230,223,212,.9); border-radius:12px; padding:12px 14px; cursor:pointer; transition:all .15s; background:var(--white); }
+        .plan-option.active { border-color:var(--forest-l); background:var(--sage-l); }
         @media(max-width:768px) { .reg-left{display:none} .reg-right{padding:24px 20px 40px;align-items:flex-start} .mobile-logo{display:flex} }
       `}</style>
       <div className="reg-shell">
@@ -62,15 +81,31 @@ export default function RegisterPage() {
               <span style={{fontFamily:'var(--serif)',fontSize:20,color:'var(--ink)'}}>LitterDesk</span>
             </div>
             <div className="auth-card">
-              <h1 className="auth-title">Start free trial</h1>
-              <p className="auth-sub">7 days free · Cancel anytime</p>
+              <h1 className="auth-title">Start your free trial</h1>
+              <p className="auth-sub">7 days free, then {PLANS[plan].price}/mo · Card required · Cancel anytime</p>
+
+              {wasCancelled && (
+                <div style={{background:'var(--amber-f)',color:'var(--amber)',fontSize:13,fontWeight:600,padding:'10px 14px',borderRadius:10,marginBottom:16}}>
+                  Checkout was cancelled — pick a plan and try again whenever you're ready.
+                </div>
+              )}
+
+              <div className="plan-toggle">
+                {(['starter','pro'] as const).map(p => (
+                  <div key={p} className={`plan-option ${plan===p ? 'active' : ''}`} onClick={()=>setPlan(p)}>
+                    <div style={{fontSize:13,fontWeight:700,color:'var(--ink)'}}>{PLANS[p].name} — {PLANS[p].price}/mo</div>
+                    <div style={{fontSize:11.5,color:'var(--ink-4)',marginTop:2,lineHeight:1.4}}>{PLANS[p].blurb}</div>
+                  </div>
+                ))}
+              </div>
+
               <form onSubmit={handleSubmit}>
                 <div className="field"><label className="label">Your name</label><input className="input" placeholder="Jane Smith" value={form.full_name} onChange={e=>setForm(f=>({...f,full_name:e.target.value}))} required/></div>
                 <div className="field"><label className="label">Kennel name <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label><input className="input" placeholder="Oakwood Goldens" value={form.kennel_name} onChange={e=>setForm(f=>({...f,kennel_name:e.target.value}))}/></div>
                 <div className="field"><label className="label">Email address</label><input type="email" className="input" placeholder="you@kennel.com" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} required/></div>
                 <div className="field"><label className="label">Password</label><input type="password" className="input" placeholder="Min. 8 characters" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} minLength={8} required/></div>
-                <button type="submit" disabled={isLoading} className="btn-primary" style={{width:'100%',justifyContent:'center',padding:'13px',fontSize:15,marginTop:4}}>
-                  {isLoading?<span style={{display:'flex',alignItems:'center',gap:8}}><span className="spinner" style={{width:14,height:14,borderColor:'rgba(255,255,255,.4)',borderTopColor:'#fff'}}/>Creating account…</span>:'Start free trial →'}
+                <button type="submit" disabled={busy} className="btn-primary" style={{width:'100%',justifyContent:'center',padding:'13px',fontSize:15,marginTop:4}}>
+                  {busy?<span style={{display:'flex',alignItems:'center',gap:8}}><span className="spinner" style={{width:14,height:14,borderColor:'rgba(255,255,255,.4)',borderTopColor:'#fff'}}/>Setting up your trial…</span>:`Continue to payment →`}
                 </button>
               </form>
               <div className="divider"/>
@@ -84,5 +119,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" style={{ width: 32, height: 32 }} />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   )
 }

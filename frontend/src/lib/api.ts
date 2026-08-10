@@ -107,7 +107,8 @@ export const aiApi = {
 
 // ─── Payments ────────────────────────────────────────────────────────────────
 export const paymentsApi = {
-  createSubscription: (plan: string) => api.post(`/payments/create-subscription/${plan}`),
+  createSubscription: (plan: string, newSignup: boolean = false) =>
+    api.post(`/payments/create-subscription/${plan}${newSignup ? '?new_signup=true' : ''}`),
   createPortal: () => api.post('/payments/create-portal'),
   collectDeposit: (data: any) => api.post('/payments/collect-deposit', null, { params: data }),
   stripeConnectOnboard: () => api.post('/payments/stripe-connect/onboard'),

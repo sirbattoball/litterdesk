@@ -90,8 +90,12 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
         subscription_plan="free",
         subscription_active=False,
     )
-    # Give 7-day trial on registration
-    user.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=7)
+    # No trial is granted here anymore. Registration just creates the
+    # account; the frontend immediately sends the user to Stripe Checkout
+    # to pick Starter or Pro and start their 7-day trial with a card on
+    # file. trial_ends_at gets set from the real Stripe subscription once
+    # checkout completes (see the webhook handler in payments.py) — that
+    # way Stripe's trial date is always the source of truth, not ours.
 
     db.add(user)
     db.commit()

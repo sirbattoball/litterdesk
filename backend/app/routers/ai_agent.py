@@ -44,7 +44,7 @@ def generate_contract(
     current_user: User = Depends(get_current_user)
 ):
     """Generate an AI-written puppy sale contract."""
-    if not current_user.subscription_active and current_user.subscription_plan not in ["pro", "kennel"]:
+    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
         raise HTTPException(403, "Contract generation requires Pro plan")
 
     buyer = db.query(Buyer).filter(
@@ -115,7 +115,7 @@ def draft_email(
     current_user: User = Depends(get_current_user)
 ):
     """Draft a follow-up email to a buyer."""
-    if not current_user.subscription_active and current_user.subscription_plan not in ["pro", "kennel"]:
+    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
         raise HTTPException(403, "Email drafting requires Pro plan")
 
     buyer = db.query(Buyer).filter(
@@ -142,8 +142,8 @@ def match_litter(
     current_user: User = Depends(get_current_user)
 ):
     """AI-match buyers on waitlist to available puppies."""
-    if not current_user.subscription_active:
-        raise HTTPException(403, "AI matching requires active subscription")
+    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
+        raise HTTPException(403, "AI matching requires Pro plan")
 
     litter = db.query(Litter).filter(
         Litter.id == litter_id,
