@@ -1,0 +1,158 @@
+diff --git a/backend/app/main.py b/backend/app/main.py
+index b3e3c0f..4f2778b 100644
+--- a/backend/app/main.py
++++ b/backend/app/main.py
+@@ -1,15 +1,75 @@
+ from fastapi import FastAPI
+ from fastapi.middleware.cors import CORSMiddleware
+ from contextlib import asynccontextmanager
++import logging
++
++from sqlalchemy import text
+ 
+ from app.database import engine, Base
+ from app.routers import auth, dogs, litters, buyers, contracts, payments, ai_agent, dashboard, leads
+ from app.config import settings
+ 
++logger = logging.getLogger("uvicorn.error")
++
++# (table, column) pairs that need to be timestamp-with-timezone.
++_TIMEZONE_AWARE_COLUMNS = [
++    ('users', 'reset_token_expires'), ('users', 'trial_ends_at'),
++    ('users', 'created_at'), ('users', 'updated_at'), ('users', 'last_login'),
++    ('dogs', 'created_at'), ('dogs', 'updated_at'),
++    ('litters', 'created_at'), ('litters', 'updated_at'),
++    ('puppies', 'created_at'),
++    ('buyers', 'last_contacted'), ('buyers', 'follow_up_date'),
++    ('buyers', 'created_at'), ('buyers', 'updated_at'),
++    ('buyer_litter_matches', 'created_at'),
++    ('contracts', 'sent_at'), ('contracts', 'signed_at'),
++    ('contracts', 'created_at'), ('contracts', 'updated_at'),
++    ('health_records', 'created_at'),
++    ('communications', 'sent_at'),
++    ('leads', 'created_at'),
++    ('contact_messages', 'created_at'),
++]
++
++
++def ensure_timezone_aware_columns():
++    """Self-healing fix for columns that were created without timezone=True.
++
++    This project's tables were created directly by SQLAlchemy's
++    create_all() rather than through Alembic (there's no alembic_version
++    table in production), so a normal `alembic upgrade head` can't be run
++    safely here — it would try to re-create tables that already exist.
++
++    Instead, this checks each column's actual current type via
++    information_schema and only alters the ones that still need it. Safe
++    to run on every startup: already-correct columns are skipped, and a
++    missing column/table is logged and skipped rather than crashing the
++    app.
++    """
++    with engine.begin() as conn:
++        for table, column in _TIMEZONE_AWARE_COLUMNS:
++            try:
++                result = conn.execute(text(
++                    "SELECT data_type FROM information_schema.columns "
++                    "WHERE table_name = :t AND column_name = :c"
++                ), {"t": table, "c": column}).fetchone()
++
++                if result is None:
++                    logger.warning(f"Skipping {table}.{column}: column not found")
++                    continue
++
++                if result[0] == "timestamp without time zone":
++                    conn.execute(text(
++                        f'ALTER TABLE {table} ALTER COLUMN {column} '
++                        f"TYPE TIMESTAMP WITH TIME ZONE USING {column} AT TIME ZONE 'UTC'"
++                    ))
++                    logger.info(f"Made {table}.{column} timezone-aware")
++            except Exception as e:
++                logger.warning(f"Skipping {table}.{column}: {e}")
++
+ 
+ @asynccontextmanager
+ async def lifespan(app: FastAPI):
+     Base.metadata.create_all(bind=engine)
++    ensure_timezone_aware_columns()
+     yield
+ 
+ 
+diff --git a/backend/migrations/versions/002_timezone_aware_datetimes.py b/backend/migrations/versions/002_timezone_aware_datetimes.py
+deleted file mode 100644
+index 93f94f0..0000000
+--- a/backend/migrations/versions/002_timezone_aware_datetimes.py
++++ /dev/null
+@@ -1,72 +0,0 @@
+-"""Make all DateTime columns timezone-aware
+-
+-Every DateTime column was created without timezone=True, and every value
+-written into them so far came from datetime.utcnow() — a real UTC instant,
+-just missing the tag saying so. That untagged value gets sent to the
+-frontend, where JavaScript's Date parser assumes an untagged timestamp is
+-already in the browser's local timezone, silently shifting every date/time
+-shown in the app forward by the user's UTC offset (visible as trial
+-countdowns and activity timestamps being several hours ahead of reality).
+-
+-This migration converts every column to `timestamp with time zone` and
+-tags the existing data as UTC via `AT TIME ZONE 'UTC'` — this does NOT
+-change any stored instant, it only adds the missing timezone tag so
+-Postgres (and everything downstream) knows what it already meant.
+-
+-Revision ID: 002_timezone_aware_datetimes
+-Revises: 001_initial
+-Create Date: 2026-08-10
+-"""
+-from alembic import op
+-import sqlalchemy as sa
+-
+-revision = '002_timezone_aware_datetimes'
+-down_revision = '001_initial'
+-branch_labels = None
+-depends_on = None
+-
+-
+-# (table, column) pairs for every DateTime column in the schema
+-DATETIME_COLUMNS = [
+-    ('users', 'reset_token_expires'),
+-    ('users', 'trial_ends_at'),
+-    ('users', 'created_at'),
+-    ('users', 'updated_at'),
+-    ('users', 'last_login'),
+-    ('dogs', 'created_at'),
+-    ('dogs', 'updated_at'),
+-    ('litters', 'created_at'),
+-    ('litters', 'updated_at'),
+-    ('puppies', 'created_at'),
+-    ('buyers', 'last_contacted'),
+-    ('buyers', 'follow_up_date'),
+-    ('buyers', 'created_at'),
+-    ('buyers', 'updated_at'),
+-    ('buyer_litter_matches', 'created_at'),
+-    ('contracts', 'sent_at'),
+-    ('contracts', 'signed_at'),
+-    ('contracts', 'created_at'),
+-    ('contracts', 'updated_at'),
+-    ('health_records', 'created_at'),
+-    ('communications', 'sent_at'),
+-    ('leads', 'created_at'),
+-    ('contact_messages', 'created_at'),
+-]
+-
+-
+-def upgrade():
+-    for table, column in DATETIME_COLUMNS:
+-        op.execute(
+-            f'ALTER TABLE {table} '
+-            f'ALTER COLUMN {column} TYPE TIMESTAMP WITH TIME ZONE '
+-            f"USING {column} AT TIME ZONE 'UTC'"
+-        )
+-
+-
+-def downgrade():
+-    for table, column in DATETIME_COLUMNS:
+-        op.execute(
+-            f'ALTER TABLE {table} '
+-            f'ALTER COLUMN {column} TYPE TIMESTAMP WITHOUT TIME ZONE '
+-            f"USING {column} AT TIME ZONE 'UTC'"
+-        )
