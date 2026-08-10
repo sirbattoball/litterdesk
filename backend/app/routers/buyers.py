@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.database import get_db
 from app.models import Buyer, Communication, BuyerLitterMatch, Litter
@@ -184,7 +184,7 @@ def log_contact(
         subject=subject,
         body=body,
     )
-    buyer.last_contacted = datetime.utcnow()
+    buyer.last_contacted = datetime.now(timezone.utc)
     db.add(comm)
     db.commit()
     return {"message": "Contact logged"}

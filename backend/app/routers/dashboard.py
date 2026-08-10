@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.database import get_db
 from app.models import User, Litter, Buyer, Contract, BuyerLitterMatch
@@ -48,8 +48,8 @@ def get_stats(
 
     follow_ups_due = db.query(Buyer).filter(
         Buyer.breeder_id == current_user.id,
-        Buyer.follow_up_date <= datetime.utcnow() + timedelta(days=1),
-        Buyer.follow_up_date >= datetime.utcnow() - timedelta(days=7),
+        Buyer.follow_up_date <= datetime.now(timezone.utc) + timedelta(days=1),
+        Buyer.follow_up_date >= datetime.now(timezone.utc) - timedelta(days=7),
     ).count()
 
     return DashboardStats(

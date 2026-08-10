@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import uuid
 import time
@@ -49,7 +49,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -91,7 +91,7 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
         subscription_active=False,
     )
     # Give 7-day trial on registration
-    user.trial_ends_at = datetime.utcnow() + timedelta(days=7)
+    user.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=7)
 
     db.add(user)
     db.commit()
@@ -110,7 +110,7 @@ def login(data: UserLogin, request: Request, db: Session = Depends(get_db)):
     if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    user.last_login = datetime.utcnow()
+    user.last_login = datetime.now(timezone.utc)
     db.commit()
 
     token = create_access_token({"sub": user.id})
@@ -143,7 +143,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
         from app.services import email_service
         reset_token = str(uuid.uuid4())
         user.reset_token = reset_token
-        user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+        user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
         db.commit()
         reset_url = f"https://litterdesk.vercel.app/reset-password/{reset_token}"
         email_service.send_email(
@@ -157,7 +157,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
 @router.post("/reset-password", status_code=204)
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.reset_token == data.token).first()
-    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
+    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
         raise HTTPException(400, "Invalid or expired reset link")
     if len(data.new_password) < 8:
         raise HTTPException(400, "New password must be at least 8 characters")

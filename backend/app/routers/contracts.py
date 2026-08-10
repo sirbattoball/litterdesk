@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from app.database import get_db
@@ -58,7 +58,7 @@ def sign_contract(token: str, buyer_name: str, db: Session = Depends(get_db)):
     if contract.status != "sent":
         raise HTTPException(400, "Contract cannot be signed in its current state")
     contract.status = "signed"
-    contract.signed_at = datetime.utcnow()
+    contract.signed_at = datetime.now(timezone.utc)
     contract.buyer_signature = buyer_name
     if contract.buyer:
         contract.buyer.status = "contract_sent"
@@ -84,7 +84,7 @@ def send_contract(contract_id: str, db: Session = Depends(get_db), current_user:
     if not contract.sign_token:
         contract.sign_token = str(uuid.uuid4())
     contract.status = "sent"
-    contract.sent_at = datetime.utcnow()
+    contract.sent_at = datetime.now(timezone.utc)
     db.commit()
     sign_url = f"{FRONTEND_URL}/sign/{contract.sign_token}"
     if settings.RESEND_API_KEY:

@@ -13,7 +13,7 @@ from app.models import User, Buyer, Litter, BuyerLitterMatch, Lead
 from app.services import ai_service
 from app.services.email_service import send_email
 from app.services.nurture_emails import NURTURE_SCHEDULE, NURTURE_EMAILS
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ def send_go_home_reminders(self):
     """
     db = SessionLocal()
     try:
-        target_date = datetime.utcnow().date() + timedelta(days=7)
+        target_date = datetime.now(timezone.utc).date() + timedelta(days=7)
         litters = db.query(Litter).filter(
             Litter.go_home_date == target_date,
             Litter.status.in_(["born", "weaning", "ready"])
@@ -74,7 +74,7 @@ def send_followup_reminders(self):
     """
     db = SessionLocal()
     try:
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         buyers_due = db.query(Buyer).filter(
             Buyer.follow_up_date >= today,
             Buyer.follow_up_date < today + timedelta(days=1),
@@ -127,7 +127,7 @@ def send_weekly_digest(self):
             User.subscription_active == True
         ).all()
 
-        week_ago = datetime.utcnow() - timedelta(days=7)
+        week_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
         for breeder in breeders:
             new_buyers = db.query(Buyer).filter(
@@ -145,8 +145,8 @@ def send_weekly_digest(self):
 
             upcoming_go_home = db.query(Litter).filter(
                 Litter.breeder_id == breeder.id,
-                Litter.go_home_date >= datetime.utcnow().date(),
-                Litter.go_home_date <= datetime.utcnow().date() + timedelta(days=14),
+                Litter.go_home_date >= datetime.now(timezone.utc).date(),
+                Litter.go_home_date <= datetime.now(timezone.utc).date() + timedelta(days=14),
             ).all()
 
             if new_buyers == 0 and new_deposits == 0 and not upcoming_go_home:
@@ -159,7 +159,7 @@ def send_weekly_digest(self):
 
             send_email(
                 to=breeder.email,
-                subject=f"LitterDesk Weekly Digest — {datetime.utcnow().strftime('%b %d')}",
+                subject=f"LitterDesk Weekly Digest — {datetime.now(timezone.utc).strftime('%b %d')}",
                 body=f"Hi {breeder.full_name},\n\n"
                      f"Here's your LitterDesk summary for the week:\n\n"
                      f"📬 New buyer inquiries: {new_buyers}\n"
@@ -183,7 +183,7 @@ def check_trial_expiry(self):
     """
     db = SessionLocal()
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # 3-day warning
         warn_date = now + timedelta(days=3)
@@ -224,7 +224,7 @@ def send_lead_nurture_emails(self):
     """
     db = SessionLocal()
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         leads = db.query(Lead).filter(
             Lead.converted_to_signup == False,
             Lead.nurture_step < len(NURTURE_SCHEDULE),

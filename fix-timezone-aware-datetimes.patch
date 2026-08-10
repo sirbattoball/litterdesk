@@ -1,0 +1,432 @@
+diff --git a/backend/app/models/__init__.py b/backend/app/models/__init__.py
+index 7f4a160..fa40094 100644
+--- a/backend/app/models/__init__.py
++++ b/backend/app/models/__init__.py
+@@ -78,23 +78,23 @@ class User(Base):
+ 
+     # Password reset
+     reset_token = Column(String, unique=True, nullable=True)
+-    reset_token_expires = Column(DateTime, nullable=True)
++    reset_token_expires = Column(DateTime(timezone=True), nullable=True)
+ 
+     # Subscription
+     subscription_plan = Column(Enum(SubscriptionPlan), default=SubscriptionPlan.free)
+     stripe_customer_id = Column(String)
+     stripe_subscription_id = Column(String)
+     subscription_active = Column(Boolean, default=False)
+-    trial_ends_at = Column(DateTime)
++    trial_ends_at = Column(DateTime(timezone=True))
+ 
+     # Stripe Connect (for deposit collection)
+     stripe_account_id = Column(String)
+     stripe_onboarded = Column(Boolean, default=False)
+ 
+     # Timestamps
+-    created_at = Column(DateTime, server_default=func.now())
+-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+-    last_login = Column(DateTime)
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
++    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
++    last_login = Column(DateTime(timezone=True))
+ 
+     # Relations
+     dogs = relationship("Dog", back_populates="owner", cascade="all, delete-orphan")
+@@ -141,8 +141,8 @@ class Dog(Base):
+     is_active = Column(Boolean, default=True)
+     is_external = Column(Boolean, default=False)  # stud dog not owned by breeder
+ 
+-    created_at = Column(DateTime, server_default=func.now())
+-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
++    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+ 
+     # Relations
+     owner = relationship("User", back_populates="dogs")
+@@ -185,8 +185,8 @@ class Litter(Base):
+     photos = Column(JSON, default=list)
+     waitlist_open = Column(Boolean, default=True)
+ 
+-    created_at = Column(DateTime, server_default=func.now())
+-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
++    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+ 
+     # Relations
+     breeder = relationship("User", back_populates="litters")
+@@ -217,7 +217,7 @@ class Puppy(Base):
+     is_available = Column(Boolean, default=True)
+     is_keeper = Column(Boolean, default=False)  # breeder keeping this one
+ 
+-    created_at = Column(DateTime, server_default=func.now())
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
+ 
+     litter = relationship("Litter", back_populates="puppies")
+     buyer_match = relationship("BuyerLitterMatch", back_populates="puppy", uselist=False)
+@@ -254,11 +254,11 @@ class Buyer(Base):
+     ai_notes = Column(Text)  # AI-generated summary of buyer fit
+ 
+     # Communication
+-    last_contacted = Column(DateTime)
+-    follow_up_date = Column(DateTime)
++    last_contacted = Column(DateTime(timezone=True))
++    follow_up_date = Column(DateTime(timezone=True))
+ 
+-    created_at = Column(DateTime, server_default=func.now())
+-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
++    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+ 
+     # Relations
+     breeder = relationship("User", back_populates="buyers")
+@@ -285,7 +285,7 @@ class BuyerLitterMatch(Base):
+     match_score = Column(Integer)  # AI-calculated match score
+     match_notes = Column(Text)
+ 
+-    created_at = Column(DateTime, server_default=func.now())
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
+ 
+     buyer = relationship("Buyer", back_populates="litter_matches")
+     litter = relationship("Litter", back_populates="buyer_litter_matches")
+@@ -316,13 +316,13 @@ class Contract(Base):
+     balance_due_date = Column(Date)
+ 
+     # Signing
+-    sent_at = Column(DateTime)
+-    signed_at = Column(DateTime)
++    sent_at = Column(DateTime(timezone=True))
++    signed_at = Column(DateTime(timezone=True))
+     buyer_signature = Column(String)
+     sign_token = Column(String, unique=True)  # for email signing link
+ 
+-    created_at = Column(DateTime, server_default=func.now())
+-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
++    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+ 
+     buyer = relationship("Buyer", back_populates="contracts")
+     breeder = relationship("User")
+@@ -345,7 +345,7 @@ class HealthRecord(Base):
+     document_url = Column(String)
+     notes = Column(Text)
+ 
+-    created_at = Column(DateTime, server_default=func.now())
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
+ 
+     dog = relationship("Dog", back_populates="health_records")
+ 
+@@ -362,7 +362,7 @@ class Communication(Base):
+     direction = Column(String)  # inbound, outbound
+     subject = Column(String)
+     body = Column(Text)
+-    sent_at = Column(DateTime, server_default=func.now())
++    sent_at = Column(DateTime(timezone=True), server_default=func.now())
+     ai_generated = Column(Boolean, default=False)
+ 
+     buyer = relationship("Buyer", back_populates="communications")
+@@ -381,7 +381,7 @@ class Lead(Base):
+     biggest_headache = Column(String)  # "buyers", "contracts", "deposits", "records"
+     nurture_step = Column(Integer, default=0)  # which sequence email they're on
+     converted_to_signup = Column(Boolean, default=False)
+-    created_at = Column(DateTime, server_default=func.now())
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
+ 
+ 
+ class ContactMessage(Base):
+@@ -393,5 +393,5 @@ class ContactMessage(Base):
+     name = Column(String)
+     email = Column(String, nullable=False, index=True)
+     message = Column(Text, nullable=False)
+-    created_at = Column(DateTime, server_default=func.now())
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
+ 
+diff --git a/backend/app/routers/auth.py b/backend/app/routers/auth.py
+index f96f7b9..7d32372 100644
+--- a/backend/app/routers/auth.py
++++ b/backend/app/routers/auth.py
+@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+ from sqlalchemy.orm import Session
+ from jose import JWTError, jwt
+ from passlib.context import CryptContext
+-from datetime import datetime, timedelta
++from datetime import datetime, timedelta, timezone
+ from typing import Optional
+ import uuid
+ import time
+@@ -49,7 +49,7 @@ def verify_password(plain: str, hashed: str) -> bool:
+ 
+ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+     to_encode = data.copy()
+-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
++    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+     to_encode.update({"exp": expire})
+     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+ 
+@@ -91,7 +91,7 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
+         subscription_active=False,
+     )
+     # Give 7-day trial on registration
+-    user.trial_ends_at = datetime.utcnow() + timedelta(days=7)
++    user.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=7)
+ 
+     db.add(user)
+     db.commit()
+@@ -110,7 +110,7 @@ def login(data: UserLogin, request: Request, db: Session = Depends(get_db)):
+     if not user or not verify_password(data.password, user.hashed_password):
+         raise HTTPException(status_code=401, detail="Invalid credentials")
+ 
+-    user.last_login = datetime.utcnow()
++    user.last_login = datetime.now(timezone.utc)
+     db.commit()
+ 
+     token = create_access_token({"sub": user.id})
+@@ -143,7 +143,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+         from app.services import email_service
+         reset_token = str(uuid.uuid4())
+         user.reset_token = reset_token
+-        user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
++        user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+         db.commit()
+         reset_url = f"https://litterdesk.vercel.app/reset-password/{reset_token}"
+         email_service.send_email(
+@@ -157,7 +157,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+ @router.post("/reset-password", status_code=204)
+ def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+     user = db.query(User).filter(User.reset_token == data.token).first()
+-    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
++    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
+         raise HTTPException(400, "Invalid or expired reset link")
+     if len(data.new_password) < 8:
+         raise HTTPException(400, "New password must be at least 8 characters")
+diff --git a/backend/app/routers/buyers.py b/backend/app/routers/buyers.py
+index 8d59c7d..40abc1c 100644
+--- a/backend/app/routers/buyers.py
++++ b/backend/app/routers/buyers.py
+@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
+ from sqlalchemy.orm import Session
+ from typing import List, Optional
+ import uuid
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from app.database import get_db
+ from app.models import Buyer, Communication, BuyerLitterMatch, Litter
+@@ -184,7 +184,7 @@ def log_contact(
+         subject=subject,
+         body=body,
+     )
+-    buyer.last_contacted = datetime.utcnow()
++    buyer.last_contacted = datetime.now(timezone.utc)
+     db.add(comm)
+     db.commit()
+     return {"message": "Contact logged"}
+diff --git a/backend/app/routers/contracts.py b/backend/app/routers/contracts.py
+index 2e2e0c2..09cae86 100644
+--- a/backend/app/routers/contracts.py
++++ b/backend/app/routers/contracts.py
+@@ -1,7 +1,7 @@
+ from fastapi import APIRouter, Depends, HTTPException
+ from sqlalchemy.orm import Session
+ from typing import List
+-from datetime import datetime
++from datetime import datetime, timezone
+ import uuid
+ 
+ from app.database import get_db
+@@ -58,7 +58,7 @@ def sign_contract(token: str, buyer_name: str, db: Session = Depends(get_db)):
+     if contract.status != "sent":
+         raise HTTPException(400, "Contract cannot be signed in its current state")
+     contract.status = "signed"
+-    contract.signed_at = datetime.utcnow()
++    contract.signed_at = datetime.now(timezone.utc)
+     contract.buyer_signature = buyer_name
+     if contract.buyer:
+         contract.buyer.status = "contract_sent"
+@@ -84,7 +84,7 @@ def send_contract(contract_id: str, db: Session = Depends(get_db), current_user:
+     if not contract.sign_token:
+         contract.sign_token = str(uuid.uuid4())
+     contract.status = "sent"
+-    contract.sent_at = datetime.utcnow()
++    contract.sent_at = datetime.now(timezone.utc)
+     db.commit()
+     sign_url = f"{FRONTEND_URL}/sign/{contract.sign_token}"
+     if settings.RESEND_API_KEY:
+diff --git a/backend/app/routers/dashboard.py b/backend/app/routers/dashboard.py
+index 04648ea..5292171 100644
+--- a/backend/app/routers/dashboard.py
++++ b/backend/app/routers/dashboard.py
+@@ -1,7 +1,7 @@
+ from fastapi import APIRouter, Depends
+ from sqlalchemy.orm import Session
+ from sqlalchemy import func
+-from datetime import datetime, timedelta
++from datetime import datetime, timedelta, timezone
+ 
+ from app.database import get_db
+ from app.models import User, Litter, Buyer, Contract, BuyerLitterMatch
+@@ -48,8 +48,8 @@ def get_stats(
+ 
+     follow_ups_due = db.query(Buyer).filter(
+         Buyer.breeder_id == current_user.id,
+-        Buyer.follow_up_date <= datetime.utcnow() + timedelta(days=1),
+-        Buyer.follow_up_date >= datetime.utcnow() - timedelta(days=7),
++        Buyer.follow_up_date <= datetime.now(timezone.utc) + timedelta(days=1),
++        Buyer.follow_up_date >= datetime.now(timezone.utc) - timedelta(days=7),
+     ).count()
+ 
+     return DashboardStats(
+diff --git a/backend/app/tasks.py b/backend/app/tasks.py
+index 81073be..7b55c3f 100644
+--- a/backend/app/tasks.py
++++ b/backend/app/tasks.py
+@@ -13,7 +13,7 @@ from app.models import User, Buyer, Litter, BuyerLitterMatch, Lead
+ from app.services import ai_service
+ from app.services.email_service import send_email
+ from app.services.nurture_emails import NURTURE_SCHEDULE, NURTURE_EMAILS
+-from datetime import datetime, timedelta
++from datetime import datetime, timedelta, timezone
+ import logging
+ 
+ logger = logging.getLogger(__name__)
+@@ -27,7 +27,7 @@ def send_go_home_reminders(self):
+     """
+     db = SessionLocal()
+     try:
+-        target_date = datetime.utcnow().date() + timedelta(days=7)
++        target_date = datetime.now(timezone.utc).date() + timedelta(days=7)
+         litters = db.query(Litter).filter(
+             Litter.go_home_date == target_date,
+             Litter.status.in_(["born", "weaning", "ready"])
+@@ -74,7 +74,7 @@ def send_followup_reminders(self):
+     """
+     db = SessionLocal()
+     try:
+-        today = datetime.utcnow().date()
++        today = datetime.now(timezone.utc).date()
+         buyers_due = db.query(Buyer).filter(
+             Buyer.follow_up_date >= today,
+             Buyer.follow_up_date < today + timedelta(days=1),
+@@ -127,7 +127,7 @@ def send_weekly_digest(self):
+             User.subscription_active == True
+         ).all()
+ 
+-        week_ago = datetime.utcnow() - timedelta(days=7)
++        week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+ 
+         for breeder in breeders:
+             new_buyers = db.query(Buyer).filter(
+@@ -145,8 +145,8 @@ def send_weekly_digest(self):
+ 
+             upcoming_go_home = db.query(Litter).filter(
+                 Litter.breeder_id == breeder.id,
+-                Litter.go_home_date >= datetime.utcnow().date(),
+-                Litter.go_home_date <= datetime.utcnow().date() + timedelta(days=14),
++                Litter.go_home_date >= datetime.now(timezone.utc).date(),
++                Litter.go_home_date <= datetime.now(timezone.utc).date() + timedelta(days=14),
+             ).all()
+ 
+             if new_buyers == 0 and new_deposits == 0 and not upcoming_go_home:
+@@ -159,7 +159,7 @@ def send_weekly_digest(self):
+ 
+             send_email(
+                 to=breeder.email,
+-                subject=f"LitterDesk Weekly Digest — {datetime.utcnow().strftime('%b %d')}",
++                subject=f"LitterDesk Weekly Digest — {datetime.now(timezone.utc).strftime('%b %d')}",
+                 body=f"Hi {breeder.full_name},\n\n"
+                      f"Here's your LitterDesk summary for the week:\n\n"
+                      f"📬 New buyer inquiries: {new_buyers}\n"
+@@ -183,7 +183,7 @@ def check_trial_expiry(self):
+     """
+     db = SessionLocal()
+     try:
+-        now = datetime.utcnow()
++        now = datetime.now(timezone.utc)
+ 
+         # 3-day warning
+         warn_date = now + timedelta(days=3)
+@@ -224,7 +224,7 @@ def send_lead_nurture_emails(self):
+     """
+     db = SessionLocal()
+     try:
+-        now = datetime.utcnow()
++        now = datetime.now(timezone.utc)
+         leads = db.query(Lead).filter(
+             Lead.converted_to_signup == False,
+             Lead.nurture_step < len(NURTURE_SCHEDULE),
+diff --git a/backend/migrations/versions/002_timezone_aware_datetimes.py b/backend/migrations/versions/002_timezone_aware_datetimes.py
+new file mode 100644
+index 0000000..93f94f0
+--- /dev/null
++++ b/backend/migrations/versions/002_timezone_aware_datetimes.py
+@@ -0,0 +1,72 @@
++"""Make all DateTime columns timezone-aware
++
++Every DateTime column was created without timezone=True, and every value
++written into them so far came from datetime.utcnow() — a real UTC instant,
++just missing the tag saying so. That untagged value gets sent to the
++frontend, where JavaScript's Date parser assumes an untagged timestamp is
++already in the browser's local timezone, silently shifting every date/time
++shown in the app forward by the user's UTC offset (visible as trial
++countdowns and activity timestamps being several hours ahead of reality).
++
++This migration converts every column to `timestamp with time zone` and
++tags the existing data as UTC via `AT TIME ZONE 'UTC'` — this does NOT
++change any stored instant, it only adds the missing timezone tag so
++Postgres (and everything downstream) knows what it already meant.
++
++Revision ID: 002_timezone_aware_datetimes
++Revises: 001_initial
++Create Date: 2026-08-10
++"""
++from alembic import op
++import sqlalchemy as sa
++
++revision = '002_timezone_aware_datetimes'
++down_revision = '001_initial'
++branch_labels = None
++depends_on = None
++
++
++# (table, column) pairs for every DateTime column in the schema
++DATETIME_COLUMNS = [
++    ('users', 'reset_token_expires'),
++    ('users', 'trial_ends_at'),
++    ('users', 'created_at'),
++    ('users', 'updated_at'),
++    ('users', 'last_login'),
++    ('dogs', 'created_at'),
++    ('dogs', 'updated_at'),
++    ('litters', 'created_at'),
++    ('litters', 'updated_at'),
++    ('puppies', 'created_at'),
++    ('buyers', 'last_contacted'),
++    ('buyers', 'follow_up_date'),
++    ('buyers', 'created_at'),
++    ('buyers', 'updated_at'),
++    ('buyer_litter_matches', 'created_at'),
++    ('contracts', 'sent_at'),
++    ('contracts', 'signed_at'),
++    ('contracts', 'created_at'),
++    ('contracts', 'updated_at'),
++    ('health_records', 'created_at'),
++    ('communications', 'sent_at'),
++    ('leads', 'created_at'),
++    ('contact_messages', 'created_at'),
++]
++
++
++def upgrade():
++    for table, column in DATETIME_COLUMNS:
++        op.execute(
++            f'ALTER TABLE {table} '
++            f'ALTER COLUMN {column} TYPE TIMESTAMP WITH TIME ZONE '
++            f"USING {column} AT TIME ZONE 'UTC'"
++        )
++
++
++def downgrade():
++    for table, column in DATETIME_COLUMNS:
++        op.execute(
++            f'ALTER TABLE {table} '
++            f'ALTER COLUMN {column} TYPE TIMESTAMP WITHOUT TIME ZONE '
++            f"USING {column} AT TIME ZONE 'UTC'"
++        )

@@ -78,23 +78,23 @@ class User(Base):
 
     # Password reset
     reset_token = Column(String, unique=True, nullable=True)
-    reset_token_expires = Column(DateTime, nullable=True)
+    reset_token_expires = Column(DateTime(timezone=True), nullable=True)
 
     # Subscription
     subscription_plan = Column(Enum(SubscriptionPlan), default=SubscriptionPlan.free)
     stripe_customer_id = Column(String)
     stripe_subscription_id = Column(String)
     subscription_active = Column(Boolean, default=False)
-    trial_ends_at = Column(DateTime)
+    trial_ends_at = Column(DateTime(timezone=True))
 
     # Stripe Connect (for deposit collection)
     stripe_account_id = Column(String)
     stripe_onboarded = Column(Boolean, default=False)
 
     # Timestamps
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    last_login = Column(DateTime)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    last_login = Column(DateTime(timezone=True))
 
     # Relations
     dogs = relationship("Dog", back_populates="owner", cascade="all, delete-orphan")
@@ -141,8 +141,8 @@ class Dog(Base):
     is_active = Column(Boolean, default=True)
     is_external = Column(Boolean, default=False)  # stud dog not owned by breeder
 
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relations
     owner = relationship("User", back_populates="dogs")
@@ -185,8 +185,8 @@ class Litter(Base):
     photos = Column(JSON, default=list)
     waitlist_open = Column(Boolean, default=True)
 
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relations
     breeder = relationship("User", back_populates="litters")
@@ -217,7 +217,7 @@ class Puppy(Base):
     is_available = Column(Boolean, default=True)
     is_keeper = Column(Boolean, default=False)  # breeder keeping this one
 
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     litter = relationship("Litter", back_populates="puppies")
     buyer_match = relationship("BuyerLitterMatch", back_populates="puppy", uselist=False)
@@ -254,11 +254,11 @@ class Buyer(Base):
     ai_notes = Column(Text)  # AI-generated summary of buyer fit
 
     # Communication
-    last_contacted = Column(DateTime)
-    follow_up_date = Column(DateTime)
+    last_contacted = Column(DateTime(timezone=True))
+    follow_up_date = Column(DateTime(timezone=True))
 
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relations
     breeder = relationship("User", back_populates="buyers")
@@ -285,7 +285,7 @@ class BuyerLitterMatch(Base):
     match_score = Column(Integer)  # AI-calculated match score
     match_notes = Column(Text)
 
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     buyer = relationship("Buyer", back_populates="litter_matches")
     litter = relationship("Litter", back_populates="buyer_litter_matches")
@@ -316,13 +316,13 @@ class Contract(Base):
     balance_due_date = Column(Date)
 
     # Signing
-    sent_at = Column(DateTime)
-    signed_at = Column(DateTime)
+    sent_at = Column(DateTime(timezone=True))
+    signed_at = Column(DateTime(timezone=True))
     buyer_signature = Column(String)
     sign_token = Column(String, unique=True)  # for email signing link
 
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     buyer = relationship("Buyer", back_populates="contracts")
     breeder = relationship("User")
@@ -345,7 +345,7 @@ class HealthRecord(Base):
     document_url = Column(String)
     notes = Column(Text)
 
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     dog = relationship("Dog", back_populates="health_records")
 
@@ -362,7 +362,7 @@ class Communication(Base):
     direction = Column(String)  # inbound, outbound
     subject = Column(String)
     body = Column(Text)
-    sent_at = Column(DateTime, server_default=func.now())
+    sent_at = Column(DateTime(timezone=True), server_default=func.now())
     ai_generated = Column(Boolean, default=False)
 
     buyer = relationship("Buyer", back_populates="communications")
@@ -381,7 +381,7 @@ class Lead(Base):
     biggest_headache = Column(String)  # "buyers", "contracts", "deposits", "records"
     nurture_step = Column(Integer, default=0)  # which sequence email they're on
     converted_to_signup = Column(Boolean, default=False)
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class ContactMessage(Base):
@@ -393,5 +393,5 @@ class ContactMessage(Base):
     name = Column(String)
     email = Column(String, nullable=False, index=True)
     message = Column(Text, nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
