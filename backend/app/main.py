@@ -18,6 +18,9 @@ app = FastAPI(
     description="Breeder operations management platform",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
+    redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
+    openapi_url="/openapi.json" if settings.ENVIRONMENT != "production" else None,
 )
 
 app.add_middleware(

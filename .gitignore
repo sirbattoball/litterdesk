@@ -1,1 +1,18 @@
 frontend/node_modules/
+
+# Secrets — never commit these
+.env
+.env.*
+!.env.example
+
+# Python
+backend/__pycache__/
+backend/**/__pycache__/
+backend/venv/
+backend/.venv/
+*.pyc
+
+# OS/editor cruft
+.DS_Store
+.vscode/
+.idea/

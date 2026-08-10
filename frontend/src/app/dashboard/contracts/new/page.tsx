@@ -67,7 +67,7 @@ export default function NewContractPage() {
     } catch (err: any) {
       const detail = err.response?.data?.detail || err.message || 'AI generation failed'
       toast.error(detail.includes('API') || detail.includes('Anthropic')
-        ? 'Anthropic API key not configured. Add ANTHROPIC_API_KEY in Railway.'
+        ? 'Anthropic API key not configured. Add ANTHROPIC_API_KEY in Render.'
         : detail)
       setStep('form')
     }

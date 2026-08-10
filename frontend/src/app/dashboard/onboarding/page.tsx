@@ -50,7 +50,7 @@ export default function OnboardingPage() {
   const progress = (step / (STEPS.length - 1)) * 100
 
   return (
-    <div style={{minHeight:'100vh',background:'radial-gradient(ellipse at 20% 60%,rgba(196,217,200,.18) 0%,transparent 55%),var(--paper)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,marginLeft:'-240px',width:'calc(100% + 240px)'}}>
+    <div style={{minHeight:'100vh',background:'radial-gradient(ellipse at 20% 60%,rgba(196,217,200,.18) 0%,transparent 55%),var(--paper)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24}}>
 
       {/* Logo */}
       <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:32}}>

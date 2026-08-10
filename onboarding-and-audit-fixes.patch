@@ -1,0 +1,199 @@
+diff --git a/.gitignore b/.gitignore
+index 6bde8b9..25fbb91 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1 +1,18 @@
+ frontend/node_modules/
++
++# Secrets — never commit these
++.env
++.env.*
++!.env.example
++
++# Python
++backend/__pycache__/
++backend/**/__pycache__/
++backend/venv/
++backend/.venv/
++*.pyc
++
++# OS/editor cruft
++.DS_Store
++.vscode/
++.idea/
+diff --git a/backend/app/main.py b/backend/app/main.py
+index b90b4c5..b3e3c0f 100644
+--- a/backend/app/main.py
++++ b/backend/app/main.py
+@@ -18,6 +18,9 @@ app = FastAPI(
+     description="Breeder operations management platform",
+     version="1.0.0",
+     lifespan=lifespan,
++    docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
++    redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
++    openapi_url="/openapi.json" if settings.ENVIRONMENT != "production" else None,
+ )
+ 
+ app.add_middleware(
+diff --git a/backend/app/routers/auth.py b/backend/app/routers/auth.py
+index 6344926..f96f7b9 100644
+--- a/backend/app/routers/auth.py
++++ b/backend/app/routers/auth.py
+@@ -1,4 +1,4 @@
+-from fastapi import APIRouter, Depends, HTTPException, status
++from fastapi import APIRouter, Depends, HTTPException, status, Request
+ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+ from sqlalchemy.orm import Session
+ from jose import JWTError, jwt
+@@ -6,6 +6,7 @@ from passlib.context import CryptContext
+ from datetime import datetime, timedelta
+ from typing import Optional
+ import uuid
++import time
+ 
+ from app.database import get_db
+ from app.models import User
+@@ -17,6 +18,26 @@ router = APIRouter()
+ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+ 
++# Simple in-memory rate limiting for login attempts.
++# Note: resets on server restart/redeploy since it's not backed by Redis —
++# this is a baseline deterrent against casual brute-forcing, not a hardened
++# defense against a sustained distributed attack.
++_login_attempts: dict[str, list[float]] = {}
++_LOGIN_MAX_ATTEMPTS = 8
++_LOGIN_WINDOW_SECONDS = 300  # 5 minutes
++
++
++def _check_login_rate_limit(key: str):
++    now = time.time()
++    attempts = [t for t in _login_attempts.get(key, []) if now - t < _LOGIN_WINDOW_SECONDS]
++    if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
++        raise HTTPException(
++            status_code=429,
++            detail="Too many login attempts. Please wait a few minutes and try again.",
++        )
++    attempts.append(now)
++    _login_attempts[key] = attempts
++
+ 
+ def hash_password(password: str) -> str:
+     return pwd_context.hash(password)
+@@ -81,7 +102,10 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
+ 
+ 
+ @router.post("/login", response_model=Token)
+-def login(data: UserLogin, db: Session = Depends(get_db)):
++def login(data: UserLogin, request: Request, db: Session = Depends(get_db)):
++    client_ip = request.client.host if request.client else "unknown"
++    _check_login_rate_limit(f"{client_ip}:{data.email.lower()}")
++
+     user = db.query(User).filter(User.email == data.email).first()
+     if not user or not verify_password(data.password, user.hashed_password):
+         raise HTTPException(status_code=401, detail="Invalid credentials")
+diff --git a/backend/app/routers/payments.py b/backend/app/routers/payments.py
+index 03d337e..9373f90 100644
+--- a/backend/app/routers/payments.py
++++ b/backend/app/routers/payments.py
+@@ -31,7 +31,7 @@ def create_subscription(
+ 
+     price_id = PLAN_PRICES[plan]
+     if not price_id:
+-        raise HTTPException(400, f"Price ID not configured for '{plan}'. Add STRIPE_PRICE_{plan.upper()} in Railway.")
++        raise HTTPException(400, f"Price ID not configured for '{plan}'. Add STRIPE_PRICE_{plan.upper()} in Render.")
+ 
+     if not settings.STRIPE_SECRET_KEY:
+         raise HTTPException(400, "Stripe key not configured.")
+diff --git a/frontend/src/app/dashboard/contracts/new/page.tsx b/frontend/src/app/dashboard/contracts/new/page.tsx
+index 6cbb693..dfd2e1a 100644
+--- a/frontend/src/app/dashboard/contracts/new/page.tsx
++++ b/frontend/src/app/dashboard/contracts/new/page.tsx
+@@ -67,7 +67,7 @@ export default function NewContractPage() {
+     } catch (err: any) {
+       const detail = err.response?.data?.detail || err.message || 'AI generation failed'
+       toast.error(detail.includes('API') || detail.includes('Anthropic')
+-        ? 'Anthropic API key not configured. Add ANTHROPIC_API_KEY in Railway.'
++        ? 'Anthropic API key not configured. Add ANTHROPIC_API_KEY in Render.'
+         : detail)
+       setStep('form')
+     }
+diff --git a/frontend/src/app/dashboard/layout.tsx b/frontend/src/app/dashboard/layout.tsx
+index 8ca011e..b04707f 100644
+--- a/frontend/src/app/dashboard/layout.tsx
++++ b/frontend/src/app/dashboard/layout.tsx
+@@ -1,7 +1,7 @@
+ 'use client'
+ 
+ import { useEffect, useState } from 'react'
+-import { useRouter } from 'next/navigation'
++import { useRouter, usePathname } from 'next/navigation'
+ import { Sidebar } from '@/components/layout/Sidebar'
+ import { TrialBanner } from '@/components/layout/TrialBanner'
+ import { useAuthStore } from '@/lib/store'
+@@ -9,6 +9,7 @@ import { useAuthStore } from '@/lib/store'
+ export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+   const { user, token } = useAuthStore()
+   const router = useRouter()
++  const pathname = usePathname()
+   const [hydrated, setHydrated] = useState(false)
+ 
+   useEffect(() => {
+@@ -33,6 +34,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
+     </div>
+   )
+ 
++  // Onboarding gets the full viewport, no sidebar — it's a focused setup flow,
++  // not a normal dashboard screen, and the full nav shouldn't be clickable
++  // before setup is done.
++  const isOnboarding = pathname?.startsWith('/dashboard/onboarding')
++  if (isOnboarding) return <>{children}</>
++
+   return (
+     <div className="shell">
+       <Sidebar />
+diff --git a/frontend/src/app/dashboard/onboarding/page.tsx b/frontend/src/app/dashboard/onboarding/page.tsx
+index c78bb65..3b0951b 100644
+--- a/frontend/src/app/dashboard/onboarding/page.tsx
++++ b/frontend/src/app/dashboard/onboarding/page.tsx
+@@ -50,7 +50,7 @@ export default function OnboardingPage() {
+   const progress = (step / (STEPS.length - 1)) * 100
+ 
+   return (
+-    <div style={{minHeight:'100vh',background:'radial-gradient(ellipse at 20% 60%,rgba(196,217,200,.18) 0%,transparent 55%),var(--paper)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,marginLeft:'-240px',width:'calc(100% + 240px)'}}>
++    <div style={{minHeight:'100vh',background:'radial-gradient(ellipse at 20% 60%,rgba(196,217,200,.18) 0%,transparent 55%),var(--paper)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24}}>
+ 
+       {/* Logo */}
+       <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:32}}>
+diff --git a/frontend/src/components/layout/Sidebar.tsx b/frontend/src/components/layout/Sidebar.tsx
+index 1ab1c1c..68f20d7 100644
+--- a/frontend/src/components/layout/Sidebar.tsx
++++ b/frontend/src/components/layout/Sidebar.tsx
+@@ -39,9 +39,24 @@ export function Sidebar() {
+     href === '/dashboard' ? pathname === href : pathname.startsWith(href)
+ 
+   const initials = user?.full_name?.split(' ').map((n:string) => n[0]).join('').slice(0,2).toUpperCase() ?? 'U'
+-  const planLabel = user?.subscription_plan
+-    ? user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
+-    : 'Free Trial'
++
++  const planLabel = (() => {
++    // Once they've actually subscribed, show the real plan name.
++    if (user?.subscription_active && user?.subscription_plan) {
++      return user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
++    }
++    // Otherwise, if they're within their trial window, say so explicitly —
++    // "Free Plan" reads as a permanent limited tier and undercuts the
++    // "7-day free trial" pitch on the landing page.
++    if (user?.trial_ends_at) {
++      const daysLeft = Math.ceil((new Date(user.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
++      if (daysLeft > 0) return `Trial · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`
++      return 'Trial expired'
++    }
++    return user?.subscription_plan
++      ? user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
++      : 'Free Trial'
++  })()
+ 
+   return (
+     <>

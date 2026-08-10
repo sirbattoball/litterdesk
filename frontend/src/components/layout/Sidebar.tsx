@@ -39,9 +39,24 @@ export function Sidebar() {
     href === '/dashboard' ? pathname === href : pathname.startsWith(href)
 
   const initials = user?.full_name?.split(' ').map((n:string) => n[0]).join('').slice(0,2).toUpperCase() ?? 'U'
-  const planLabel = user?.subscription_plan
-    ? user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
-    : 'Free Trial'
+
+  const planLabel = (() => {
+    // Once they've actually subscribed, show the real plan name.
+    if (user?.subscription_active && user?.subscription_plan) {
+      return user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
+    }
+    // Otherwise, if they're within their trial window, say so explicitly —
+    // "Free Plan" reads as a permanent limited tier and undercuts the
+    // "7-day free trial" pitch on the landing page.
+    if (user?.trial_ends_at) {
+      const daysLeft = Math.ceil((new Date(user.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      if (daysLeft > 0) return `Trial · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`
+      return 'Trial expired'
+    }
+    return user?.subscription_plan
+      ? user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
+      : 'Free Trial'
+  })()
 
   return (
     <>

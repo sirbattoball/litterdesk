@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TrialBanner } from '@/components/layout/TrialBanner'
 import { useAuthStore } from '@/lib/store'
@@ -9,6 +9,7 @@ import { useAuthStore } from '@/lib/store'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, token } = useAuthStore()
   const router = useRouter()
+  const pathname = usePathname()
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
@@ -32,6 +33,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="spinner" style={{ width: 32, height: 32 }} />
     </div>
   )
+
+  // Onboarding gets the full viewport, no sidebar — it's a focused setup flow,
+  // not a normal dashboard screen, and the full nav shouldn't be clickable
+  // before setup is done.
+  const isOnboarding = pathname?.startsWith('/dashboard/onboarding')
+  if (isOnboarding) return <>{children}</>
 
   return (
     <div className="shell">

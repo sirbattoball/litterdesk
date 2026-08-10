@@ -31,7 +31,7 @@ def create_subscription(
 
     price_id = PLAN_PRICES[plan]
     if not price_id:
-        raise HTTPException(400, f"Price ID not configured for '{plan}'. Add STRIPE_PRICE_{plan.upper()} in Railway.")
+        raise HTTPException(400, f"Price ID not configured for '{plan}'. Add STRIPE_PRICE_{plan.upper()} in Render.")
 
     if not settings.STRIPE_SECRET_KEY:
         raise HTTPException(400, "Stripe key not configured.")
