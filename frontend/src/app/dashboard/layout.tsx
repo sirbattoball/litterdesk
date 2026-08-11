@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TrialBanner } from '@/components/layout/TrialBanner'
 import { useAuthStore } from '@/lib/store'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardContent({ children }: { children: React.ReactNode }) {
   const { user, token, refreshUser } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
@@ -53,9 +54,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // back to pick a plan rather than letting them into a dashboard they
   // never actually unlocked. (Doesn't affect earlier accounts that got the
   // old automatic trial — they still have a trial_ends_at value.)
+  //
+  // Exception: Stripe redirects back here the instant checkout succeeds,
+  // but the webhook that flips subscription_active on our side is a
+  // separate, slightly-delayed server call — it can genuinely still be in
+  // flight when this page loads. `subscribed=true` only ever appears on
+  // that redirect, so treat it as trustworthy and skip the gate for this
+  // load; refreshUser() already re-syncs on every dashboard visit, so the
+  // real status catches up within a page or two regardless.
+  const justSubscribed = searchParams.get('subscribed') === 'true'
   const isUpgradePage = pathname === '/dashboard/upgrade'
   const neverActivated = !user.subscription_active && !user.trial_ends_at
-  if (neverActivated && !isUpgradePage) {
+  if (neverActivated && !isUpgradePage && !justSubscribed) {
     router.replace('/dashboard/upgrade')
     return (
       <div style={{ minHeight: '100vh', background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -78,5 +88,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </div>
     </div>
+  )
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" style={{ width: 32, height: 32 }} />
+      </div>
+    }>
+      <DashboardContent>{children}</DashboardContent>
+    </Suspense>
   )
 }

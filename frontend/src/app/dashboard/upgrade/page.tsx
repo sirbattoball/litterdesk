@@ -1,25 +1,30 @@
 'use client'
 import { paymentsApi } from '@/lib/api'
+import { useAuthStore } from '@/lib/store'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
 import Link from 'next/link'
 
 const PLANS = [
-  { key:'starter', name:'Starter', price:39, desc:'For dedicated hobby breeders',
-    features:['2 active litters','Unlimited buyer CRM','Dog health records','Go-home reminders','Email support'], cta:'Get started' },
-  { key:'pro', name:'Pro', price:89, desc:'For serious breeding programs', popular:true,
-    features:['Unlimited litters','Everything in Starter','AI contract generation','AI litter announcements & email drafting','Contract e-signing for buyers','Priority support'], cta:'Start Pro trial' },
-  { key:'kennel', name:'Kennel', price:179, desc:'Multi-breed & team operations',
-    features:['Everything in Pro','Up to 5 team members','Public kennel listing page','Buyer-facing inquiry portal','Revenue analytics & reporting'], cta:'Build my kennel →' },
+  { key:'starter', name:'Starter', price:39, desc:'Everything you need to get organized',
+    features:['Unlimited litters','Unlimited buyer CRM','Dog & health records','Waitlist management','Go-home date tracking','Contract drafting & e-sign'], cta:'Get started' },
+  { key:'pro', name:'Pro', price:89, desc:'Starter, plus AI contracts & automation', popular:true,
+    features:['Everything in Starter','Instant AI contract drafting','AI litter announcements','AI buyer email drafting','Stripe deposit collection','Priority support'], cta:'Start Pro trial' },
 ]
 
 export default function UpgradePage() {
+  const { user, refreshUser } = useAuthStore()
   const [loading, setLoading] = useState<string|null>(null)
   const handleUpgrade = async (plan: string) => {
     setLoading(plan)
     try {
       const res = await paymentsApi.createSubscription(plan)
-      window.location.href = res.data.checkout_url
+      if (res.data.switched) {
+        await refreshUser()
+        toast.success(`Switched to ${plan === 'pro' ? 'Pro' : 'Starter'} — you'll see prorated billing on your next invoice.`)
+      } else {
+        window.location.href = res.data.checkout_url
+      }
     } catch (err: any) {
       const detail = err.response?.data?.detail || ''
       if (detail.includes('Price ID not configured')) {
@@ -33,7 +38,7 @@ export default function UpgradePage() {
   return (
     <div className="page-enter">
       <div className="topbar">
-        <div><div className="topbar-title">Upgrade Plan</div><div className="topbar-sub">Every plan includes a 7-day free trial</div></div>
+        <div><div className="topbar-title">{user?.subscription_active ? 'Change Plan' : 'Upgrade Plan'}</div><div className="topbar-sub">{user?.subscription_active ? 'Switch between Starter and Pro anytime' : 'Every plan includes a 7-day free trial'}</div></div>
         <div className="topbar-right"><Link href="/dashboard" className="btn-ghost">← Back</Link></div>
       </div>
       <div className="page-body">
@@ -46,8 +51,10 @@ export default function UpgradePage() {
             <span key={t} style={{fontSize:13,color:'var(--ink-4)',fontWeight:500}}>{t}</span>
           ))}
         </div>
-        <div className="three-col animate-fade-in-up" style={{maxWidth:900,margin:'0 auto 48px',gap:16}}>
-          {PLANS.map((p,i)=>(
+        <div className="three-col animate-fade-in-up" style={{maxWidth:640,margin:'0 auto 48px',gap:16}}>
+          {PLANS.map((p,i)=>{
+            const isCurrent = user?.subscription_active && user?.subscription_plan === p.key
+            return (
             <div key={p.key} className="animate-fade-in-up" style={{animationDelay:`${i*80}ms`,position:'relative'}}>
               {p.popular&&<div style={{position:'absolute',top:-13,left:'50%',transform:'translateX(-50%)',background:'linear-gradient(135deg,var(--amber),#e8891e)',color:'#fff',fontSize:11.5,fontWeight:700,padding:'4px 16px',borderRadius:20,whiteSpace:'nowrap',zIndex:1}}>✦ Most Popular</div>}
               <div style={{borderRadius:'var(--r-2xl)',padding:28,height:'100%',...(p.popular?{background:'linear-gradient(160deg,var(--forest-l) 0%,var(--forest) 100%)',border:'2px solid rgba(255,255,255,.1)',boxShadow:'0 8px 32px rgba(26,71,48,.35)'}:{background:'var(--white)',border:'1px solid rgba(230,223,212,.7)',boxShadow:'var(--sh-sm)'})}}>
@@ -57,8 +64,8 @@ export default function UpgradePage() {
                   <span style={{fontSize:14,color:p.popular?'rgba(250,248,243,.5)':'var(--ink-4)'}}>/mo</span>
                 </div>
                 <p style={{fontSize:13,color:p.popular?'rgba(250,248,243,.6)':'var(--ink-4)',marginBottom:20,lineHeight:1.5}}>{p.desc}</p>
-                <button onClick={()=>handleUpgrade(p.key)} disabled={loading===p.key} style={{width:'100%',padding:'12px',borderRadius:'var(--r-xl)',border:'none',cursor:'pointer',fontFamily:'var(--sans)',fontSize:14,fontWeight:600,marginBottom:22,transition:'all var(--t-base) var(--ease-out)',...(p.popular?{background:'var(--cream)',color:'var(--forest)'}:{background:'linear-gradient(135deg,var(--forest-l),var(--forest))',color:'#fff',boxShadow:'0 2px 8px rgba(26,71,48,.25)'})}}>
-                  {loading===p.key?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span className="spinner" style={{width:14,height:14}}/>Opening…</span>:p.cta}
+                <button onClick={()=>handleUpgrade(p.key)} disabled={loading===p.key || isCurrent} style={{width:'100%',padding:'12px',borderRadius:'var(--r-xl)',border:'none',cursor:isCurrent?'default':'pointer',opacity:isCurrent?0.6:1,fontFamily:'var(--sans)',fontSize:14,fontWeight:600,marginBottom:22,transition:'all var(--t-base) var(--ease-out)',...(p.popular?{background:'var(--cream)',color:'var(--forest)'}:{background:'linear-gradient(135deg,var(--forest-l),var(--forest))',color:'#fff',boxShadow:'0 2px 8px rgba(26,71,48,.25)'})}}>
+                  {loading===p.key?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span className="spinner" style={{width:14,height:14}}/>{user?.subscription_active?'Switching…':'Opening…'}</span>:isCurrent?'Current plan':(user?.subscription_active?`Switch to ${p.name}`:p.cta)}
                 </button>
                 <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:9}}>
                   {p.features.map(f=>(
@@ -71,7 +78,7 @@ export default function UpgradePage() {
                 </ul>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
     </div>

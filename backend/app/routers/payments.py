@@ -58,6 +58,24 @@ def create_subscription(
             current_user.stripe_customer_id = customer.id
             db.commit()
 
+        # Already has an active subscription — this is an upgrade/downgrade
+        # between plans, not a new signup. Modify the existing Stripe
+        # subscription's price in place rather than creating a second
+        # subscription, which would bill them twice.
+        if current_user.subscription_active and current_user.stripe_subscription_id:
+            existing_sub = stripe.Subscription.retrieve(current_user.stripe_subscription_id)
+            stripe.Subscription.modify(
+                current_user.stripe_subscription_id,
+                items=[{
+                    "id": existing_sub["items"]["data"][0]["id"],
+                    "price": price_id,
+                }],
+                proration_behavior="create_prorations",
+            )
+            current_user.subscription_plan = plan
+            db.commit()
+            return {"switched": True, "plan": plan}
+
         session = stripe.checkout.Session.create(
             customer=current_user.stripe_customer_id,
             payment_method_types=["card"],
