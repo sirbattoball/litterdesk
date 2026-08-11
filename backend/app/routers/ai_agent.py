@@ -187,6 +187,9 @@ def litter_announcement(
     current_user: User = Depends(get_current_user)
 ):
     """Generate a litter announcement for email/social media."""
+    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
+        raise HTTPException(403, "AI litter announcements require Pro plan")
+
     litter = db.query(Litter).filter(
         Litter.id == litter_id,
         Litter.breeder_id == current_user.id

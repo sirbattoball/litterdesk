@@ -49,6 +49,17 @@ def create_subscription(
     )
 
     try:
+        # A stored customer ID can go stale if it was deleted directly in
+        # Stripe (manual cleanup, GDPR request, whatever) — reusing a dead
+        # ID fails checkout with a raw "No such customer" error. Verify it
+        # actually still exists first and self-heal instead of leaving the
+        # account permanently unable to subscribe again.
+        if current_user.stripe_customer_id:
+            try:
+                stripe.Customer.retrieve(current_user.stripe_customer_id)
+            except stripe.error.InvalidRequestError:
+                current_user.stripe_customer_id = None
+
         if not current_user.stripe_customer_id:
             customer = stripe.Customer.create(
                 email=current_user.email,
