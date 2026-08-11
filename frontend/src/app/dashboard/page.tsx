@@ -55,20 +55,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="page-body">
-        {!user?.subscription_active && (
-          <div className="trial-banner animate-fade-in" style={{animationDelay:'100ms'}}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{width:36,height:36,borderRadius:'var(--r-lg)',background:'rgba(200,117,26,.12)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" strokeWidth="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--amber)' }}>Free trial active</p>
-                <p style={{ fontSize: 13, color: 'var(--ink-3)' }}>Upgrade for AI contracts, unlimited litters & buyer automation</p>
-              </div>
-            </div>
-            <Link href="/dashboard/upgrade" className="btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}>Upgrade Now →</Link>
-          </div>
-        )}
 
         <div className="stats-grid stagger">
           <StatCard delay={0} label="Active Litters" value={stats?.active_litters} sub="↑ tracking in real time" color="var(--pink)" href="/dashboard/litters"

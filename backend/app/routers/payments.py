@@ -76,12 +76,21 @@ def create_subscription(
             db.commit()
             return {"switched": True, "plan": plan}
 
+        # Only grant a trial for customers who've genuinely never had one.
+        # Anyone with a trial_ends_at already set has been through Stripe
+        # Checkout before (that field only ever gets set by the webhook
+        # below) — re-subscribing them with another trial_period_days is
+        # both wrong (they're not "starting a trial") and something Stripe's
+        # own anti-abuse protection can reject outright, which is what a
+        # generic "couldn't open checkout" error usually means in practice.
+        subscription_data = {} if current_user.trial_ends_at else {"trial_period_days": 7}
+
         session = stripe.checkout.Session.create(
             customer=current_user.stripe_customer_id,
             payment_method_types=["card"],
             line_items=[{"price": price_id, "quantity": 1}],
             mode="subscription",
-            subscription_data={"trial_period_days": 7},
+            subscription_data=subscription_data,
             success_url=success_url,
             cancel_url=cancel_url,
             metadata={"user_id": current_user.id, "plan": plan},

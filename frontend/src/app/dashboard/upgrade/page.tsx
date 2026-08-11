@@ -15,6 +15,7 @@ const PLANS = [
 export default function UpgradePage() {
   const { user, refreshUser } = useAuthStore()
   const [loading, setLoading] = useState<string|null>(null)
+  const hasUsedTrial = !!user?.trial_ends_at
   const handleUpgrade = async (plan: string) => {
     setLoading(plan)
     try {
@@ -29,6 +30,8 @@ export default function UpgradePage() {
       const detail = err.response?.data?.detail || ''
       if (detail.includes('Price ID not configured')) {
         toast.error('Payments not configured yet. Contact support.')
+      } else if (detail) {
+        toast.error(detail)
       } else {
         toast.error('Could not open checkout. Try again.')
       }
@@ -38,7 +41,7 @@ export default function UpgradePage() {
   return (
     <div className="page-enter">
       <div className="topbar">
-        <div><div className="topbar-title">{user?.subscription_active ? 'Change Plan' : 'Upgrade Plan'}</div><div className="topbar-sub">{user?.subscription_active ? 'Switch between Starter and Pro anytime' : 'Every plan includes a 7-day free trial'}</div></div>
+        <div><div className="topbar-title">{user?.subscription_active ? 'Change Plan' : 'Upgrade Plan'}</div><div className="topbar-sub">{user?.subscription_active ? 'Switch between Starter and Pro anytime' : hasUsedTrial ? 'Pick a plan to continue' : 'Every plan includes a 7-day free trial'}</div></div>
         <div className="topbar-right"><Link href="/dashboard" className="btn-ghost">← Back</Link></div>
       </div>
       <div className="page-body">
@@ -47,11 +50,11 @@ export default function UpgradePage() {
           <p style={{fontSize:16,color:'var(--ink-4)',lineHeight:1.6}}>Built for professional breeders who want to run a tighter operation.</p>
         </div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:28,marginBottom:36,flexWrap:'wrap'}}>
-          {['🔒 SSL secured','💳 Cancel anytime','7-day free trial'].map(t=>(
+          {(hasUsedTrial ? ['🔒 SSL secured','💳 Cancel anytime'] : ['🔒 SSL secured','💳 Cancel anytime','7-day free trial']).map(t=>(
             <span key={t} style={{fontSize:13,color:'var(--ink-4)',fontWeight:500}}>{t}</span>
           ))}
         </div>
-        <div className="three-col animate-fade-in-up" style={{maxWidth:640,margin:'0 auto 48px',gap:16}}>
+        <div className="two-col animate-fade-in-up" style={{maxWidth:820,margin:'0 auto 48px',gap:20}}>
           {PLANS.map((p,i)=>{
             const isCurrent = user?.subscription_active && user?.subscription_plan === p.key
             return (
@@ -65,7 +68,7 @@ export default function UpgradePage() {
                 </div>
                 <p style={{fontSize:13,color:p.popular?'rgba(250,248,243,.6)':'var(--ink-4)',marginBottom:20,lineHeight:1.5}}>{p.desc}</p>
                 <button onClick={()=>handleUpgrade(p.key)} disabled={loading===p.key || isCurrent} style={{width:'100%',padding:'12px',borderRadius:'var(--r-xl)',border:'none',cursor:isCurrent?'default':'pointer',opacity:isCurrent?0.6:1,fontFamily:'var(--sans)',fontSize:14,fontWeight:600,marginBottom:22,transition:'all var(--t-base) var(--ease-out)',...(p.popular?{background:'var(--cream)',color:'var(--forest)'}:{background:'linear-gradient(135deg,var(--forest-l),var(--forest))',color:'#fff',boxShadow:'0 2px 8px rgba(26,71,48,.25)'})}}>
-                  {loading===p.key?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span className="spinner" style={{width:14,height:14}}/>{user?.subscription_active?'Switching…':'Opening…'}</span>:isCurrent?'Current plan':(user?.subscription_active?`Switch to ${p.name}`:p.cta)}
+                  {loading===p.key?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span className="spinner" style={{width:14,height:14}}/>{user?.subscription_active?'Switching…':'Opening…'}</span>:isCurrent?'Current plan':(user?.subscription_active?`Switch to ${p.name}`:hasUsedTrial?'Subscribe':p.cta)}
                 </button>
                 <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:9}}>
                   {p.features.map(f=>(
