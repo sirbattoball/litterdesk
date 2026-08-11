@@ -1,0 +1,51 @@
+diff --git a/frontend/src/components/layout/TrialBanner.tsx b/frontend/src/components/layout/TrialBanner.tsx
+index cbba3ac..0967157 100644
+--- a/frontend/src/components/layout/TrialBanner.tsx
++++ b/frontend/src/components/layout/TrialBanner.tsx
+@@ -6,16 +6,25 @@ import { useAuthStore } from '@/lib/store'
+ export function TrialBanner() {
+   const { user } = useAuthStore()
+ 
+-  // Paying customers never see this.
+-  if (!user || user.subscription_active || !user.trial_ends_at) return null
++  if (!user || !user.trial_ends_at) return null
+ 
+   const endsAt = new Date(user.trial_ends_at)
+   const now = new Date()
+   const msLeft = endsAt.getTime() - now.getTime()
+   const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24))
+-
+   const expired = msLeft <= 0
++
++  // Two kinds of accounts can reach this point:
++  // - New-flow signups already have a card on file (Stripe trial ==
++  //   subscription_active from day one), so once the trial window ends,
++  //   billing has already started normally — nothing to nag about.
++  // - Legacy no-card accounts never had subscription_active flip true, so
++  //   once their trial ends they're stuck on free-tier limits until they
++  //   actually upgrade — keep nudging those.
++  if (expired && user.subscription_active) return null
++
+   const urgent = !expired && daysLeft <= 2
++  const hasCardOnFile = user.subscription_active
+ 
+   const bg = expired
+     ? 'var(--red-f)'
+@@ -33,6 +42,8 @@ export function TrialBanner() {
+     ? `Your free trial ends in ${daysLeft} days.`
+     : `${daysLeft} days left in your free trial.`
+ 
++  const ctaText = expired ? 'Upgrade now →' : hasCardOnFile ? 'Manage plan →' : 'Add payment method →'
++
+   return (
+     <div
+       style={{
+@@ -58,7 +69,7 @@ export function TrialBanner() {
+           whiteSpace: 'nowrap',
+         }}
+       >
+-        {expired ? 'Upgrade now →' : 'Add payment method →'}
++        {ctaText}
+       </Link>
+     </div>
+   )
