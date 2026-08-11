@@ -1,0 +1,24 @@
+diff --git a/frontend/src/app/dashboard/onboarding/page.tsx b/frontend/src/app/dashboard/onboarding/page.tsx
+index 9845733..ece5254 100644
+--- a/frontend/src/app/dashboard/onboarding/page.tsx
++++ b/frontend/src/app/dashboard/onboarding/page.tsx
+@@ -16,7 +16,7 @@ export default function OnboardingPage() {
+   const router = useRouter()
+   const [step, setStep] = useState(0)
+   const [saving, setSaving] = useState(false)
+-  const [litter, setLitter] = useState({ breed: 'Golden Retriever', status: 'planned', num_males: 0, num_females: 0, puppy_price: '', go_home_date: '' })
++  const [litter, setLitter] = useState({ breed: 'Golden Retriever', status: 'planned', num_males: '', num_females: '', puppy_price: '', go_home_date: '' })
+   const [dog, setDog] = useState({ name: '', breed: 'Golden Retriever', sex: 'female' })
+   const [skipDog, setSkipDog] = useState(false)
+ 
+@@ -127,8 +127,8 @@ export default function OnboardingPage() {
+               </div>
+             </div>
+             <div className="two-col">
+-              <div className="field"><label className="label">Males</label><input type="number" className="input" min={0} value={litter.num_males} onChange={e=>setLitter(l=>({...l,num_males:+e.target.value}))} /></div>
+-              <div className="field"><label className="label">Females</label><input type="number" className="input" min={0} value={litter.num_females} onChange={e=>setLitter(l=>({...l,num_females:+e.target.value}))} /></div>
++              <div className="field"><label className="label">Males</label><input type="number" className="input" min={0} value={litter.num_males} onChange={e=>setLitter(l=>({...l,num_males:e.target.value}))} /></div>
++              <div className="field"><label className="label">Females</label><input type="number" className="input" min={0} value={litter.num_females} onChange={e=>setLitter(l=>({...l,num_females:e.target.value}))} /></div>
+             </div>
+             <div className="two-col">
+               <div className="field"><label className="label">Puppy price ($)</label><input type="number" className="input" placeholder="2800" value={litter.puppy_price} onChange={e=>setLitter(l=>({...l,puppy_price:e.target.value}))} /></div>
