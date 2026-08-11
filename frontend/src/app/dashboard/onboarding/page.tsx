@@ -109,7 +109,7 @@ export default function OnboardingPage() {
             <div style={{marginBottom:24}}>
               <div style={{fontSize:12,fontWeight:700,color:'var(--forest-ll)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Step 1 of 3</div>
               <h2 style={{fontFamily:'var(--serif)',fontSize:24,color:'var(--ink)',marginBottom:6}}>Add your first litter</h2>
-              <p style={{fontSize:14,color:'var(--ink-4)'}}>Even a planned or future litter is fine — you can edit everything later.</p>
+              <p style={{fontSize:14,color:'var(--ink-3)'}}>Even a planned or future litter is fine — you can edit everything later.</p>
             </div>
 
             <div className="two-col">
@@ -150,7 +150,7 @@ export default function OnboardingPage() {
             <div style={{marginBottom:24}}>
               <div style={{fontSize:12,fontWeight:700,color:'var(--forest-ll)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Step 2 of 3</div>
               <h2 style={{fontFamily:'var(--serif)',fontSize:24,color:'var(--ink)',marginBottom:6}}>Add your dam or sire</h2>
-              <p style={{fontSize:14,color:'var(--ink-4)'}}>Health records and pedigree tracking starts here. You can skip this for now.</p>
+              <p style={{fontSize:14,color:'var(--ink-3)'}}>Health records and pedigree tracking starts here. You can skip this for now.</p>
             </div>
 
             {!skipDog ? (
@@ -183,7 +183,7 @@ export default function OnboardingPage() {
               </>
             ) : (
               <>
-                <p style={{fontSize:14,color:'var(--ink-4)',marginBottom:20}}>No problem — you can add dogs anytime from the My Dogs section.</p>
+                <p style={{fontSize:14,color:'var(--ink-3)',marginBottom:20}}>No problem — you can add dogs anytime from the My Dogs section.</p>
                 <div style={{display:'flex',gap:10}}>
                   <button onClick={() => setSkipDog(false)} className="btn-ghost">← Back</button>
                   <button onClick={() => setStep(3)} className="btn-primary" style={{flex:1,justifyContent:'center',padding:'12px',fontSize:15}}>Continue →</button>
