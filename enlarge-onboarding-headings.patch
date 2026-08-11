@@ -1,0 +1,22 @@
+diff --git a/frontend/src/app/dashboard/onboarding/page.tsx b/frontend/src/app/dashboard/onboarding/page.tsx
+index ab0d01c..9845733 100644
+--- a/frontend/src/app/dashboard/onboarding/page.tsx
++++ b/frontend/src/app/dashboard/onboarding/page.tsx
+@@ -108,7 +108,7 @@ export default function OnboardingPage() {
+           <div className="card animate-fade-in-up" style={{padding:32}}>
+             <div style={{marginBottom:24}}>
+               <div style={{fontSize:12,fontWeight:700,color:'var(--forest-ll)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Step 1 of 3</div>
+-              <h2 style={{fontFamily:'var(--serif)',fontSize:24,color:'var(--ink)',marginBottom:6}}>Add your first litter</h2>
++              <h2 style={{fontFamily:'var(--serif)',fontSize:28,color:'var(--ink)',marginBottom:8,letterSpacing:'-.2px'}}>Add your first litter</h2>
+               <p style={{fontSize:14,color:'var(--ink-3)'}}>Even a planned or future litter is fine — you can edit everything later.</p>
+             </div>
+ 
+@@ -149,7 +149,7 @@ export default function OnboardingPage() {
+           <div className="card animate-fade-in-up" style={{padding:32}}>
+             <div style={{marginBottom:24}}>
+               <div style={{fontSize:12,fontWeight:700,color:'var(--forest-ll)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Step 2 of 3</div>
+-              <h2 style={{fontFamily:'var(--serif)',fontSize:24,color:'var(--ink)',marginBottom:6}}>Add your dam or sire</h2>
++              <h2 style={{fontFamily:'var(--serif)',fontSize:28,color:'var(--ink)',marginBottom:8,letterSpacing:'-.2px'}}>Add your dam or sire</h2>
+               <p style={{fontSize:14,color:'var(--ink-3)'}}>Health records and pedigree tracking starts here. You can skip this for now.</p>
+             </div>
+ 
