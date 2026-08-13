@@ -1,0 +1,17 @@
+diff --git a/frontend/src/app/dashboard/upgrade/page.tsx b/frontend/src/app/dashboard/upgrade/page.tsx
+index b7db122..f18b5e9 100644
+--- a/frontend/src/app/dashboard/upgrade/page.tsx
++++ b/frontend/src/app/dashboard/upgrade/page.tsx
+@@ -48,8 +48,10 @@ export default function UpgradePage() {
+         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:22,marginBottom:32,marginTop:8,flexWrap:'wrap'}}>
+           {[
+             {icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, text:'SSL secured'},
+-            {icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>, text:'Cancel anytime'},
+-            ...(hasUsedTrial ? [] : [{icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>, text:'7-day free trial'}]),
++            ...(hasUsedTrial ? [] : [
++              {icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>, text:'Cancel anytime'},
++              {icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>, text:'7-day free trial'},
++            ]),
+           ].map(t=>(
+             <span key={t.text} style={{display:'flex',alignItems:'center',gap:6,fontSize:13,color:'var(--ink-3)',fontWeight:500}}>{t.icon}{t.text}</span>
+           ))}
