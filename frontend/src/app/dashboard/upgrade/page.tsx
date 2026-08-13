@@ -44,14 +44,14 @@ export default function UpgradePage() {
         <div><div className="topbar-title">{user?.subscription_active ? 'Change Plan' : 'Upgrade Plan'}</div><div className="topbar-sub">{user?.subscription_active ? 'Switch between Starter and Pro anytime' : hasUsedTrial ? 'Pick a plan to continue' : 'Every plan includes a 7-day free trial'}</div></div>
         <div className="topbar-right"><Link href="/dashboard" className="btn-ghost">← Back</Link></div>
       </div>
-      <div className="page-body">
-        <div style={{textAlign:'center',marginBottom:40,maxWidth:520,margin:'0 auto 40px'}}>
-          <h2 style={{fontFamily:'var(--serif)',fontSize:34,color:'var(--ink)',marginBottom:10,letterSpacing:'-.3px'}}>Simple, honest pricing</h2>
-          <p style={{fontSize:16,color:'var(--ink-4)',lineHeight:1.6}}>Built for professional breeders who want to run a tighter operation.</p>
-        </div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:28,marginBottom:36,flexWrap:'wrap'}}>
-          {(hasUsedTrial ? ['🔒 SSL secured','💳 Cancel anytime'] : ['🔒 SSL secured','💳 Cancel anytime','7-day free trial']).map(t=>(
-            <span key={t} style={{fontSize:13,color:'var(--ink-4)',fontWeight:500}}>{t}</span>
+      <div className="page-body" style={{background:'radial-gradient(ellipse at 15% 0%,rgba(196,217,200,.22) 0%,transparent 55%),radial-gradient(ellipse at 85% 15%,rgba(200,117,26,.06) 0%,transparent 50%)'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:22,marginBottom:32,marginTop:8,flexWrap:'wrap'}}>
+          {[
+            {icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, text:'SSL secured'},
+            {icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>, text:'Cancel anytime'},
+            ...(hasUsedTrial ? [] : [{icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>, text:'7-day free trial'}]),
+          ].map(t=>(
+            <span key={t.text} style={{display:'flex',alignItems:'center',gap:6,fontSize:13,color:'var(--ink-3)',fontWeight:500}}>{t.icon}{t.text}</span>
           ))}
         </div>
         <div className="two-col animate-fade-in-up" style={{maxWidth:820,margin:'0 auto 48px',gap:20}}>

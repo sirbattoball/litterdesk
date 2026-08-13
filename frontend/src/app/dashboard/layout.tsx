@@ -84,7 +84,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     <div className="shell">
       <Sidebar />
       <div className="main-content">
-        <TrialBanner />
+        {!isUpgradePage && <TrialBanner />}
         {children}
       </div>
     </div>
