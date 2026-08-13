@@ -1,0 +1,23 @@
+diff --git a/backend/app/routers/payments.py b/backend/app/routers/payments.py
+index d32af59..4831cde 100644
+--- a/backend/app/routers/payments.py
++++ b/backend/app/routers/payments.py
+@@ -120,6 +120,18 @@ def create_portal(
+ ):
+     if not current_user.stripe_customer_id:
+         raise HTTPException(400, "No active subscription")
++
++    # Same staleness check as create-subscription — if this customer was
++    # deleted directly in Stripe, clear the dead reference so this doesn't
++    # keep failing on every future attempt, and tell the person clearly
++    # what's actually going on instead of surfacing a raw Stripe error.
++    try:
++        stripe.Customer.retrieve(current_user.stripe_customer_id)
++    except stripe.error.InvalidRequestError:
++        current_user.stripe_customer_id = None
++        db.commit()
++        raise HTTPException(400, "No active subscription found. Please subscribe to a plan first.")
++
+     try:
+         session = stripe.billing_portal.Session.create(
+             customer=current_user.stripe_customer_id,
