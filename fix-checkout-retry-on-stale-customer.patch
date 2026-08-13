@@ -1,0 +1,50 @@
+diff --git a/backend/app/routers/payments.py b/backend/app/routers/payments.py
+index 4831cde..df96d10 100644
+--- a/backend/app/routers/payments.py
++++ b/backend/app/routers/payments.py
+@@ -96,16 +96,35 @@ def create_subscription(
+         # generic "couldn't open checkout" error usually means in practice.
+         subscription_data = {} if current_user.trial_ends_at else {"trial_period_days": 7}
+ 
+-        session = stripe.checkout.Session.create(
+-            customer=current_user.stripe_customer_id,
+-            payment_method_types=["card"],
+-            line_items=[{"price": price_id, "quantity": 1}],
+-            mode="subscription",
+-            subscription_data=subscription_data,
+-            success_url=success_url,
+-            cancel_url=cancel_url,
+-            metadata={"user_id": current_user.id, "plan": plan},
+-        )
++        def _create_checkout_session():
++            return stripe.checkout.Session.create(
++                customer=current_user.stripe_customer_id,
++                payment_method_types=["card"],
++                line_items=[{"price": price_id, "quantity": 1}],
++                mode="subscription",
++                subscription_data=subscription_data,
++                success_url=success_url,
++                cancel_url=cancel_url,
++                metadata={"user_id": current_user.id, "plan": plan},
++            )
++
++        try:
++            session = _create_checkout_session()
++        except stripe.error.InvalidRequestError as e:
++            if "No such customer" not in str(e):
++                raise
++            # Belt-and-suspenders: the upfront check above should have
++            # caught this, but if a stale customer ID somehow still made it
++            # this far, force a brand new customer right here and retry
++            # once rather than surfacing the raw Stripe error.
++            customer = stripe.Customer.create(
++                email=current_user.email,
++                name=current_user.full_name,
++                metadata={"user_id": current_user.id},
++            )
++            current_user.stripe_customer_id = customer.id
++            db.commit()
++            session = _create_checkout_session()
+         return {"checkout_url": session.url, "session_id": session.id}
+     except stripe.error.StripeError as e:
+         raise HTTPException(400, f"Stripe error: {str(e)}")
