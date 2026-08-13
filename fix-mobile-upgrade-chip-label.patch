@@ -1,0 +1,13 @@
+diff --git a/frontend/src/components/layout/Sidebar.tsx b/frontend/src/components/layout/Sidebar.tsx
+index 68f20d7..fe19fef 100644
+--- a/frontend/src/components/layout/Sidebar.tsx
++++ b/frontend/src/components/layout/Sidebar.tsx
+@@ -132,7 +132,7 @@ export function Sidebar() {
+         <div style={{display:'flex',alignItems:'center',gap:8}}>
+           {!user?.subscription_active && (
+             <Link href="/dashboard/upgrade" className="plan-chip" style={{fontSize:11,padding:'3px 10px',textDecoration:'none'}}>
+-              ↑ Pro
++              ↑ Upgrade
+             </Link>
+           )}
+           <button onClick={logout} style={{border:'none',background:'var(--paper)',cursor:'pointer',color:'var(--ink-4)',padding:'6px 8px',borderRadius:8,fontSize:13}}>
