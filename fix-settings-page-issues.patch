@@ -1,0 +1,46 @@
+diff --git a/frontend/src/app/dashboard/settings/page.tsx b/frontend/src/app/dashboard/settings/page.tsx
+index f5bdc0d..65751f8 100644
+--- a/frontend/src/app/dashboard/settings/page.tsx
++++ b/frontend/src/app/dashboard/settings/page.tsx
+@@ -121,19 +121,27 @@ export default function SettingsPage() {
+             <div className="card" style={{padding:20}}>
+               <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+                 <span className="plan-chip" style={{fontSize:14,padding:'6px 16px'}}>
+-                  {user?.subscription_plan
+-                    ? user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
+-                    : 'Free Trial'}
++                  {(() => {
++                    if (user?.subscription_active && user?.subscription_plan) {
++                      return user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
++                    }
++                    if (user?.trial_ends_at) {
++                      const daysLeft = Math.ceil((new Date(user.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
++                      if (daysLeft > 0) return `Trial · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`
++                      return 'Trial expired'
++                    }
++                    return 'Free Trial'
++                  })()}
+                 </span>
+                 {user?.subscription_active && <span style={{fontSize:13,color:'var(--forest-ll)',fontWeight:500}}>✓ Active</span>}
+               </div>
+               {user?.subscription_active ? (
+                 <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Manage billing, download invoices, or cancel your subscription.</p>
+               ) : (
+-                <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Upgrade to unlock AI contracts, unlimited litters, and buyer automation.</p>
++                <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Upgrade to Pro to unlock AI contracts, litter announcements, and Stripe deposit collection.</p>
+               )}
+               {!user?.subscription_active && (
+-                <Link href="/dashboard/upgrade" className="btn-primary" style={{textDecoration:'none',fontSize:13}}>Upgrade to Pro →</Link>
++                <Link href="/dashboard/upgrade" className="btn-primary" style={{textDecoration:'none',fontSize:13}}>{user?.trial_ends_at ? 'Subscribe →' : 'Upgrade to Pro →'}</Link>
+               )}
+             </div>
+           </div>
+@@ -169,7 +177,7 @@ export default function SettingsPage() {
+                 Permanently delete your LitterDesk account and all data. This cannot be undone.
+               </p>
+               <button
+-                onClick={() => toast.error('Please contact support@litterdesk.com to delete your account.')}
++                onClick={() => toast.error('Please contact litterdesk.hello@gmail.com to delete your account.')}
+                 style={{fontSize:13,color:'var(--red)',background:'none',border:'1px solid rgba(196,64,64,.3)',borderRadius:'var(--r-lg)',padding:'8px 16px',cursor:'pointer',fontFamily:'var(--sans)'}}>
+                 Request account deletion
+               </button>
