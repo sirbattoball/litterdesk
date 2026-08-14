@@ -1,0 +1,49 @@
+diff --git a/frontend/public/landing.html b/frontend/public/landing.html
+index 8744f56..57e3f10 100644
+--- a/frontend/public/landing.html
++++ b/frontend/public/landing.html
+@@ -1175,7 +1175,7 @@ body::before {
+   <div class="section-center anim">
+     <div class="section-label">Pricing</div>
+     <h2 class="section-title">Less than one puppy's deposit</h2>
+-    <p class="section-sub">Every plan includes a 7-day free trial, no credit card required. Cancel anytime. At $89/month, LitterDesk costs less than 0.3% of a single puppy sale.</p>
++    <p class="section-sub">Every plan includes a 7-day free trial. A card is required to start — you won't be charged until day 8, and you can cancel anytime before then. At $89/month, LitterDesk costs less than 0.3% of a single puppy sale.</p>
+   </div>
+ 
+   <div class="pricing-grid g2" style="max-width:740px;margin:0 auto;grid-template-columns:1fr 1fr;">
+@@ -1218,10 +1218,10 @@ body::before {
+ <div class="trust-bar">
+   <div class="trust-bar-inner">
+     <h2>Built on the infrastructure serious businesses trust</h2>
+-    <p>Payments powered by Stripe. AI powered by Anthropic Claude. Hosted on Render with 99.9% uptime SLA. Your data never sold, never shared.</p>
++    <p>Payments powered by Stripe. AI powered by Anthropic Claude. Hosted on Render's cloud infrastructure. Your data never sold, never shared.</p>
+     <div class="trust-grid">
+       <div class="trust-item"><div class="trust-num">90 sec</div><div class="trust-lbl">To generate a contract</div></div>
+-      <div class="trust-item"><div class="trust-num">7-day</div><div class="trust-lbl">Free trial, no card required</div></div>
++      <div class="trust-item"><div class="trust-num">7-day</div><div class="trust-lbl">Free trial before you're billed</div></div>
+       <div class="trust-item"><div class="trust-num">0.3%</div><div class="trust-lbl">Of gross revenue to run your business</div></div>
+       <div class="trust-item"><div class="trust-num">100%</div><div class="trust-lbl">Built for dog breeders</div></div>
+     </div>
+@@ -1243,6 +1243,13 @@ body::before {
+       </button>
+       <div class="faq-a">No. LitterDesk works for all breeds and all registries — AKC, UKC, ABKC, and none at all. If you produce puppies and manage buyers, it works for you.</div>
+     </div>
++    <div class="faq-item">
++      <button class="faq-q" onclick="toggleFaq(this)">
++        Will I be charged automatically after the trial?
++        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
++      </button>
++      <div class="faq-a">A card is required to start your trial, and yes — you'll be billed for the plan you picked on day 8 unless you cancel first. Cancel anytime from your dashboard, no calls or emails required.</div>
++    </div>
+     <div class="faq-item">
+       <button class="faq-q" onclick="toggleFaq(this)">
+         How does the instant contract drafting work?
+@@ -1557,7 +1564,7 @@ const LEGAL = {
+       <h3>2. Service Description</h3>
+       <p>LitterDesk is a SaaS platform for professional dog breeders to manage litters, buyers, contracts, and deposits. We provide tools including AI-generated contracts, buyer CRM, and Stripe-powered payment collection.</p>
+       <h3>3. Subscriptions & Billing</h3>
+-      <p>LitterDesk offers paid subscription plans billed monthly. All plans include a 7-day free trial with no credit card required. You may cancel at any time. No refunds are issued for partial billing periods.</p>
++      <p>LitterDesk offers paid subscription plans billed monthly. All plans include a 7-day free trial. A valid payment method is required to start the trial, and no charge occurs until the trial period ends. You may cancel at any time. No refunds are issued for partial billing periods.</p>
+       <h3>4. Acceptable Use</h3>
+       <p>You agree not to use LitterDesk for any unlawful purpose, to misrepresent your identity, to interfere with the platform's operation, or to violate any applicable laws regarding animal welfare or commerce.</p>
+       <h3>5. AI-Generated Content</h3>
