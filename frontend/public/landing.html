@@ -1364,7 +1364,7 @@ body::before {
     <div class="footer-col">
       <h4>Company</h4>
       <a href="#" onclick="openModal('about');return false;">About</a>
-      <a href="#" onclick="openModal('blog');return false;">Blog</a>
+      <a href="/blog">Blog</a>
       <a href="mailto:litterdesk.hello@gmail.com">Contact</a>
     </div>
     <div class="footer-col">
@@ -1609,23 +1609,6 @@ function openModal(type) {
     document.body.style.overflow = 'hidden';
     return;
   }
-  if (type === 'blog') {
-    document.getElementById('modalContent').innerHTML = `
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--forest-ll);margin-bottom:8px">From The Kennel</div>
-      <h2 style="font-family:var(--serif);font-size:32px;color:var(--ink);margin-bottom:16px">The blog is coming soon</h2>
-      <p style="font-size:14.5px;color:var(--ink-2);line-height:1.8;margin-bottom:22px;">Practical, no-fluff guides for the 1–4 litter breeder — buyer screening, what actually belongs in a puppy contract, and running a serious breeding program without an ops team. First posts are in the works.</p>
-      <form id="blogNotifyForm" style="display:flex;gap:8px;flex-wrap:wrap;">
-        <input type="email" id="blogNotifyEmail" required placeholder="you@yourkennel.com"
-          style="flex:1;min-width:180px;padding:11px 16px;border-radius:10px;border:1px solid rgba(230,223,212,.9);font-size:14px;font-family:inherit;background:var(--white);color:var(--ink);box-sizing:border-box;">
-        <button type="submit" id="blogNotifyBtn" class="pricing-cta" style="background:linear-gradient(135deg,var(--forest-l),var(--forest));color:#fff;margin-bottom:0;white-space:nowrap;padding:11px 20px;">Notify me →</button>
-      </form>
-      <div id="blogNotifyMsg" style="margin-top:12px;font-size:13px;color:var(--ink-4);min-height:16px;"></div>
-    `;
-    document.getElementById('legalModal').style.display = 'block';
-    document.body.style.overflow = 'hidden';
-    wireBlogNotifyForm();
-    return;
-  }
   const doc = LEGAL[type];
   document.getElementById('modalContent').innerHTML = `
     <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--forest-ll);margin-bottom:8px">${doc.date}</div>
@@ -1634,47 +1617,6 @@ function openModal(type) {
   `;
   document.getElementById('legalModal').style.display = 'block';
   document.body.style.overflow = 'hidden';
-}
-
-function wireBlogNotifyForm() {
-  var form = document.getElementById('blogNotifyForm');
-  if (!form) return;
-  form.addEventListener('submit', function(e){
-    e.preventDefault();
-    var emailEl = document.getElementById('blogNotifyEmail');
-    var btn = document.getElementById('blogNotifyBtn');
-    var msg = document.getElementById('blogNotifyMsg');
-    var email = emailEl.value.trim();
-    if (!email) return;
-
-    btn.disabled = true;
-    var originalText = btn.textContent;
-    btn.textContent = 'Sending…';
-    msg.style.color = 'var(--ink-4)';
-    msg.textContent = '';
-
-    fetch('https://litterdesk.onrender.com/api/leads/capture', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, source: 'blog_notify' })
-    })
-    .then(function(res){
-      if (!res.ok) throw new Error('failed');
-      return res.json();
-    })
-    .then(function(){
-      form.style.display = 'none';
-      msg.style.color = 'var(--forest)';
-      msg.style.fontWeight = '600';
-      msg.textContent = "You're on the list — we'll email you when we publish.";
-    })
-    .catch(function(){
-      btn.disabled = false;
-      btn.textContent = originalText;
-      msg.style.color = '#b91c1c';
-      msg.textContent = "Something went wrong — mind trying again?";
-    });
-  });
 }
 
 function closeModal() {
