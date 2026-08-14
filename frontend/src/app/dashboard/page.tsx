@@ -112,10 +112,14 @@ export default function DashboardPage() {
             <h3 style={{fontSize:15,fontWeight:700,color:'var(--ink)',marginBottom:16}}>Quick Actions</h3>
             <div className="qa-grid" style={{marginBottom:16}}>
               {QUICK_ACTIONS.map((a, i) => (
-                <Link key={a.href} href={a.href} className="qa-btn" style={{animationDelay:`${i*40}ms`}}
-                  onMouseOver={e => {(e.currentTarget as HTMLElement).style.borderColor=a.color;(e.currentTarget as HTMLElement).style.background=a.bg}}
-                  onMouseOut={e => {(e.currentTarget as HTMLElement).style.borderColor='';(e.currentTarget as HTMLElement).style.background='var(--cream)'}}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke={a.color} strokeWidth="2">{a.icon}</svg>
+                <Link key={a.href} href={a.href} className="qa-btn" style={{
+                  animationDelay:`${i*40}ms`,
+                  background: `linear-gradient(165deg, ${a.bg} 0%, var(--white) 75%)`,
+                  borderColor: a.color,
+                }}>
+                  <div className="qa-icon" style={{ background: 'var(--white)', boxShadow: '0 1px 3px rgba(13,26,15,.1)' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke={a.color} strokeWidth="2">{a.icon}</svg>
+                  </div>
                   <div className="qa-label">{a.label}</div>
                 </Link>
               ))}

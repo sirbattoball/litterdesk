@@ -1,0 +1,49 @@
+diff --git a/frontend/src/app/dashboard/page.tsx b/frontend/src/app/dashboard/page.tsx
+index f604757..88162c9 100644
+--- a/frontend/src/app/dashboard/page.tsx
++++ b/frontend/src/app/dashboard/page.tsx
+@@ -112,10 +112,14 @@ export default function DashboardPage() {
+             <h3 style={{fontSize:15,fontWeight:700,color:'var(--ink)',marginBottom:16}}>Quick Actions</h3>
+             <div className="qa-grid" style={{marginBottom:16}}>
+               {QUICK_ACTIONS.map((a, i) => (
+-                <Link key={a.href} href={a.href} className="qa-btn" style={{animationDelay:`${i*40}ms`}}
+-                  onMouseOver={e => {(e.currentTarget as HTMLElement).style.borderColor=a.color;(e.currentTarget as HTMLElement).style.background=a.bg}}
+-                  onMouseOut={e => {(e.currentTarget as HTMLElement).style.borderColor='';(e.currentTarget as HTMLElement).style.background='var(--cream)'}}>
+-                  <svg viewBox="0 0 24 24" fill="none" stroke={a.color} strokeWidth="2">{a.icon}</svg>
++                <Link key={a.href} href={a.href} className="qa-btn" style={{
++                  animationDelay:`${i*40}ms`,
++                  background: `linear-gradient(165deg, ${a.bg} 0%, var(--white) 75%)`,
++                  borderColor: a.color,
++                }}>
++                  <div className="qa-icon" style={{ background: 'var(--white)', boxShadow: '0 1px 3px rgba(13,26,15,.1)' }}>
++                    <svg viewBox="0 0 24 24" fill="none" stroke={a.color} strokeWidth="2">{a.icon}</svg>
++                  </div>
+                   <div className="qa-label">{a.label}</div>
+                 </Link>
+               ))}
+diff --git a/frontend/src/app/globals.css b/frontend/src/app/globals.css
+index 1e9e1a1..fe2f734 100644
+--- a/frontend/src/app/globals.css
++++ b/frontend/src/app/globals.css
+@@ -377,15 +377,16 @@ body {
+ /* WHY: 4 options max. Dashed border signals "add" affordance. Color on hover = reward */
+ .qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+ .qa-btn {
+-  border: 1.5px dashed rgba(196,217,200,.8); border-radius: var(--r-lg);
++  border: 1.5px solid rgba(230,223,212,.9); border-radius: var(--r-lg);
+   padding: 18px 12px; text-align: center; cursor: pointer;
+-  background: var(--cream); font-family: var(--sans);
++  font-family: var(--sans);
+   width: 100%; transition: all var(--t-base) var(--ease-out);
+   text-decoration: none; display: block;
+ }
+-.qa-btn:hover { border-style: solid; transform: translateY(-2px); box-shadow: var(--sh-sm); }
+-.qa-btn svg { width: 22px; height: 22px; margin: 0 auto 8px; display: block; }
+-.qa-label { font-size: 13px; font-weight: 500; color: var(--ink-3); }
++.qa-btn:hover { transform: translateY(-3px); box-shadow: var(--sh-sm); }
++.qa-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
++.qa-btn svg { width: 20px; height: 20px; display: block; }
++.qa-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+ 
+ /* ─── PHASE 4+5: TRUST & PERFORMANCE ─── */
+ .trial-banner {

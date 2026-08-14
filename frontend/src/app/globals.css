@@ -377,15 +377,16 @@ body {
 /* WHY: 4 options max. Dashed border signals "add" affordance. Color on hover = reward */
 .qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .qa-btn {
-  border: 1.5px dashed rgba(196,217,200,.8); border-radius: var(--r-lg);
+  border: 1.5px solid rgba(230,223,212,.9); border-radius: var(--r-lg);
   padding: 18px 12px; text-align: center; cursor: pointer;
-  background: var(--cream); font-family: var(--sans);
+  font-family: var(--sans);
   width: 100%; transition: all var(--t-base) var(--ease-out);
   text-decoration: none; display: block;
 }
-.qa-btn:hover { border-style: solid; transform: translateY(-2px); box-shadow: var(--sh-sm); }
-.qa-btn svg { width: 22px; height: 22px; margin: 0 auto 8px; display: block; }
-.qa-label { font-size: 13px; font-weight: 500; color: var(--ink-3); }
+.qa-btn:hover { transform: translateY(-3px); box-shadow: var(--sh-sm); }
+.qa-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+.qa-btn svg { width: 20px; height: 20px; display: block; }
+.qa-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
 
 /* ─── PHASE 4+5: TRUST & PERFORMANCE ─── */
 .trial-banner {
