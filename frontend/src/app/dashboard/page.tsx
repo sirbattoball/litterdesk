@@ -5,6 +5,7 @@ import { dashboardApi } from '@/lib/api'
 import { useAuthStore } from '@/lib/store'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import { Heart, Users, TrendingUp, Bell, UserPlus, Zap, Dog } from 'lucide-react'
 
 function StatCard({ label, value, sub, color, fill, icon, href, delay = 0 }: any) {
   const inner = (
@@ -19,7 +20,7 @@ function StatCard({ label, value, sub, color, fill, icon, href, delay = 0 }: any
       <div className="stat-top">
         <span className="stat-label">{label}</span>
         <div className="stat-icon" style={{ background: 'var(--white)', boxShadow: '0 1px 3px rgba(13,26,15,.08)' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">{icon}</svg>
+          {icon}
         </div>
       </div>
       <div className="stat-value">{value ?? <span className="skeleton skeleton-title" style={{width:60,display:'inline-block'}}/>}</div>
@@ -30,10 +31,10 @@ function StatCard({ label, value, sub, color, fill, icon, href, delay = 0 }: any
 }
 
 const QUICK_ACTIONS = [
-  { href: '/dashboard/litters/new', label: 'New Litter', icon: <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>, color: 'var(--pink)', bg: 'var(--pink-f)' },
-  { href: '/dashboard/buyers/new', label: 'Add Buyer', icon: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></>, color: 'var(--blue)', bg: 'var(--blue-f)' },
-  { href: '/dashboard/contracts/new', label: 'AI Contract', icon: <path d="M13 10V3L4 14h7v7l9-11h-7z"/>, color: 'var(--purple)', bg: 'var(--purple-f)' },
-  { href: '/dashboard/dogs/new', label: 'Add Dog', icon: <><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></>, color: 'var(--amber)', bg: 'var(--amber-f)' },
+  { href: '/dashboard/litters/new', label: 'New Litter', icon: Heart, color: 'var(--pink)', bg: 'var(--pink-f)' },
+  { href: '/dashboard/buyers/new', label: 'Add Buyer', icon: UserPlus, color: 'var(--blue)', bg: 'var(--blue-f)' },
+  { href: '/dashboard/contracts/new', label: 'AI Contract', icon: Zap, color: 'var(--purple)', bg: 'var(--purple-f)' },
+  { href: '/dashboard/dogs/new', label: 'Add Dog', icon: Dog, color: 'var(--amber)', bg: 'var(--amber-f)' },
 ]
 
 export default function DashboardPage() {
@@ -65,20 +66,20 @@ export default function DashboardPage() {
 
         <div className="stats-grid stagger">
           <StatCard delay={0} label="Active Litters" value={stats?.active_litters} sub="↑ tracking in real time" color="var(--pink)" fill="var(--pink-f)" href="/dashboard/litters"
-            icon={<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>}
+            icon={<Heart size={17} color="var(--pink)" strokeWidth={2}/>}
           />
           <StatCard delay={60} label="Total Buyers" value={stats?.total_buyers} sub="↑ in your pipeline" color="var(--blue)" fill="var(--blue-f)" href="/dashboard/buyers"
-            icon={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></>}
+            icon={<Users size={17} color="var(--blue)" strokeWidth={2}/>}
           />
           <StatCard delay={120} label="Deposits Collected" value={stats?.buyers_with_deposit} sub="via Stripe Connect" color="var(--forest-ll)" fill="var(--sage-l)"
-            icon={<><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>}
+            icon={<TrendingUp size={17} color="var(--forest-ll)" strokeWidth={2}/>}
           />
           <StatCard delay={180} label="Follow-ups Due" value={stats?.follow_ups_due ?? 0}
             sub={stats?.follow_ups_due > 0 ? '⚠ Action needed' : '✓ All caught up'}
             color={stats?.follow_ups_due > 0 ? 'var(--red)' : 'var(--forest-ll)'}
             fill={stats?.follow_ups_due > 0 ? 'var(--red-f)' : 'var(--sage-l)'}
             href="/dashboard/buyers"
-            icon={<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>}
+            icon={<Bell size={17} color={stats?.follow_ups_due > 0 ? 'var(--red)' : 'var(--forest-ll)'} strokeWidth={2}/>}
           />
         </div>
 
@@ -118,7 +119,7 @@ export default function DashboardPage() {
                   borderColor: a.color,
                 }}>
                   <div className="qa-icon" style={{ background: 'var(--white)', boxShadow: '0 1px 3px rgba(13,26,15,.1)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke={a.color} strokeWidth="2">{a.icon}</svg>
+                    <a.icon size={20} color={a.color} strokeWidth={2}/>
                   </div>
                   <div className="qa-label">{a.label}</div>
                 </Link>
