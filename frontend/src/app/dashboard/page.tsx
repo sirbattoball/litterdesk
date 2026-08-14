@@ -6,12 +6,19 @@ import { useAuthStore } from '@/lib/store'
 import { format } from 'date-fns'
 import Link from 'next/link'
 
-function StatCard({ label, value, sub, color, icon, href, delay = 0 }: any) {
+function StatCard({ label, value, sub, color, fill, icon, href, delay = 0 }: any) {
   const inner = (
-    <div className="stat-card animate-fade-in-up" style={{ animationDelay: `${delay}ms` }}>
+    <div
+      className="stat-card animate-fade-in-up"
+      style={{
+        animationDelay: `${delay}ms`,
+        borderTop: `3px solid ${color}`,
+        background: `linear-gradient(165deg, ${fill} 0%, var(--white) 55%)`,
+      }}
+    >
       <div className="stat-top">
         <span className="stat-label">{label}</span>
-        <div className="stat-icon" style={{ background: color + '18' }}>
+        <div className="stat-icon" style={{ background: 'var(--white)', boxShadow: '0 1px 3px rgba(13,26,15,.08)' }}>
           <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">{icon}</svg>
         </div>
       </div>
@@ -57,18 +64,19 @@ export default function DashboardPage() {
       <div className="page-body">
 
         <div className="stats-grid stagger">
-          <StatCard delay={0} label="Active Litters" value={stats?.active_litters} sub="↑ tracking in real time" color="var(--pink)" href="/dashboard/litters"
+          <StatCard delay={0} label="Active Litters" value={stats?.active_litters} sub="↑ tracking in real time" color="var(--pink)" fill="var(--pink-f)" href="/dashboard/litters"
             icon={<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>}
           />
-          <StatCard delay={60} label="Total Buyers" value={stats?.total_buyers} sub="↑ in your pipeline" color="var(--blue)" href="/dashboard/buyers"
+          <StatCard delay={60} label="Total Buyers" value={stats?.total_buyers} sub="↑ in your pipeline" color="var(--blue)" fill="var(--blue-f)" href="/dashboard/buyers"
             icon={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></>}
           />
-          <StatCard delay={120} label="Deposits Collected" value={stats?.buyers_with_deposit} sub="via Stripe Connect" color="var(--forest-ll)"
+          <StatCard delay={120} label="Deposits Collected" value={stats?.buyers_with_deposit} sub="via Stripe Connect" color="var(--forest-ll)" fill="var(--sage-l)"
             icon={<><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>}
           />
           <StatCard delay={180} label="Follow-ups Due" value={stats?.follow_ups_due ?? 0}
             sub={stats?.follow_ups_due > 0 ? '⚠ Action needed' : '✓ All caught up'}
             color={stats?.follow_ups_due > 0 ? 'var(--red)' : 'var(--forest-ll)'}
+            fill={stats?.follow_ups_due > 0 ? 'var(--red-f)' : 'var(--sage-l)'}
             href="/dashboard/buyers"
             icon={<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>}
           />
