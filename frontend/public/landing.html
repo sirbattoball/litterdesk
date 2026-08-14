@@ -503,8 +503,14 @@ body::before {
 </script>
 
 <!-- HERO + CALCULATOR -->
-<section style="background:radial-gradient(ellipse at 15% 70%,rgba(196,217,200,.5) 0%,transparent 55%),radial-gradient(ellipse at 85% 20%,rgba(200,117,26,.22) 0%,transparent 50%),radial-gradient(ellipse at 50% 100%,rgba(26,71,48,.1) 0%,transparent 60%),var(--paper)">
-  <div class="hero">
+<section style="background:radial-gradient(ellipse at 15% 70%,rgba(196,217,200,.5) 0%,transparent 55%),radial-gradient(ellipse at 85% 20%,rgba(200,117,26,.22) 0%,transparent 50%),radial-gradient(ellipse at 50% 100%,rgba(26,71,48,.1) 0%,transparent 60%),var(--paper);position:relative;overflow:hidden;">
+  <svg width="140" height="140" viewBox="0 0 100 100" style="position:absolute;top:8%;right:4%;opacity:.05;transform:rotate(-18deg);pointer-events:none;z-index:0;">
+    <ellipse cx="50" cy="70" rx="22" ry="18" fill="var(--forest)"/><ellipse cx="25" cy="48" rx="10" ry="13" fill="var(--forest)"/><ellipse cx="75" cy="48" rx="10" ry="13" fill="var(--forest)"/><ellipse cx="35" cy="30" rx="8" ry="10" fill="var(--forest)"/><ellipse cx="65" cy="30" rx="8" ry="10" fill="var(--forest)"/>
+  </svg>
+  <svg width="90" height="90" viewBox="0 0 100 100" style="position:absolute;bottom:6%;left:2%;opacity:.045;transform:rotate(24deg);pointer-events:none;z-index:0;">
+    <ellipse cx="50" cy="70" rx="22" ry="18" fill="var(--amber)"/><ellipse cx="25" cy="48" rx="10" ry="13" fill="var(--amber)"/><ellipse cx="75" cy="48" rx="10" ry="13" fill="var(--amber)"/><ellipse cx="35" cy="30" rx="8" ry="10" fill="var(--amber)"/><ellipse cx="65" cy="30" rx="8" ry="10" fill="var(--amber)"/>
+  </svg>
+  <div class="hero" style="position:relative;z-index:1;">
     <div class="anim" style="animation-delay:0ms">
       <div class="hero-badge">
         <span class="hero-badge-dot"></span>
@@ -1352,8 +1358,11 @@ body::before {
 </script>
 
 <!-- FOOTER -->
-<footer>
-  <div class="footer-inner">
+<footer style="position:relative;overflow:hidden;">
+  <svg width="180" height="180" viewBox="0 0 100 100" style="position:absolute;top:-10%;right:-2%;opacity:.035;transform:rotate(-12deg);pointer-events:none;">
+    <ellipse cx="50" cy="70" rx="22" ry="18" fill="var(--cream)"/><ellipse cx="25" cy="48" rx="10" ry="13" fill="var(--cream)"/><ellipse cx="75" cy="48" rx="10" ry="13" fill="var(--cream)"/><ellipse cx="35" cy="30" rx="8" ry="10" fill="var(--cream)"/><ellipse cx="65" cy="30" rx="8" ry="10" fill="var(--cream)"/>
+  </svg>
+  <div class="footer-inner" style="position:relative;z-index:1;">
     <div class="footer-brand">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <div class="nav-logomark"><svg viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
