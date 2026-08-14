@@ -1,0 +1,356 @@
+diff --git a/frontend/public/landing.html b/frontend/public/landing.html
+index 69dd81e..8744f56 100644
+--- a/frontend/public/landing.html
++++ b/frontend/public/landing.html
+@@ -589,6 +589,151 @@ body::before {
+   </div>
+ </section>
+ 
++<!-- LEAD MAGNET -->
++<section class="section" style="background:linear-gradient(160deg,rgba(196,217,200,.22) 0%,var(--cream) 60%);padding:80px 40px;">
++  <div style="max-width:720px;margin:0 auto;text-align:center;">
++    <div class="section-label">Free For Breeders</div>
++    <h2 style="font-family:var(--serif);font-size:32px;line-height:1.2;color:var(--ink);margin-bottom:16px;">Ever had a buyer back out with nothing in writing?</h2>
++    <p style="font-size:16px;color:var(--ink-3);line-height:1.7;margin-bottom:32px;max-width:560px;margin-left:auto;margin-right:auto;">
++      Get the Puppy Buyer Agreement &amp; Deposit Terms template every breeder needs before their first difficult buyer &mdash; free, right now, no strings attached.
++    </p>
++
++    <form id="leadMagnetForm" style="display:flex;gap:10px;max-width:440px;margin:0 auto;flex-wrap:wrap;justify-content:center;">
++      <input type="email" id="leadMagnetEmail" required placeholder="you@yourkennel.com"
++        style="flex:1;min-width:220px;padding:14px 18px;border-radius:10px;border:1px solid rgba(230,223,212,.9);font-size:15px;font-family:inherit;background:var(--white);color:var(--ink);">
++      <button type="submit" id="leadMagnetBtn" class="pricing-cta" style="background:linear-gradient(135deg,var(--forest-l),var(--forest));color:#fff;margin-bottom:0;white-space:nowrap;">Send me the template →</button>
++    </form>
++    <div id="leadMagnetMsg" style="margin-top:14px;font-size:13.5px;color:var(--ink-4);min-height:18px;"></div>
++
++    <!-- Step 2: optional qualification, shown after email capture -->
++    <div id="leadQualify" style="display:none;max-width:440px;margin:20px auto 0;text-align:left;background:var(--white);border:1px solid rgba(230,223,212,.9);border-radius:14px;padding:22px 24px;">
++      <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px;">Two quick questions? <span style="font-weight:400;color:var(--ink-4);">(optional)</span></div>
++      <div style="font-size:12.5px;color:var(--ink-4);margin-bottom:16px;">So we only send you stuff that's actually relevant.</div>
++
++      <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">How many litters a year?</div>
++      <div id="qLitters" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
++        <button type="button" data-v="1-2" class="qualify-pill">1–2</button>
++        <button type="button" data-v="3-4" class="qualify-pill">3–4</button>
++        <button type="button" data-v="5+" class="qualify-pill">5+</button>
++      </div>
++
++      <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Biggest headache right now?</div>
++      <div id="qHeadache" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
++        <button type="button" data-v="buyers" class="qualify-pill">Buyer chaos</button>
++        <button type="button" data-v="contracts" class="qualify-pill">Contracts</button>
++        <button type="button" data-v="deposits" class="qualify-pill">Deposits</button>
++        <button type="button" data-v="records" class="qualify-pill">Records</button>
++      </div>
++
++      <div style="display:flex;gap:10px;align-items:center;">
++        <button type="button" id="qSubmit" class="btn-hero" style="padding:10px 20px;font-size:13.5px;">Done</button>
++        <button type="button" id="qSkip" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--ink-4);text-decoration:underline;">Skip</button>
++      </div>
++      <div id="qThanks" style="display:none;font-size:13.5px;color:var(--forest);font-weight:600;margin-top:4px;">Got it — thanks!</div>
++    </div>
++
++    <p style="font-size:12.5px;color:var(--ink-4);margin-top:8px;">No credit card. No trial. Just the template, straight to your inbox.</p>
++  </div>
++</section>
++
++<script>
++(function(){
++  var LEADS_API = "https://litterdesk.onrender.com/api/leads/capture";
++  var QUALIFY_API = "https://litterdesk.onrender.com/api/leads/qualify";
++  var form = document.getElementById('leadMagnetForm');
++  if (!form) return;
++  var capturedEmail = '';
++
++  form.addEventListener('submit', function(e){
++    e.preventDefault();
++    var emailInput = document.getElementById('leadMagnetEmail');
++    var btn = document.getElementById('leadMagnetBtn');
++    var msg = document.getElementById('leadMagnetMsg');
++    var email = emailInput.value.trim();
++    if (!email) return;
++
++    btn.disabled = true;
++    var originalText = btn.textContent;
++    btn.textContent = 'Sending…';
++    msg.style.color = 'var(--ink-4)';
++    msg.textContent = '';
++
++    fetch(LEADS_API, {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ email: email, source: 'buyer_agreement_template' })
++    })
++    .then(function(res){
++      if (!res.ok) throw new Error('failed');
++      return res.json();
++    })
++    .then(function(){
++      capturedEmail = email;
++      form.style.display = 'none';
++      msg.style.color = 'var(--forest)';
++      msg.style.fontWeight = '600';
++      msg.textContent = "Check your inbox — the template's on its way.";
++      var q = document.getElementById('leadQualify');
++      if (q) q.style.display = 'block';
++    })
++    .catch(function(){
++      btn.disabled = false;
++      btn.textContent = originalText;
++      msg.style.color = '#b91c1c';
++      msg.textContent = "Something went wrong — mind trying again?";
++    });
++  });
++
++  // Step 2: qualification pills
++  function wirePills(groupId){
++    var group = document.getElementById(groupId);
++    if (!group) return;
++    group.querySelectorAll('.qualify-pill').forEach(function(p){
++      p.addEventListener('click', function(){
++        group.querySelectorAll('.qualify-pill').forEach(function(x){ x.classList.remove('selected'); });
++        p.classList.add('selected');
++      });
++    });
++  }
++  wirePills('qLitters');
++  wirePills('qHeadache');
++
++  function getSelected(groupId){
++    var el = document.querySelector('#'+groupId+' .qualify-pill.selected');
++    return el ? el.getAttribute('data-v') : null;
++  }
++
++  function finishQualify(send){
++    var box = document.getElementById('leadQualify');
++    if (send) {
++      var payload = { email: capturedEmail };
++      var lit = getSelected('qLitters');
++      var ha = getSelected('qHeadache');
++      if (lit) payload.litters_per_year = lit;
++      if (ha) payload.biggest_headache = ha;
++      fetch(QUALIFY_API, {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify(payload)
++      }).catch(function(){ /* best-effort, never block the user */ });
++    }
++    var thanks = document.getElementById('qThanks');
++    var submit = document.getElementById('qSubmit');
++    var skip = document.getElementById('qSkip');
++    if (submit) submit.style.display = 'none';
++    if (skip) skip.style.display = 'none';
++    if (send && thanks) thanks.style.display = 'block';
++    if (!send && box) box.style.display = 'none';
++  }
++
++  var qSubmit = document.getElementById('qSubmit');
++  var qSkip = document.getElementById('qSkip');
++  if (qSubmit) qSubmit.addEventListener('click', function(){ finishQualify(true); });
++  if (qSkip) qSkip.addEventListener('click', function(){ finishQualify(false); });
++})();
++</script>
++
++
+ <!-- PAIN STATS -->
+ <div class="pain-bar">
+   <div class="pain-inner">
+@@ -611,6 +756,48 @@ body::before {
+   </div>
+ </div>
+ 
++<!-- SYSTEM -->
++<section class="section" style="background:var(--paper);">
++  <div class="section-center anim" style="max-width:680px;margin:0 auto 56px;text-align:center;">
++    <div class="section-label">The LitterDesk System</div>
++    <h2 class="section-title">Plan. Protect. Place.</h2>
++    <p class="section-sub">Not a feature list — a path. Every breeder who switches to LitterDesk moves through the same three phases, in the same order, every litter.</p>
++  </div>
++  <div class="g3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1100px;margin:0 auto;">
++
++    <div class="anim" style="background:linear-gradient(160deg,rgba(196,217,200,.4) 0%,var(--white) 45%);border:1px solid rgba(196,217,200,.6);border-top:3px solid var(--forest-l);border-radius:16px;padding:28px;">
++      <div style="width:36px;height:36px;border-radius:10px;background:var(--sage-l);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
++        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
++      </div>
++      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--forest);margin-bottom:6px;">Phase 1</div>
++      <div style="font-weight:700;font-size:19px;color:var(--ink);margin-bottom:10px;">Plan</div>
++      <p style="font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:14px;">Every litter and every inquiry, out of scattered texts and into one pipeline you can actually see.</p>
++      <p style="font-size:12.5px;color:var(--ink-4);line-height:1.5;border-top:1px solid rgba(230,223,212,.7);padding-top:12px;"><strong style="color:var(--ink-3);">By the end:</strong> every active litter tracked, every buyer inquiry in one place instead of six different apps.</p>
++    </div>
++
++    <div class="anim" style="background:linear-gradient(160deg,rgba(200,117,26,.08) 0%,var(--white) 45%);border:1px solid rgba(200,117,26,.2);border-top:3px solid var(--amber);border-radius:16px;padding:28px;animation-delay:80ms;">
++      <div style="width:36px;height:36px;border-radius:10px;background:var(--amber-f);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
++        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
++      </div>
++      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--amber);margin-bottom:6px;">Phase 2</div>
++      <div style="font-weight:700;font-size:19px;color:var(--ink);margin-bottom:10px;">Protect</div>
++      <p style="font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:14px;">Contracts signed and deposits collected before a puppy ever changes hands — nothing riding on a verbal agreement or a memory.</p>
++      <p style="font-size:12.5px;color:var(--ink-4);line-height:1.5;border-top:1px solid rgba(230,223,212,.7);padding-top:12px;"><strong style="color:var(--ink-3);">By the end:</strong> every sale backed by a signed contract, every deposit actually collected.</p>
++    </div>
++
++    <div class="anim" style="background:linear-gradient(160deg,rgba(196,217,200,.4) 0%,var(--white) 45%);border:1px solid rgba(196,217,200,.6);border-top:3px solid var(--forest-l);border-radius:16px;padding:28px;animation-delay:160ms;">
++      <div style="width:36px;height:36px;border-radius:10px;background:var(--sage-l);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
++        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
++      </div>
++      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--forest);margin-bottom:6px;">Phase 3</div>
++      <div style="font-weight:700;font-size:19px;color:var(--ink);margin-bottom:10px;">Place</div>
++      <p style="font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:14px;">Go-home dates tracked, health records ready, buyers followed through to the day the puppy actually goes home.</p>
++      <p style="font-size:12.5px;color:var(--ink-4);line-height:1.5;border-top:1px solid rgba(230,223,212,.7);padding-top:12px;"><strong style="color:var(--ink-3);">By the end:</strong> the litter closes clean, and the next one starts from a system — not from scratch.</p>
++    </div>
++
++  </div>
++</section>
++
+ <!-- FEATURES -->
+ <section class="section section-sage" id="features">
+   <div class="section-center anim">
+@@ -983,150 +1170,6 @@ body::before {
+   </div>
+ </section>
+ 
+-<!-- LEAD MAGNET -->
+-<section class="section" style="background:linear-gradient(160deg,rgba(196,217,200,.22) 0%,var(--cream) 60%);padding:80px 40px;">
+-  <div style="max-width:720px;margin:0 auto;text-align:center;">
+-    <div class="section-label">Free For Breeders</div>
+-    <h2 style="font-family:var(--serif);font-size:32px;line-height:1.2;color:var(--ink);margin-bottom:16px;">Not ready to try LitterDesk yet? Take the contract.</h2>
+-    <p style="font-size:16px;color:var(--ink-3);line-height:1.7;margin-bottom:32px;max-width:560px;margin-left:auto;margin-right:auto;">
+-      A free Puppy Buyer Agreement & Deposit Terms template — the same kind of document most breeders wish they'd had before their first difficult buyer. Yours free, no strings attached.
+-    </p>
+-
+-    <form id="leadMagnetForm" style="display:flex;gap:10px;max-width:440px;margin:0 auto;flex-wrap:wrap;justify-content:center;">
+-      <input type="email" id="leadMagnetEmail" required placeholder="you@yourkennel.com"
+-        style="flex:1;min-width:220px;padding:14px 18px;border-radius:10px;border:1px solid rgba(230,223,212,.9);font-size:15px;font-family:inherit;background:var(--white);color:var(--ink);">
+-      <button type="submit" id="leadMagnetBtn" class="pricing-cta" style="background:linear-gradient(135deg,var(--forest-l),var(--forest));color:#fff;margin-bottom:0;white-space:nowrap;">Send me the template →</button>
+-    </form>
+-    <div id="leadMagnetMsg" style="margin-top:14px;font-size:13.5px;color:var(--ink-4);min-height:18px;"></div>
+-
+-    <!-- Step 2: optional qualification, shown after email capture -->
+-    <div id="leadQualify" style="display:none;max-width:440px;margin:20px auto 0;text-align:left;background:var(--white);border:1px solid rgba(230,223,212,.9);border-radius:14px;padding:22px 24px;">
+-      <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px;">Two quick questions? <span style="font-weight:400;color:var(--ink-4);">(optional)</span></div>
+-      <div style="font-size:12.5px;color:var(--ink-4);margin-bottom:16px;">So we only send you stuff that's actually relevant.</div>
+-
+-      <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">How many litters a year?</div>
+-      <div id="qLitters" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+-        <button type="button" data-v="1-2" class="qualify-pill">1–2</button>
+-        <button type="button" data-v="3-4" class="qualify-pill">3–4</button>
+-        <button type="button" data-v="5+" class="qualify-pill">5+</button>
+-      </div>
+-
+-      <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Biggest headache right now?</div>
+-      <div id="qHeadache" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+-        <button type="button" data-v="buyers" class="qualify-pill">Buyer chaos</button>
+-        <button type="button" data-v="contracts" class="qualify-pill">Contracts</button>
+-        <button type="button" data-v="deposits" class="qualify-pill">Deposits</button>
+-        <button type="button" data-v="records" class="qualify-pill">Records</button>
+-      </div>
+-
+-      <div style="display:flex;gap:10px;align-items:center;">
+-        <button type="button" id="qSubmit" class="btn-hero" style="padding:10px 20px;font-size:13.5px;">Done</button>
+-        <button type="button" id="qSkip" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--ink-4);text-decoration:underline;">Skip</button>
+-      </div>
+-      <div id="qThanks" style="display:none;font-size:13.5px;color:var(--forest);font-weight:600;margin-top:4px;">Got it — thanks!</div>
+-    </div>
+-
+-    <p style="font-size:12.5px;color:var(--ink-4);margin-top:8px;">No credit card. No trial. Just the template, straight to your inbox.</p>
+-  </div>
+-</section>
+-
+-<script>
+-(function(){
+-  var LEADS_API = "https://litterdesk.onrender.com/api/leads/capture";
+-  var QUALIFY_API = "https://litterdesk.onrender.com/api/leads/qualify";
+-  var form = document.getElementById('leadMagnetForm');
+-  if (!form) return;
+-  var capturedEmail = '';
+-
+-  form.addEventListener('submit', function(e){
+-    e.preventDefault();
+-    var emailInput = document.getElementById('leadMagnetEmail');
+-    var btn = document.getElementById('leadMagnetBtn');
+-    var msg = document.getElementById('leadMagnetMsg');
+-    var email = emailInput.value.trim();
+-    if (!email) return;
+-
+-    btn.disabled = true;
+-    var originalText = btn.textContent;
+-    btn.textContent = 'Sending…';
+-    msg.style.color = 'var(--ink-4)';
+-    msg.textContent = '';
+-
+-    fetch(LEADS_API, {
+-      method: 'POST',
+-      headers: { 'Content-Type': 'application/json' },
+-      body: JSON.stringify({ email: email, source: 'buyer_agreement_template' })
+-    })
+-    .then(function(res){
+-      if (!res.ok) throw new Error('failed');
+-      return res.json();
+-    })
+-    .then(function(){
+-      capturedEmail = email;
+-      form.style.display = 'none';
+-      msg.style.color = 'var(--forest)';
+-      msg.style.fontWeight = '600';
+-      msg.textContent = "Check your inbox — the template's on its way.";
+-      var q = document.getElementById('leadQualify');
+-      if (q) q.style.display = 'block';
+-    })
+-    .catch(function(){
+-      btn.disabled = false;
+-      btn.textContent = originalText;
+-      msg.style.color = '#b91c1c';
+-      msg.textContent = "Something went wrong — mind trying again?";
+-    });
+-  });
+-
+-  // Step 2: qualification pills
+-  function wirePills(groupId){
+-    var group = document.getElementById(groupId);
+-    if (!group) return;
+-    group.querySelectorAll('.qualify-pill').forEach(function(p){
+-      p.addEventListener('click', function(){
+-        group.querySelectorAll('.qualify-pill').forEach(function(x){ x.classList.remove('selected'); });
+-        p.classList.add('selected');
+-      });
+-    });
+-  }
+-  wirePills('qLitters');
+-  wirePills('qHeadache');
+-
+-  function getSelected(groupId){
+-    var el = document.querySelector('#'+groupId+' .qualify-pill.selected');
+-    return el ? el.getAttribute('data-v') : null;
+-  }
+-
+-  function finishQualify(send){
+-    var box = document.getElementById('leadQualify');
+-    if (send) {
+-      var payload = { email: capturedEmail };
+-      var lit = getSelected('qLitters');
+-      var ha = getSelected('qHeadache');
+-      if (lit) payload.litters_per_year = lit;
+-      if (ha) payload.biggest_headache = ha;
+-      fetch(QUALIFY_API, {
+-        method: 'POST',
+-        headers: { 'Content-Type': 'application/json' },
+-        body: JSON.stringify(payload)
+-      }).catch(function(){ /* best-effort, never block the user */ });
+-    }
+-    var thanks = document.getElementById('qThanks');
+-    var submit = document.getElementById('qSubmit');
+-    var skip = document.getElementById('qSkip');
+-    if (submit) submit.style.display = 'none';
+-    if (skip) skip.style.display = 'none';
+-    if (send && thanks) thanks.style.display = 'block';
+-    if (!send && box) box.style.display = 'none';
+-  }
+-
+-  var qSubmit = document.getElementById('qSubmit');
+-  var qSkip = document.getElementById('qSkip');
+-  if (qSubmit) qSubmit.addEventListener('click', function(){ finishQualify(true); });
+-  if (qSkip) qSkip.addEventListener('click', function(){ finishQualify(false); });
+-})();
+-</script>
+-
+ <!-- PRICING -->
+ <section class="section section-warm" id="pricing">
+   <div class="section-center anim">
