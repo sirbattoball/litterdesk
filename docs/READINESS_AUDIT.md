@@ -111,3 +111,37 @@ The implementation follows Stripe's official documentation for
 
 Nothing has been pushed or deployed. No real checkout, payment, buyer email,
 contract invitation, or outreach message was sent.
+
+## Connected platform checks
+
+After Stripe and Render authorization became available:
+
+- Confirmed the selected Stripe account is `litterdesk sandbox` with
+  `livemode=false`. Its Starter and Pro prices are USD 3,900 and 8,900 cents
+  per month, matching the advertised $39/$89 plans.
+- Created a sandbox-only Starter checkout session with a seven-day trial and
+  `payment_method_collection=always`. The real hosted checkout displays
+  seven days free, then $39/month, and collects payment details. The form uses
+  Stripe test-card data and a synthetic example.com buyer address; no customer
+  data or real payment information was submitted.
+- Trial completion is pending user takeover. Automatic approval review rejected
+  automated checkout submission even in sandbox mode. No subscription was
+  started. Do not claim signup-to-webhook verification has passed.
+- Render workspace `My Workspace` was explicitly confirmed by the user. It has
+  two backend services: `litterdesk` and `litterdesk-1`. The frontend points to
+  `https://litterdesk.onrender.com`, service `srv-d8kt4jcvikkc73c5pmi0`.
+  Its live deployment is still main commit `2d5b61d`; backend auto-deploy is on,
+  and PR previews are off. No errors were returned for the requested recent
+  error-log window.
+- The Stripe sandbox has only one webhook endpoint, and it still points to
+  `https://litterdesk-production.up.railway.app/api/payments/webhook`. It also
+  lacks the new subscription/invoice/checkout lifecycle events described above.
+  This is a release blocker until the correct receiving environment and signing
+  secret are verified. The endpoint has not been changed blindly.
+- The Render connection can inspect services and deployments but does not expose
+  reading environment-variable values. Dashboard verification reached a sign-in
+  page; user sign-in is needed before checking the Stripe mode/signing-secret
+  pairing and email sender configuration. No credentials were requested in chat.
+- Draft PR: https://github.com/sirbattoball/litterdesk/pull/1 . The automatic
+  Vercel frontend preview built successfully. It still targets the existing
+  backend and is not an isolated end-to-end payment test environment.
