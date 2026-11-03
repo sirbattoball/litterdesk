@@ -145,3 +145,23 @@ After Stripe and Render authorization became available:
 - Draft PR: https://github.com/sirbattoball/litterdesk/pull/1 . The automatic
   Vercel frontend preview built successfully. It still targets the existing
   backend and is not an isolated end-to-end payment test environment.
+
+### Completed sandbox trial and production separation
+
+The user completed the hosted Stripe checkout. Stripe subsequently reported the
+session complete with `livemode=false`, a subscription in `trialing` state, a
+saved test payment method, and exactly seven days between trial_start and
+trial_end. The synthetic verification subscription was then canceled with
+invoice_now=false and prorate=false as cleanup; Stripe confirmed canceled in
+sandbox mode. No live transaction occurred. The generic deposit-result page
+was only used as this standalone checkout test's return URL; this does not
+verify the application's full onboarding/webhook path.
+
+The user also signed into the Render dashboard. The backend's Stripe secret
+was checked without displaying or recording its value: it is a live-mode key.
+Configured Starter/Pro prices are different from the sandbox IDs. Therefore,
+the old Railway endpoint discovered in sandbox cannot be assumed to be the
+production endpoint. The live Stripe environment must be authorized separately
+for read-only verification before changing production billing configuration.
+The dashboard lists RESEND_API_KEY but no FROM_EMAIL or APP_URL override, so
+verified-sender and actual return-origin checks remain release requirements.
