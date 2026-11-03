@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 import uuid
 
 from app.database import get_db
-from app.models import User, Contract, Buyer
-from app.schemas import ContractOut, ContractCreate
-from app.routers.auth import get_current_user
+from app.models import User, Contract, Buyer, Litter
+from app.schemas import ContractOut, ContractCreate, ContractUpdate
+from app.routers.auth import get_active_user as get_current_user
 from app.config import settings
 from app.services import email_service
 
@@ -35,8 +35,8 @@ def get_contract_for_signing(token: str, db: Session = Depends(get_db)):
     contract = db.query(Contract).filter(Contract.sign_token == token).first()
     if not contract:
         raise HTTPException(404, "Contract not found")
-    if contract.status in ["signed", "voided"]:
-        raise HTTPException(400, f"Contract is already {contract.status.value}")
+    if contract.status != "sent":
+        raise HTTPException(400, "Contract is not available for signing")
     return {
         "contract_id": contract.id,
         "title": contract.title,
@@ -52,7 +52,9 @@ def get_contract_for_signing(token: str, db: Session = Depends(get_db)):
 
 @router.post("/sign/{token}")
 def sign_contract(token: str, buyer_name: str, db: Session = Depends(get_db)):
-    contract = db.query(Contract).filter(Contract.sign_token == token).first()
+    if not buyer_name.strip():
+        raise HTTPException(400, "Your name is required")
+    contract = db.query(Contract).filter(Contract.sign_token == token).with_for_update().first()
     if not contract:
         raise HTTPException(404, "Contract not found")
     if contract.status != "sent":
@@ -76,27 +78,34 @@ def get_contract(contract_id: str, db: Session = Depends(get_db), current_user: 
 
 @router.post("/{contract_id}/send")
 def send_contract(contract_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    contract = db.query(Contract).filter(Contract.id == contract_id, Contract.breeder_id == current_user.id).first()
+    contract = db.query(Contract).filter(Contract.id == contract_id, Contract.breeder_id == current_user.id).with_for_update().first()
     if not contract:
         raise HTTPException(404, "Contract not found")
+    if contract.status not in ["draft", "sent"]:
+        raise HTTPException(400, "Only draft or sent contracts can be sent")
+    if not contract.content or not contract.content.strip():
+        raise HTTPException(400, "Contract content is required")
     if not contract.buyer:
         raise HTTPException(400, "Contract has no buyer attached")
     if not contract.sign_token:
         contract.sign_token = str(uuid.uuid4())
-    contract.status = "sent"
-    contract.sent_at = datetime.now(timezone.utc)
-    db.commit()
     sign_url = f"{FRONTEND_URL}/sign/{contract.sign_token}"
-    if settings.RESEND_API_KEY:
-        kennel = current_user.kennel_name or f"{current_user.full_name}'s Kennel"
-        email_service.send_contract_email(
+    if not settings.RESEND_API_KEY:
+        raise HTTPException(503, "Email delivery is not configured")
+    kennel = current_user.kennel_name or f"{current_user.full_name}'s Kennel"
+    delivered = email_service.send_contract_email(
             buyer_email=contract.buyer.email,
             buyer_name=contract.buyer.full_name,
             breeder_name=current_user.full_name,
             kennel_name=kennel,
             sign_url=sign_url,
             puppy_details=contract.title or "your puppy",
-        )
+    )
+    if not delivered:
+        raise HTTPException(502, "Email delivery failed. Please try again.")
+    contract.status = "sent"
+    contract.sent_at = datetime.now(timezone.utc)
+    db.commit()
     return {"message": "Contract sent to buyer", "sign_url": sign_url}
 
 
@@ -125,6 +134,12 @@ def create_contract(data: ContractCreate, db: Session = Depends(get_db), current
     buyer = db.query(Buyer).filter(Buyer.id == data.buyer_id, Buyer.breeder_id == current_user.id).first()
     if not buyer:
         raise HTTPException(404, "Buyer not found")
+    if data.litter_id and not db.query(Litter).filter(
+        Litter.id == data.litter_id, Litter.breeder_id == current_user.id
+    ).first():
+        raise HTTPException(404, "Litter not found")
+    if not data.content or not data.content.strip():
+        raise HTTPException(400, "Contract content is required")
     contract = Contract(
         id=str(uuid.uuid4()),
         breeder_id=current_user.id,
@@ -132,12 +147,29 @@ def create_contract(data: ContractCreate, db: Session = Depends(get_db), current
         litter_id=data.litter_id,
         sale_price=data.sale_price,
         deposit_amount=data.deposit_amount,
+        balance_due=(data.sale_price - (data.deposit_amount or 0)) if data.sale_price is not None else None,
+        balance_due_date=data.balance_due_date,
         content=data.content,
         status="draft",
         title=f"Puppy Sale Agreement — {buyer.full_name}",
         sign_token=str(uuid.uuid4()),
     )
     db.add(contract)
+    db.commit()
+    db.refresh(contract)
+    return contract
+
+
+@router.put("/{contract_id}", response_model=ContractOut)
+def update_contract(contract_id: str, data: ContractUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    contract = db.query(Contract).filter(Contract.id == contract_id, Contract.breeder_id == current_user.id).with_for_update().first()
+    if not contract:
+        raise HTTPException(404, "Contract not found")
+    if contract.status != "draft":
+        raise HTTPException(400, "Only draft contracts can be edited")
+    if not data.content.strip():
+        raise HTTPException(400, "Contract content is required")
+    contract.content = data.content
     db.commit()
     db.refresh(contract)
     return contract

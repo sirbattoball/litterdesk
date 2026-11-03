@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from app.database import get_db
 from app.models import Buyer, Communication, BuyerLitterMatch, Litter
 from app.schemas import BuyerCreate, BuyerUpdate, BuyerOut
-from app.routers.auth import get_current_user
+from app.routers.auth import get_active_user as get_current_user
 from app.models import User
 
 router = APIRouter()
@@ -109,9 +109,17 @@ def add_to_waitlist(
 
     litter = db.query(Litter).filter(
         Litter.id == litter_id, Litter.breeder_id == current_user.id
-    ).first()
+    ).with_for_update().first()
     if not litter:
         raise HTTPException(status_code=404, detail="Litter not found")
+
+    # Serialize additions on the litter row and make retries idempotent.
+    existing = db.query(BuyerLitterMatch).filter(
+        BuyerLitterMatch.buyer_id == buyer_id,
+        BuyerLitterMatch.litter_id == litter_id,
+    ).first()
+    if existing:
+        return {"message": "Already on waitlist", "position": existing.position}
 
     # Get next position
     current_count = db.query(BuyerLitterMatch).filter(
@@ -201,7 +209,9 @@ def delete_buyer(
     ).first()
     if not buyer:
         raise HTTPException(404, "Buyer not found")
-    from app.models import Contract
+    from app.models import Contract, DepositPayment
+    if db.query(DepositPayment).filter(DepositPayment.buyer_id == buyer_id).first():
+        raise HTTPException(400, "Buyers with deposit records must be retained")
     contract_count = db.query(Contract).filter(Contract.buyer_id == buyer_id).count()
     if contract_count > 0:
         raise HTTPException(

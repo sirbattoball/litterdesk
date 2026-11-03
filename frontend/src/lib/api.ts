@@ -90,6 +90,7 @@ export const contractsApi = {
   list: (params?: any) => api.get('/contracts/', { params }),
   get: (id: string) => api.get(`/contracts/${id}`),
   create: (data: any) => api.post('/contracts/', data),  // FIX: was missing
+  update: (id: string, data: any) => api.put(`/contracts/${id}`, data),
   send: (id: string) => api.post(`/contracts/${id}/send`),
   void: (id: string) => api.delete(`/contracts/${id}`),
   deletePermanently: (id: string) => api.delete(`/contracts/${id}/permanent`),
@@ -109,6 +110,8 @@ export const aiApi = {
 export const paymentsApi = {
   createSubscription: (plan: string, newSignup: boolean = false) =>
     api.post(`/payments/create-subscription/${plan}${newSignup ? '?new_signup=true' : ''}`),
+  syncSubscription: (sessionId: string) => api.post('/payments/sync-subscription', null, { params: { session_id: sessionId } }),
+  deposits: () => api.get('/payments/deposits'),
   createPortal: () => api.post('/payments/create-portal'),
   collectDeposit: (data: any) => api.post('/payments/collect-deposit', null, { params: data }),
   stripeConnectOnboard: () => api.post('/payments/stripe-connect/onboard'),

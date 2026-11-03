@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models import User
 from app.models import Dog, HealthRecord
 from app.schemas import DogCreate, DogOut, HealthRecordCreate, HealthRecordOut
-from app.routers.auth import get_current_user
+from app.routers.auth import get_active_user as get_current_user
 
 router = APIRouter()
 

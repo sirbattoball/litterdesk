@@ -1,300 +1,295 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from datetime import datetime, timezone
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 import stripe
+
 from app.config import settings
 from app.database import get_db
-from app.models import User, BuyerLitterMatch, Litter
+from app.models import User, Buyer, BuyerLitterMatch, Litter, DepositPayment
 from app.routers.auth import get_current_user
-from datetime import datetime, timezone
+from app.services.subscriptions import plan_prices, sync_subscription
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
-
 router = APIRouter()
 
-FRONTEND_URL = "https://litterdesk.vercel.app"
 
-PLAN_PRICES = {
-    "starter": settings.STRIPE_PRICE_STARTER,
-    "pro": settings.STRIPE_PRICE_PRO,
-    "kennel": settings.STRIPE_PRICE_KENNEL,
-}
+def frontend_url():
+    return settings.APP_URL.rstrip("/")
+
+
+def require_pro(user):
+    if not (user.subscription_active and user.subscription_plan in ["pro", "kennel"]):
+        raise HTTPException(403, "Deposit collection requires Pro plan")
+
+
+def stripe_failure(error):
+    return HTTPException(502, "Could not contact the payment provider. Please try again.")
 
 
 @router.post("/create-subscription/{plan}")
-def create_subscription(
-    plan: str,
-    new_signup: bool = False,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    if plan not in PLAN_PRICES:
-        raise HTTPException(400, f"Invalid plan. Choose: {list(PLAN_PRICES.keys())}")
-
-    price_id = PLAN_PRICES[plan]
-    if not price_id:
-        raise HTTPException(400, f"Price ID not configured for '{plan}'. Add STRIPE_PRICE_{plan.upper()} in Render.")
-
-    if not settings.STRIPE_SECRET_KEY:
-        raise HTTPException(400, "Stripe key not configured.")
-
-    # Brand-new registrations land in onboarding after checkout; existing
-    # accounts upgrading from the dashboard go straight back to it.
-    success_url = (
-        f"{FRONTEND_URL}/dashboard/onboarding?subscribed=true" if new_signup
-        else f"{FRONTEND_URL}/dashboard?subscribed=true"
-    )
-    cancel_url = (
-        f"{FRONTEND_URL}/register?plan={plan}&checkout_cancelled=true" if new_signup
-        else f"{FRONTEND_URL}/dashboard/upgrade"
-    )
-
+def create_subscription(plan: str, new_signup: bool = False, db: Session = Depends(get_db),
+                        current_user: User = Depends(get_current_user)):
+    prices = plan_prices()
+    if plan not in prices:
+        raise HTTPException(400, "Choose Starter or Pro")
+    if not prices[plan] or not settings.STRIPE_SECRET_KEY:
+        raise HTTPException(503, "Subscription checkout is not configured")
+    user = db.query(User).filter(User.id == current_user.id).with_for_update().one()
     try:
-        # A stored customer ID can go stale if it was deleted directly in
-        # Stripe (manual cleanup, GDPR request, whatever) — reusing a dead
-        # ID fails checkout with a raw "No such customer" error. Verify it
-        # actually still exists first and self-heal instead of leaving the
-        # account permanently unable to subscribe again.
-        if current_user.stripe_customer_id:
+        previous_customer_id = user.stripe_customer_id or "new"
+        if user.stripe_customer_id:
             try:
-                stripe.Customer.retrieve(current_user.stripe_customer_id)
-            except stripe.error.InvalidRequestError:
-                current_user.stripe_customer_id = None
+                customer = stripe.Customer.retrieve(user.stripe_customer_id)
+                if customer.get("deleted"):
+                    user.stripe_customer_id = None
+            except stripe.error.InvalidRequestError as exc:
+                if exc.code != "resource_missing":
+                    raise
+                user.stripe_customer_id = None
+        if not user.stripe_customer_id:
+            customer = stripe.Customer.create(email=user.email, name=user.full_name,
+                metadata={"user_id": user.id}, idempotency_key=f"customer-{user.id}-{previous_customer_id}")
+            user.stripe_customer_id = customer.id
+            db.flush()
 
-        if not current_user.stripe_customer_id:
-            customer = stripe.Customer.create(
-                email=current_user.email,
-                name=current_user.full_name,
-                metadata={"user_id": current_user.id}
-            )
-            current_user.stripe_customer_id = customer.id
+        # Check Stripe itself, so webhook delays/retries cannot create two subscriptions.
+        history = list(stripe.Subscription.list(customer=user.stripe_customer_id, status="all", limit=100).auto_paging_iter())
+        ongoing = [sub for sub in history if sub["status"] not in ("canceled", "incomplete_expired")]
+        if ongoing:
+            sub = ongoing[0]
+            if sub["status"] in ("active", "trialing") and not sub.get("pause_collection"):
+                if sub["items"]["data"][0]["price"]["id"] != prices[plan]:
+                    sub = stripe.Subscription.modify(sub["id"],
+                        items=[{"id": sub["items"]["data"][0]["id"], "price": prices[plan]}],
+                        proration_behavior="create_prorations", payment_behavior="error_if_incomplete")
+                sync_subscription(user, sub)
+                db.commit()
+                return {"switched": True, "plan": user.subscription_plan}
+            # Resolve failed/paused/incomplete subscriptions through billing, not a second checkout.
+            portal = stripe.billing_portal.Session.create(customer=user.stripe_customer_id,
+                return_url=f"{frontend_url()}/dashboard/upgrade")
+            sync_subscription(user, sub)
             db.commit()
+            return {"checkout_url": portal.url}
 
-        # Already has an active subscription — this is an upgrade/downgrade
-        # between plans, not a new signup. Modify the existing Stripe
-        # subscription's price in place rather than creating a second
-        # subscription, which would bill them twice.
-        if current_user.subscription_active and current_user.stripe_subscription_id:
-            existing_sub = stripe.Subscription.retrieve(current_user.stripe_subscription_id)
-            stripe.Subscription.modify(
-                current_user.stripe_subscription_id,
-                items=[{
-                    "id": existing_sub["items"]["data"][0]["id"],
-                    "price": price_id,
-                }],
-                proration_behavior="create_prorations",
-            )
-            current_user.subscription_plan = plan
-            db.commit()
-            return {"switched": True, "plan": plan}
-
-        # Only grant a trial for customers who've genuinely never had one.
-        # Anyone with a trial_ends_at already set has been through Stripe
-        # Checkout before (that field only ever gets set by the webhook
-        # below) — re-subscribing them with another trial_period_days is
-        # both wrong (they're not "starting a trial") and something Stripe's
-        # own anti-abuse protection can reject outright, which is what a
-        # generic "couldn't open checkout" error usually means in practice.
-        subscription_data = {} if current_user.trial_ends_at else {"trial_period_days": 7}
-
-        def _create_checkout_session():
-            return stripe.checkout.Session.create(
-                customer=current_user.stripe_customer_id,
-                payment_method_types=["card"],
-                line_items=[{"price": price_id, "quantity": 1}],
-                mode="subscription",
-                subscription_data=subscription_data,
-                success_url=success_url,
-                cancel_url=cancel_url,
-                metadata={"user_id": current_user.id, "plan": plan},
-            )
-
-        try:
-            session = _create_checkout_session()
-        except stripe.error.InvalidRequestError as e:
-            if "No such customer" not in str(e):
-                raise
-            # Belt-and-suspenders: the upfront check above should have
-            # caught this, but if a stale customer ID somehow still made it
-            # this far, force a brand new customer right here and retry
-            # once rather than surfacing the raw Stripe error.
-            customer = stripe.Customer.create(
-                email=current_user.email,
-                name=current_user.full_name,
-                metadata={"user_id": current_user.id},
-            )
-            current_user.stripe_customer_id = customer.id
-            db.commit()
-            session = _create_checkout_session()
+        used_trial = bool(user.trial_ends_at or user.stripe_subscription_id or history)
+        subscription_data = {"metadata": {"user_id": user.id}}
+        if not used_trial:
+            subscription_data["trial_period_days"] = 7
+        # Reuse an open session instead of creating duplicate checkout tabs.
+        sessions = stripe.checkout.Session.list(customer=user.stripe_customer_id, status="open", limit=100)
+        for existing in sessions.auto_paging_iter():
+            if existing.get("mode") == "subscription":
+                if existing.get("metadata", {}).get("plan") == plan:
+                    db.commit()
+                    return {"checkout_url": existing.url, "session_id": existing.id}
+                stripe.checkout.Session.expire(existing.id)
+        destination = "/dashboard/onboarding" if new_signup else "/dashboard"
+        session = stripe.checkout.Session.create(customer=user.stripe_customer_id,
+            payment_method_types=["card"], payment_method_collection="always",
+            line_items=[{"price": prices[plan], "quantity": 1}], mode="subscription",
+            subscription_data=subscription_data,
+            success_url=f"{frontend_url()}{destination}?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{frontend_url()}/dashboard/upgrade?checkout_cancelled=true",
+            metadata={"user_id": user.id, "plan": plan})
+        db.commit()
         return {"checkout_url": session.url, "session_id": session.id}
-    except stripe.error.StripeError as e:
-        raise HTTPException(400, f"Stripe error: {str(e)}")
-    except Exception as e:
-        raise HTTPException(500, f"Error: {str(e)}")
+    except stripe.error.StripeError as exc:
+        db.rollback()
+        raise stripe_failure(exc)
+
+
+@router.post("/sync-subscription")
+def sync_checkout(session_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        if not current_user.stripe_customer_id or session.get("customer") != current_user.stripe_customer_id or session.get("mode") != "subscription":
+            raise HTTPException(404, "Checkout not found")
+        if session.get("status") != "complete" or not session.get("subscription"):
+            raise HTTPException(409, "Checkout has not completed")
+        sub = stripe.Subscription.retrieve(session["subscription"])
+        user = db.query(User).filter(User.id == current_user.id).with_for_update().one()
+        if user.stripe_subscription_id and user.stripe_subscription_id != sub["id"]:
+            current = stripe.Subscription.retrieve(user.stripe_subscription_id)
+            if current.get("status") not in ("canceled", "incomplete_expired"):
+                raise HTTPException(409, "A different subscription is already linked")
+        sync_subscription(user, sub)
+        db.commit()
+        return {"subscription_active": user.subscription_active}
+    except stripe.error.StripeError as exc:
+        raise stripe_failure(exc)
 
 
 @router.post("/create-portal")
-def create_portal(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+def create_portal(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if not current_user.stripe_customer_id:
-        raise HTTPException(400, "No active subscription")
-
-    # Same staleness check as create-subscription — if this customer was
-    # deleted directly in Stripe, clear the dead reference so this doesn't
-    # keep failing on every future attempt, and tell the person clearly
-    # what's actually going on instead of surfacing a raw Stripe error.
+        raise HTTPException(400, "No billing account found")
     try:
-        stripe.Customer.retrieve(current_user.stripe_customer_id)
-    except stripe.error.InvalidRequestError:
-        current_user.stripe_customer_id = None
-        db.commit()
-        raise HTTPException(400, "No active subscription found. Please subscribe to a plan first.")
-
-    try:
-        session = stripe.billing_portal.Session.create(
-            customer=current_user.stripe_customer_id,
-            return_url=f"{FRONTEND_URL}/dashboard/settings",
-        )
+        session = stripe.billing_portal.Session.create(customer=current_user.stripe_customer_id,
+            return_url=f"{frontend_url()}/dashboard/settings")
         return {"portal_url": session.url}
-    except stripe.error.StripeError as e:
-        raise HTTPException(400, f"Stripe error: {str(e)}")
+    except stripe.error.StripeError as exc:
+        raise stripe_failure(exc)
+
+
+def reconcile_deposit(payment, session, db):
+    if session.get("id") != payment.stripe_session_id:
+        raise HTTPException(400, "Payment session does not match")
+    if session.get("amount_total") != payment.amount_cents or session.get("currency") != "usd":
+        raise HTTPException(400, "Payment amount does not match")
+    if session.get("payment_status") == "paid":
+        payment.status = "paid"
+        payment.stripe_payment_intent_id = session.get("payment_intent")
+        matches = db.query(BuyerLitterMatch).filter(BuyerLitterMatch.buyer_id == payment.buyer_id,
+            BuyerLitterMatch.litter_id == payment.litter_id).all()
+        for match in matches:
+            match.deposit_paid = True
+            match.deposit_amount = payment.amount_cents / 100
+            match.stripe_payment_intent_id = payment.stripe_payment_intent_id
+        buyer = db.get(Buyer, payment.buyer_id)
+        if buyer and buyer.status in ("inquiry", "waitlisted"):
+            buyer.status = "deposit_paid"
+    elif session.get("status") == "expired" and payment.status != "paid":
+        payment.status = "expired"
 
 
 @router.post("/collect-deposit")
-def collect_deposit(
-    buyer_id: str,
-    litter_id: str,
-    amount_cents: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
-        raise HTTPException(403, "Deposit collection via Stripe requires Pro plan")
-
-    if not current_user.stripe_onboarded:
+def collect_deposit(buyer_id: str, litter_id: str, amount_cents: int = Query(ge=50, le=99999999),
+                    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    require_pro(current_user)
+    if not current_user.stripe_onboarded or not current_user.stripe_account_id:
         raise HTTPException(400, "Complete Stripe Connect setup first")
-
-    litter = db.query(Litter).filter(
-        Litter.id == litter_id, Litter.breeder_id == current_user.id
-    ).first()
-    if not litter:
-        raise HTTPException(404, "Litter not found")
-
+    litter = db.query(Litter).filter(Litter.id == litter_id, Litter.breeder_id == current_user.id).with_for_update().first()
+    buyer = db.query(Buyer).filter(Buyer.id == buyer_id, Buyer.breeder_id == current_user.id).first()
+    if not litter or not buyer:
+        raise HTTPException(404, "Buyer or litter not found")
+    match = db.query(BuyerLitterMatch).filter(BuyerLitterMatch.buyer_id == buyer_id, BuyerLitterMatch.litter_id == litter_id).first()
+    if not match:
+        raise HTTPException(400, "Add this buyer to the litter waitlist first")
+    if match.deposit_paid:
+        raise HTTPException(409, "Deposit has already been paid")
     try:
-        intent = stripe.PaymentIntent.create(
-            amount=amount_cents,
-            currency="usd",
-            transfer_data={"destination": current_user.stripe_account_id},
-            application_fee_amount=int(amount_cents * 0.015),
-            metadata={"buyer_id": buyer_id, "litter_id": litter_id, "breeder_id": current_user.id}
-        )
-        match = db.query(BuyerLitterMatch).filter(
-            BuyerLitterMatch.buyer_id == buyer_id,
-            BuyerLitterMatch.litter_id == litter_id,
-        ).first()
-        if match:
-            match.stripe_payment_intent_id = intent.id
-            match.deposit_amount = amount_cents / 100
-            db.commit()
-        return {"client_secret": intent.client_secret, "payment_intent_id": intent.id}
-    except stripe.error.StripeError as e:
-        raise HTTPException(400, f"Stripe error: {str(e)}")
+        pending = db.query(DepositPayment).filter(DepositPayment.buyer_id == buyer_id,
+            DepositPayment.litter_id == litter_id, DepositPayment.status == "pending").first()
+        if pending and not pending.stripe_session_id and pending.amount_cents != amount_cents:
+            raise HTTPException(409, "Retry the original deposit amount to recover the existing payment link")
+        if pending and pending.stripe_session_id:
+            session = stripe.checkout.Session.retrieve(pending.stripe_session_id)
+            reconcile_deposit(pending, session, db)
+            if pending.status == "paid":
+                db.commit()
+                raise HTTPException(409, "Deposit has already been paid")
+            if session.get("status") == "open":
+                if pending.amount_cents != amount_cents:
+                    raise HTTPException(409, "An unpaid link already exists with a different amount. Let it expire before creating another.")
+                db.commit()
+                return {"checkout_url": session.url}
+            if pending.status == "pending":
+                raise HTTPException(409, "Payment is still processing. Please check the deposit history shortly.")
+        # Row creation and Stripe idempotency key survive request retry failures.
+        if not pending or pending.status != "pending":
+            pending = DepositPayment(id=str(uuid.uuid4()), breeder_id=current_user.id,
+                buyer_id=buyer_id, litter_id=litter_id, amount_cents=amount_cents)
+            db.add(pending)
+            db.flush()
+        metadata = {"deposit_id": pending.id}
+        session = stripe.checkout.Session.create(mode="payment", payment_method_types=["card"],
+            customer_email=buyer.email,
+            line_items=[{"price_data": {"currency": "usd", "unit_amount": pending.amount_cents,
+                "product_data": {"name": f"Puppy deposit — {litter.name or litter.breed}"}}, "quantity": 1}],
+            payment_intent_data={"receipt_email": buyer.email, "transfer_data": {"destination": current_user.stripe_account_id},
+                "application_fee_amount": pending.amount_cents * 15 // 1000, "metadata": metadata},
+            metadata=metadata,
+            success_url=f"{frontend_url()}/deposit-result?paid=true",
+            cancel_url=f"{frontend_url()}/deposit-result?cancelled=true",
+            idempotency_key=f"deposit-{pending.id}")
+        pending.stripe_session_id = session.id
+        db.commit()
+        return {"checkout_url": session.url}
+    except stripe.error.StripeError as exc:
+        # Retain the row/key if Stripe succeeded but the response was lost.
+        if isinstance(exc, stripe.error.InvalidRequestError) and pending:
+            pending.status = "failed"
+        db.commit()
+        raise stripe_failure(exc)
+
+
+@router.get("/deposits")
+def list_deposits(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    rows = db.query(DepositPayment, Buyer.full_name, Litter.name, Litter.breed).join(
+        Buyer, Buyer.id == DepositPayment.buyer_id).join(Litter, Litter.id == DepositPayment.litter_id).filter(
+        DepositPayment.breeder_id == current_user.id).order_by(DepositPayment.created_at.desc()).all()
+    return [{"id": payment.id, "buyer_name": buyer, "litter_name": name or breed,
+             "amount_cents": payment.amount_cents, "status": payment.status,
+             "created_at": payment.created_at} for payment, buyer, name, breed in rows]
 
 
 @router.post("/stripe-connect/onboard")
-def stripe_connect_onboard(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+def stripe_connect_onboard(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    require_pro(current_user)
     try:
         if not current_user.stripe_account_id:
-            account = stripe.Account.create(
-                type="express",
-                email=current_user.email,
-                metadata={"user_id": current_user.id}
-            )
+            account = stripe.Account.create(type="express", email=current_user.email,
+                metadata={"user_id": current_user.id}, idempotency_key=f"connect-{current_user.id}")
             current_user.stripe_account_id = account.id
             db.commit()
-
-        link = stripe.AccountLink.create(
-            account=current_user.stripe_account_id,
-            refresh_url=f"{FRONTEND_URL}/dashboard/payments",
-            return_url=f"{FRONTEND_URL}/dashboard/payments",
-            type="account_onboarding",
-        )
+        link = stripe.AccountLink.create(account=current_user.stripe_account_id,
+            refresh_url=f"{frontend_url()}/dashboard/payments", return_url=f"{frontend_url()}/dashboard/payments", type="account_onboarding")
         return {"onboard_url": link.url}
-    except stripe.error.StripeError as e:
-        raise HTTPException(400, f"Stripe error: {str(e)}")
+    except stripe.error.StripeError as exc:
+        raise stripe_failure(exc)
 
 
 @router.post("/webhook")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
-        )
-    except Exception:
+        event = stripe.Webhook.construct_event(await request.body(), request.headers.get("stripe-signature"), settings.STRIPE_WEBHOOK_SECRET)
+    except (ValueError, stripe.error.SignatureVerificationError):
         raise HTTPException(400, "Invalid webhook signature")
-
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        user_id = session["metadata"].get("user_id")
-        plan = session["metadata"].get("plan")
-        if user_id and plan:
-            user = db.query(User).filter(User.id == user_id).first()
+    kind = event["type"]
+    obj = event["data"]["object"]
+    try:
+        if kind.startswith("checkout.session.") and obj.get("mode") == "payment":
+            payment = db.query(DepositPayment).filter(DepositPayment.stripe_session_id == obj["id"]).with_for_update().first()
+            if payment:
+                # Read current status so delayed failure/expiry events cannot undo payment.
+                session = stripe.checkout.Session.retrieve(obj["id"])
+                reconcile_deposit(payment, session, db)
+        elif (kind == "checkout.session.completed" and obj.get("mode") == "subscription") or kind in (
+            "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted",
+            "customer.subscription.paused", "customer.subscription.resumed", "invoice.paid", "invoice.payment_failed"):
+            subscription_id = obj.get("subscription")
+            if kind.startswith("customer.subscription."):
+                subscription_id = obj["id"]
+            if not subscription_id:
+                parent = obj.get("parent") or {}
+                subscription_id = (parent.get("subscription_details") or {}).get("subscription")
+            if subscription_id:
+                sub = stripe.Subscription.retrieve(subscription_id)
+                user = db.query(User).filter(User.stripe_customer_id == sub.get("customer")).with_for_update().first()
+                if user:
+                    # An event from a previous subscription must not overwrite a newer one.
+                    if user.stripe_subscription_id and user.stripe_subscription_id != sub["id"]:
+                        previous = stripe.Subscription.retrieve(user.stripe_subscription_id)
+                        if previous.get("status") not in ("canceled", "incomplete_expired") or previous.get("created", 0) > sub.get("created", 0):
+                            return {"received": True}
+                    sync_subscription(user, sub)
+        elif kind == "account.updated":
+            account = stripe.Account.retrieve(obj["id"])
+            user = db.query(User).filter(User.stripe_account_id == obj["id"]).first()
             if user:
-                user.subscription_plan = plan
-                user.subscription_active = True
-                subscription_id = session.get("subscription")
-                user.stripe_subscription_id = subscription_id
-
-                # Pull the real trial end date from Stripe rather than
-                # guessing — this is what the trial countdown displays.
-                if subscription_id:
-                    try:
-                        sub = stripe.Subscription.retrieve(subscription_id)
-                        if sub.get("trial_end"):
-                            user.trial_ends_at = datetime.fromtimestamp(
-                                sub["trial_end"], tz=timezone.utc
-                            )
-                    except stripe.error.StripeError:
-                        pass  # non-fatal — subscription is still activated either way
-
-                db.commit()
-
-    elif event["type"] == "customer.subscription.deleted":
-        sub = event["data"]["object"]
-        user = db.query(User).filter(User.stripe_subscription_id == sub["id"]).first()
-        if user:
-            user.subscription_active = False
-            user.subscription_plan = "free"
-            db.commit()
-
-    elif event["type"] == "account.updated":
-        # Fired when a breeder completes Stripe Connect onboarding
-        account = event["data"]["object"]
-        stripe_account_id = account.get("id")
-        charges_enabled = account.get("charges_enabled", False)
-        if stripe_account_id and charges_enabled:
-            user = db.query(User).filter(User.stripe_account_id == stripe_account_id).first()
-            if user and not user.stripe_onboarded:
-                user.stripe_onboarded = True
-                db.commit()
-
-    elif event["type"] in ("payment_intent.succeeded", "payment_intent.payment_failed"):
-        # Update deposit status on buyer-litter match
-        pi = event["data"]["object"]
-        pi_id = pi.get("id")
-        if pi_id:
-            match = db.query(BuyerLitterMatch).filter(
-                BuyerLitterMatch.stripe_payment_intent_id == pi_id
-            ).first()
-            if match:
-                match.deposit_paid = (event["type"] == "payment_intent.succeeded")
-                db.commit()
-
+                user.stripe_onboarded = bool(account.get("charges_enabled") and account.get("payouts_enabled"))
+        elif kind in ("payment_intent.succeeded", "payment_intent.payment_failed"):
+            # Backward compatibility for intents created before hosted deposit checkout.
+            intent = stripe.PaymentIntent.retrieve(obj["id"])
+            match = db.query(BuyerLitterMatch).filter(BuyerLitterMatch.stripe_payment_intent_id == obj["id"]).first()
+            if match and intent.get("status") == "succeeded":
+                match.deposit_paid = True
+        db.commit()
+    except stripe.error.StripeError as exc:
+        db.rollback()
+        # Non-2xx makes Stripe retry instead of silently losing billing changes.
+        raise stripe_failure(exc)
     return {"received": True}

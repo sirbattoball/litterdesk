@@ -74,22 +74,21 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
+def get_active_user(user: User = Depends(get_current_user)) -> User:
+    if not user.subscription_active or user.subscription_plan not in ("starter", "pro", "kennel"):
+        raise HTTPException(403, "An active subscription or trial is required")
+    return user
+
+
 @router.post("/register", response_model=Token)
 def register(data: UserRegister, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
-        # An account exists, but if it never actually completed checkout
-        # (no active subscription, no trial ever granted), it's not a real
-        # account someone is using — it's a burned email from an abandoned
-        # signup. Treat this as a restart rather than a hard conflict:
-        # update it with the new details and let them try again.
+        # Allow an abandoned checkout to resume only after authenticating
+        # the existing account. Registration must never replace its password.
         if not existing.subscription_active and not existing.trial_ends_at:
-            existing.hashed_password = hash_password(data.password)
-            existing.full_name = data.full_name
-            existing.kennel_name = data.kennel_name
-            existing.breeds = data.breeds or []
-            db.commit()
-            db.refresh(existing)
+            if not verify_password(data.password, existing.hashed_password):
+                raise HTTPException(status_code=400, detail="Email already registered. Sign in or reset your password to continue.")
             token = create_access_token({"sub": existing.id})
             return {"access_token": token, "token_type": "bearer", "user": UserOut.model_validate(existing)}
 

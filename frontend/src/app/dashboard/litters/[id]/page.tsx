@@ -24,6 +24,8 @@ const STATUS_NEXT: Record<string, string> = {
 export default function LitterDetailPage() {
   const { id } = useParams<{ id: string }>()
   const qc = useQueryClient()
+  const [counts, setCounts] = useState<{males: string, females: string} | null>(null)
+  const [savingCounts, setSavingCounts] = useState(false)
   const [announcing, setAnnouncing] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [showAddBuyer, setShowAddBuyer] = useState(false)
@@ -65,10 +67,27 @@ export default function LitterDetailPage() {
       await littersApi.update(id, { status: STATUS_NEXT[litter.status] })
       qc.invalidateQueries({ queryKey: ['litter', id] })
       qc.invalidateQueries({ queryKey: ['litters'] })
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] })
       toast.success(`Status updated to ${STATUS_NEXT[litter.status]}!`)
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to update status')
     } finally { setUpdatingStatus(false) }
+  }
+
+  const saveCounts = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!counts) return
+    const males = Number(counts.males), females = Number(counts.females)
+    if (!Number.isInteger(males) || !Number.isInteger(females) || males < 0 || females < 0) { toast.error('Enter whole counts of zero or more'); return }
+    setSavingCounts(true)
+    try {
+      await littersApi.update(id, { num_males: males, num_females: females })
+      await qc.invalidateQueries({ queryKey: ['litter', id] })
+      qc.invalidateQueries({ queryKey: ['litters'] })
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      setCounts(null)
+      toast.success('Puppy counts saved')
+    } catch { toast.error('Could not save puppy counts') } finally { setSavingCounts(false) }
   }
 
   const handleAddToWaitlist = async () => {
@@ -145,6 +164,10 @@ export default function LitterDetailPage() {
           ))}
         </div>
 
+        <div className="card" style={{padding:20,marginBottom:20}}>
+          {counts ? <form onSubmit={saveCounts}><div className="two-col"><div className="field"><label className="label" htmlFor="male-count">Males</label><input id="male-count" className="input" type="number" min="0" step="1" required value={counts.males} onChange={e=>setCounts({...counts,males:e.target.value})}/></div><div className="field"><label className="label" htmlFor="female-count">Females</label><input id="female-count" className="input" type="number" min="0" step="1" required value={counts.females} onChange={e=>setCounts({...counts,females:e.target.value})}/></div></div><button className="btn-primary" disabled={savingCounts} type="submit">{savingCounts ? 'Saving…' : 'Save counts'}</button><button className="btn-ghost" disabled={savingCounts} type="button" onClick={()=>setCounts(null)}>Cancel</button></form> : <button className="btn-ghost" onClick={()=>setCounts({males:String(litter.num_males ?? 0),females:String(litter.num_females ?? 0)})}>Edit puppy counts</button>}
+        </div>
+
         <div className="two-col">
           {/* Waitlist */}
           <div className="card" style={{padding:20}}>
@@ -213,7 +236,7 @@ export default function LitterDetailPage() {
             <div style={{marginTop:16,display:'flex',flexDirection:'column',gap:8}}>
               <Link href={`/dashboard/contracts/new?litter=${id}`} className="btn-primary" style={{textDecoration:'none',justifyContent:'center'}}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                Generate AI Contract
+                New contract
               </Link>
               <Link href={`/dashboard/buyers/new`} className="btn-ghost" style={{textDecoration:'none',justifyContent:'center'}}>
                 + Add Buyer

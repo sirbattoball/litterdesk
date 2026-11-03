@@ -36,7 +36,8 @@ function RegisterForm() {
     try {
       await register(form)
       const res = await paymentsApi.createSubscription(plan, true)
-      window.location.href = res.data.checkout_url
+      if (res.data.switched) router.push('/dashboard/onboarding')
+      else window.location.href = res.data.checkout_url
     } catch (err: any) {
       setSubmitting(false)
       toast.error(err.response?.data?.detail || 'Something went wrong')
