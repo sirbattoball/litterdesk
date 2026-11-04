@@ -4,8 +4,8 @@ import { Providers } from '@/components/Providers'
 import { Toaster } from 'react-hot-toast'
 
 export const metadata: Metadata = {
-  title: 'LitterDesk — The Operating System for Serious Dog Breeders',
-  description: 'Replace your spreadsheets, Word contracts, and text threads. LitterDesk manages your litters, buyers, contracts, and payments in one place — with AI that does the work for you.',
+  title: 'LitterDesk — A little less admin. More puppy time.',
+  description: 'Thoughtful software for small dog breeders. Keep litters, buyers, health records, and contracts together at last.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

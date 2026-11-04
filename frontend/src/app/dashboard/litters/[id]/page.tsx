@@ -148,7 +148,7 @@ export default function LitterDetailPage() {
 
       <div className="page-body">
         {/* Stats */}
-        <div className="three-col" style={{marginBottom:20}}>
+        <div className="three-col litter-metrics" style={{marginBottom:20}}>
           {[
             ['Puppies', total || '—'],
             ['Sex split', total ? `${litter.num_males}M / ${litter.num_females}F` : '—'],
