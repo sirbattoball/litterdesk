@@ -38,16 +38,16 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit}>
             <div className="field">
-              <label className="label">Email address</label>
-              <input type="email" className="input" placeholder="you@kennel.com"
+              <label className="label" htmlFor="login-email">Email address</label>
+              <input id="login-email" type="email" className="input" placeholder="you@kennel.com"
                 value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />
             </div>
             <div className="field" style={{position:'relative'}}>
-              <label className="label">Password</label>
-              <input type={showPass?'text':'password'} className="input" placeholder="••••••••"
+              <label className="label" htmlFor="login-password">Password</label>
+              <input id="login-password" type={showPass?'text':'password'} className="input" placeholder="••••••••"
                 value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password"
                 style={{paddingRight:44}} />
-              <button type="button" onClick={()=>setShowPass(!showPass)}
+              <button type="button" aria-label={showPass ? "Hide password" : "Show password"} aria-pressed={showPass} onClick={()=>setShowPass(!showPass)}
                 style={{position:'absolute',right:12,bottom:11,border:'none',background:'none',cursor:'pointer',color:'var(--ink-4)',padding:2}}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   {showPass
@@ -79,7 +79,7 @@ export default function LoginPage() {
         {/* Trust signal */}
         <p style={{textAlign:'center',fontSize:12,color:'var(--ink-4)',marginTop:20,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          256-bit SSL · SOC 2 compliant · Never sold to third parties
+          Your litters, buyers, and contracts. Together at last.
         </p>
       </div>
     </div>
