@@ -73,11 +73,11 @@ export default function ContractsPage() {
   return (
     <>
       <div className="topbar">
-        <div><div className="topbar-title">Contracts</div><div className="topbar-sub">AI-generated · Digitally signed</div></div>
+        <div><div className="topbar-title">Contracts</div><div className="topbar-sub">Manual or AI drafts · Digitally signed</div></div>
         <div className="topbar-right">
           <Link href="/dashboard/contracts/new" className="btn-primary">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            Generate AI Contract
+            New contract
           </Link>
         </div>
       </div>

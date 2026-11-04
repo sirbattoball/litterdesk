@@ -4,9 +4,9 @@ from typing import List
 import uuid
 
 from app.database import get_db
-from app.models import Litter, Puppy, BuyerLitterMatch
+from app.models import Litter, Puppy, BuyerLitterMatch, Dog, DepositPayment
 from app.schemas import LitterCreate, LitterUpdate, LitterOut, PuppyCreate, PuppyOut
-from app.routers.auth import get_current_user
+from app.routers.auth import get_active_user as get_current_user
 from app.models import User
 
 router = APIRouter()
@@ -52,6 +52,11 @@ def create_litter(
             detail="Free plan limited to 1 active litter. Start a Starter or Pro trial for unlimited litters."
         )
 
+    for dog_id, sex in [(data.dam_id, "female"), (data.sire_id, "male")]:
+        if dog_id:
+            dog = db.query(Dog).filter(Dog.id == dog_id, Dog.owner_id == current_user.id).first()
+            if not dog or dog.sex != sex:
+                raise HTTPException(404, f"{sex.title()} parent not found")
     litter = Litter(id=str(uuid.uuid4()), breeder_id=current_user.id, **data.model_dump())
     db.add(litter)
     db.commit()
@@ -90,6 +95,8 @@ def delete_litter(
     current_user: User = Depends(get_current_user)
 ):
     litter = check_litter_access(litter_id, current_user, db)
+    if db.query(DepositPayment).filter(DepositPayment.litter_id == litter_id).first():
+        raise HTTPException(400, "Litters with deposit records must be retained")
     db.delete(litter)
     db.commit()
 

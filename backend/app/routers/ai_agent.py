@@ -25,6 +25,7 @@ class ContractGenerateRequest(BaseModel):
     balance_due_date: str
     spay_neuter_required: bool = True
     health_guarantee_months: int = 24
+    special_terms: Optional[str] = None
 
 
 class FollowupRequest(BaseModel):
@@ -60,6 +61,8 @@ def generate_contract(
             Litter.id == req.litter_id,
             Litter.breeder_id == current_user.id
         ).first()
+        if not litter:
+            raise HTTPException(404, "Litter not found")
 
     # Generate contract via Claude
     contract_text = ai_service.generate_contract(
@@ -79,33 +82,11 @@ def generate_contract(
         go_home_date=req.go_home_date,
         health_guarantee_months=req.health_guarantee_months,
         spay_neuter_required=req.spay_neuter_required,
+        special_terms=req.special_terms,
     )
 
-    # Save contract
-    sign_token = str(uuid.uuid4())
-    contract = Contract(
-        id=str(uuid.uuid4()),
-        breeder_id=current_user.id,
-        buyer_id=buyer.id,
-        litter_id=req.litter_id,
-        status="draft",
-        title=f"Puppy Sale Contract — {buyer.full_name}",
-        content=contract_text,
-        sale_price=req.sale_price,
-        deposit_amount=req.deposit_amount,
-        balance_due=req.sale_price - req.deposit_amount,
-        sign_token=sign_token,
-    )
-    db.add(contract)
-    db.commit()
-    db.refresh(contract)
-
-    return {
-        "contract_id": contract.id,
-        "content": contract_text,
-        "sign_token": sign_token,
-        "message": "Contract generated successfully"
-    }
+    # Generation is a preview; save exactly once through the contract endpoint.
+    return {"content": contract_text, "message": "Contract draft generated"}
 
 
 @router.post("/draft-email")

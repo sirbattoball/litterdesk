@@ -395,3 +395,17 @@ class ContactMessage(Base):
     message = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+
+
+class DepositPayment(Base):
+    __tablename__ = "deposit_payments"
+
+    id = Column(String, primary_key=True, default=gen_uuid)
+    breeder_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    buyer_id = Column(String, ForeignKey("buyers.id"), nullable=False)
+    litter_id = Column(String, ForeignKey("litters.id"), nullable=False)
+    amount_cents = Column(Integer, nullable=False)
+    stripe_session_id = Column(String, unique=True)
+    stripe_payment_intent_id = Column(String, unique=True)
+    status = Column(String, nullable=False, default="pending")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

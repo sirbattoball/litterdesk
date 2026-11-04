@@ -37,6 +37,7 @@ def generate_contract(
     go_home_date: str,
     health_guarantee_months: int = 24,
     spay_neuter_required: bool = True,
+    special_terms: Optional[str] = None,
 ) -> str:
     """Generate a complete, legally-informed puppy sale contract."""
 
@@ -54,6 +55,7 @@ BALANCE DUE: ${sale_price - deposit_amount:,.2f} by {balance_due_date}
 GO HOME DATE: {go_home_date}
 HEALTH GUARANTEE: {health_guarantee_months} months
 SPAY/NEUTER REQUIRED: {"Yes" if spay_neuter_required else "No (breeding rights included)"}
+SPECIAL TERMS REQUESTED BY BREEDER: {special_terms or "None"}
 
 Generate a complete contract including:
 1. Parties and puppy identification

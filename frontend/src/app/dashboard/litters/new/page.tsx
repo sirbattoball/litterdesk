@@ -25,6 +25,7 @@ export default function NewLitterPage() {
     try {
       const payload: any = { ...form, num_males: Number(form.num_males), num_females: Number(form.num_females) }
       if (form.puppy_price) payload.puppy_price = Number(form.puppy_price)
+      else delete payload.puppy_price
       if (!form.dam_id) delete payload.dam_id
       if (!form.sire_id) delete payload.sire_id
       if (!form.whelp_date) delete payload.whelp_date

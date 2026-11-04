@@ -5,254 +5,75 @@ import { littersApi, buyersApi, contractsApi, aiApi } from '@/lib/api'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { useAuthStore } from '@/lib/store'
+import { isPro, useAuthStore } from '@/lib/store'
 
 export default function NewContractPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const params = useSearchParams()
   const { user } = useAuthStore()
   const qc = useQueryClient()
-  const [step, setStep] = useState<'form'|'generating'|'preview'>('form')
-  const [generatedText, setGeneratedText] = useState('')
-  const [contractId, setContractId] = useState<string|null>(null)
-  const [saving, setSaving] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [form, setForm] = useState({
-    litter_id: searchParams.get('litter') ?? '',
-    buyer_id: searchParams.get('buyer') ?? '',
-    sale_price: '',
-    deposit_amount: '',
-    puppy_name: '',
-    puppy_sex: 'female',
-    dob: '',
-    go_home_date: '',
-    balance_due_date: '',
-    spay_neuter_required: true,
-    health_guarantee_months: '24',
-    special_terms: '',
-  })
-  const set = (k: string, v: any) => setForm(f => ({...f, [k]: v}))
+  const [content, setContent] = useState('')
+  const [contractId, setContractId] = useState<string | null>(null)
+  const [busy, setBusy] = useState('')
+  const [form, setForm] = useState({ buyer_id: params.get('buyer') || '', litter_id: params.get('litter') || '', sale_price: '', deposit_amount: '', puppy_name: '', puppy_sex: 'female', dob: '', go_home_date: '', balance_due_date: '', health_guarantee_months: '24', spay_neuter_required: true, special_terms: '' })
+  const set = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }))
+  const { data: buyers } = useQuery({ queryKey: ['buyers'], queryFn: () => buyersApi.list().then(r => r.data) })
+  const { data: litters } = useQuery({ queryKey: ['litters'], queryFn: () => littersApi.list().then(r => r.data) })
+  const error = (err: any) => toast.error(typeof err.response?.data?.detail === 'string' ? err.response.data.detail : 'Please check the details and try again')
 
-  const { data: litters } = useQuery({ queryKey:['litters'], queryFn:()=>littersApi.list().then(r=>r.data) })
-  const { data: buyers } = useQuery({ queryKey:['buyers'], queryFn:()=>buyersApi.list().then(r=>r.data) })
-
-  const handleGenerate = async () => {
-    if (!user?.subscription_active) {
-      toast.error('AI contract generation requires a Pro plan.')
-      return
+  const generate = async () => {
+    if (!form.buyer_id || !form.sale_price || !form.dob || !form.go_home_date) {
+      toast.error('Select a buyer and enter price, date of birth, and go-home date for AI drafting'); return
     }
-    if (!form.buyer_id) { toast.error('Please select a buyer'); return }
-    if (!form.sale_price) { toast.error('Please enter the sale price'); return }
-    if (!form.dob) { toast.error('Please enter the puppy\'s date of birth'); return }
-    if (!form.go_home_date) { toast.error('Please enter the go-home date'); return }
-
-    setStep('generating')
+    setBusy('generate')
     try {
-      const res = await aiApi.generateContract({
-        buyer_id: form.buyer_id,
-        litter_id: form.litter_id || null,
-        puppy_name: form.puppy_name || null,
-        puppy_sex: form.puppy_sex,
-        dob: form.dob,
-        go_home_date: form.go_home_date,
-        balance_due_date: form.balance_due_date || form.go_home_date,
-        sale_price: Number(form.sale_price),
-        deposit_amount: form.deposit_amount ? Number(form.deposit_amount) : 0,
-        spay_neuter_required: form.spay_neuter_required,
-        health_guarantee_months: Number(form.health_guarantee_months) || 24,
-      })
-      setGeneratedText(res.data.content || res.data.contract_text || '')
-      if (res.data.contract_id) setContractId(res.data.contract_id)
-      setStep('preview')
-    } catch (err: any) {
-      const detail = err.response?.data?.detail || err.message || 'AI generation failed'
-      toast.error(detail.includes('API') || detail.includes('Anthropic')
-        ? 'Anthropic API key not configured. Add ANTHROPIC_API_KEY in Render.'
-        : detail)
-      setStep('form')
-    }
+      const res = await aiApi.generateContract({ ...form, litter_id: form.litter_id || null, sale_price: Number(form.sale_price), deposit_amount: Number(form.deposit_amount || 0), balance_due_date: form.balance_due_date || form.go_home_date, health_guarantee_months: Number(form.health_guarantee_months) })
+      setContent(res.data.content)
+      toast.success('Draft ready to review and edit')
+    } catch (err) { error(err) } finally { setBusy('') }
   }
-
-  const handleSave = async () => {
-    if (!form.buyer_id) { toast.error('Select a buyer to save this contract'); return }
-    setSaving(true)
+  const save = async (send: boolean) => {
+    if (!form.buyer_id || !content.trim()) { toast.error('Select a buyer and enter the contract text'); return }
+    if (form.sale_price && Number(form.deposit_amount || 0) > Number(form.sale_price)) { toast.error('Deposit cannot exceed the sale price'); return }
+    setBusy(send ? 'send' : 'save')
     try {
-      const payload: any = { buyer_id: form.buyer_id, content: generatedText, status: 'draft' }
-      if (form.sale_price) payload.sale_price = Number(form.sale_price)
-      if (form.litter_id) payload.litter_id = form.litter_id
-      if (form.deposit_amount) payload.deposit_amount = Number(form.deposit_amount)
-      const res = await contractsApi.create(payload)
-      setContractId(res.data.id)
+      let id = contractId
+      if (id) await contractsApi.update(id, { content })
+      else {
+        const res = await contractsApi.create({ buyer_id: form.buyer_id, litter_id: form.litter_id || null, sale_price: form.sale_price ? Number(form.sale_price) : null, deposit_amount: form.deposit_amount ? Number(form.deposit_amount) : null, balance_due_date: form.balance_due_date || null, content })
+        id = res.data.id as string
+        setContractId(id)
+      }
       qc.invalidateQueries({ queryKey: ['contracts'] })
-      toast.success('Contract saved as draft!')
+      if (send) await contractsApi.send(id)
+      toast.success(send ? 'Contract sent to buyer' : 'Draft saved')
       router.push('/dashboard/contracts')
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Failed to save contract')
-    } finally { setSaving(false) }
+    } catch (err) { error(err) } finally { setBusy('') }
   }
-
-  const handleSend = async () => {
-    if (!contractId) { toast.error('Save the contract first before sending'); return }
-    setSending(true)
-    try {
-      await contractsApi.send(contractId)
-      toast.success('Contract sent to buyer!')
-      router.push('/dashboard/contracts')
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Failed to send contract')
-    } finally { setSending(false) }
-  }
-
-  if (step === 'generating') return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:20}}>
-      <div style={{width:56,height:56,borderRadius:'50%',background:'var(--sage-l)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <div className="spinner" style={{width:28,height:28}}/>
-      </div>
-      <div style={{textAlign:'center'}}>
-        <p style={{color:'var(--ink-2)',fontSize:17,fontWeight:600,marginBottom:6}}>Claude is drafting your contract…</p>
-        <p style={{color:'var(--ink-4)',fontSize:14}}>Breed-specific clauses · Health guarantees · Return policy</p>
-      </div>
-    </div>
-  )
-
-  if (step === 'preview') return (
-    <>
-      <div className="topbar">
-        <div>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <div className="topbar-title">AI Contract Draft</div>
-            <span className="ai-pill"><svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Generated by Claude</span>
+  return <>
+    <div className="topbar"><div><div className="topbar-title">New contract</div><div className="topbar-sub">Write or paste your agreement, then review before sending</div></div><Link href="/dashboard/contracts" className="btn-ghost">Cancel</Link></div>
+    <div className="page-body"><div style={{ maxWidth: 800 }}>
+      <div className="card" style={{ padding: 24, marginBottom: 16 }}>
+        <fieldset disabled={!!busy || !!contractId} style={{ border: 0, padding: 0, margin: 0 }}>
+          <div className="two-col">
+            <div className="field"><label className="label" htmlFor="buyer">Buyer *</label><select id="buyer" className="input" value={form.buyer_id} onChange={e => set('buyer_id', e.target.value)}><option value="">Select buyer…</option>{buyers?.map((b: any) => <option key={b.id} value={b.id}>{b.full_name}</option>)}</select></div>
+            <div className="field"><label className="label" htmlFor="litter">Litter (optional)</label><select id="litter" className="input" value={form.litter_id} onChange={e => set('litter_id', e.target.value)}><option value="">Select litter…</option>{litters?.map((l: any) => <option key={l.id} value={l.id}>{l.name || l.breed}</option>)}</select></div>
           </div>
-          <div className="topbar-sub">Review carefully before sending</div>
-        </div>
-        <div className="topbar-right">
-          <button onClick={()=>setStep('form')} className="btn-ghost">← Edit Details</button>
-          <button onClick={handleSave} disabled={saving} className="btn-ghost">{saving?'Saving…':'Save Draft'}</button>
-          <button onClick={handleSend} disabled={sending||!contractId} className="btn-primary">{sending?'Sending…':'Save & Send →'}</button>
-        </div>
-      </div>
-      <div className="page-body">
-        <div style={{maxWidth:740}}>
-          <div className="card" style={{padding:32}}>
-            <div style={{background:'var(--sage-l)',border:'1px solid var(--sage)',borderRadius:'var(--r-lg)',padding:'12px 16px',marginBottom:24,display:'flex',alignItems:'center',gap:10}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--forest)"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              <span style={{fontSize:13,color:'var(--forest)',fontWeight:500}}>AI-generated draft. Review all terms before sending to buyer.</span>
-            </div>
-            <pre style={{fontFamily:"var(--sans)",fontSize:13.5,lineHeight:1.9,color:"#0d1a0f",whiteSpace:"pre-wrap",wordBreak:"break-word",margin:0,opacity:1}}>{generatedText}</pre>
-          </div>
-          <div style={{display:'flex',gap:10,marginTop:16}}>
-            <button onClick={handleSave} disabled={saving} className="btn-primary">{saving?'Saving…':'Save as Draft'}</button>
-            <button onClick={handleSend} disabled={sending||!contractId} className="btn-primary" style={{background:'linear-gradient(135deg,#1e4d7a,#2563eb)'}}>{sending?'Sending…':'Send to Buyer →'}</button>
-          </div>
-        </div>
-      </div>
-    </>
-  )
-
-  return (
-    <>
-      <div className="topbar">
-        <div>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <div className="topbar-title">Generate AI Contract</div>
-            <span className="ai-pill"><svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Claude</span>
-          </div>
-          <div className="topbar-sub">Breed-specific, legally-informed sale contract</div>
-        </div>
-        <div className="topbar-right"><Link href="/dashboard/contracts" className="btn-ghost">Cancel</Link></div>
-      </div>
-      <div className="page-body">
-        <div style={{maxWidth:640}}>
-
-          {/* Buyer + Litter */}
-          <div className="card" style={{padding:24,marginBottom:16}}>
-            <div className="section-label" style={{marginBottom:16}}>Transaction</div>
+          <div className="two-col">{[['sale_price', 'Sale price ($)'], ['deposit_amount', 'Deposit paid ($)']].map(([key, label]) => <div className="field" key={key}><label className="label" htmlFor={key}>{label}</label><input id={key} type="number" min="0" step="0.01" className="input" value={(form as any)[key]} onChange={e => set(key, e.target.value)} /></div>)}</div>
+          <details style={{ marginBottom: 16 }}><summary style={{ cursor: 'pointer', marginBottom: 16 }}>AI drafting details (Pro)</summary>
             <div className="two-col">
-              <div className="field">
-                <label className="label">Buyer *</label>
-                <select className="input" value={form.buyer_id} onChange={e=>set('buyer_id',e.target.value)} required>
-                  <option value="">Select buyer…</option>
-                  {buyers?.map((b:any)=><option key={b.id} value={b.id}>{b.full_name}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label className="label">Litter <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label>
-                <select className="input" value={form.litter_id} onChange={e=>set('litter_id',e.target.value)}>
-                  <option value="">Select litter…</option>
-                  {litters?.map((l:any)=><option key={l.id} value={l.id}>{l.name??l.breed}</option>)}
-                </select>
-              </div>
+              <div className="field"><label className="label">Puppy name</label><input className="input" value={form.puppy_name} onChange={e => set('puppy_name', e.target.value)} /></div>
+              <div className="field"><label className="label">Sex</label><select className="input" value={form.puppy_sex} onChange={e => set('puppy_sex', e.target.value)}><option value="female">Female</option><option value="male">Male</option></select></div>
             </div>
-            <div className="two-col">
-              <div className="field"><label className="label">Sale price ($) *</label><input type="number" className="input" placeholder="2800" value={form.sale_price} onChange={e=>set('sale_price',e.target.value)} required /></div>
-              <div className="field"><label className="label">Deposit paid ($)</label><input type="number" className="input" placeholder="500" value={form.deposit_amount} onChange={e=>set('deposit_amount',e.target.value)} /></div>
-            </div>
-          </div>
-
-          {/* Puppy Details */}
-          <div className="card" style={{padding:24,marginBottom:16}}>
-            <div className="section-label" style={{marginBottom:16}}>Puppy Details</div>
-            <div className="two-col">
-              <div className="field"><label className="label">Puppy name <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label><input className="input" placeholder="e.g. Rosie" value={form.puppy_name} onChange={e=>set('puppy_name',e.target.value)} /></div>
-              <div className="field">
-                <label className="label">Sex *</label>
-                <select className="input" value={form.puppy_sex} onChange={e=>set('puppy_sex',e.target.value)}>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                </select>
-              </div>
-            </div>
-            <div className="two-col">
-              <div className="field"><label className="label">Date of birth *</label><input type="date" className="input" value={form.dob} onChange={e=>set('dob',e.target.value)} required /></div>
-              <div className="field"><label className="label">Go-home date *</label><input type="date" className="input" value={form.go_home_date} onChange={e=>set('go_home_date',e.target.value)} required /></div>
-            </div>
-            <div className="two-col">
-              <div className="field"><label className="label">Balance due date</label><input type="date" className="input" value={form.balance_due_date} onChange={e=>set('balance_due_date',e.target.value)} /><p style={{fontSize:11.5,color:'var(--ink-4)',marginTop:4}}>Defaults to go-home date if blank</p></div>
-              <div className="field"><label className="label">Health guarantee</label>
-                <select className="input" value={form.health_guarantee_months} onChange={e=>set('health_guarantee_months',e.target.value)}>
-                  <option value="12">12 months</option>
-                  <option value="24">24 months</option>
-                  <option value="36">36 months</option>
-                </select>
-              </div>
-            </div>
-            <div className="field">
-              <label className="label" style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
-                <input type="checkbox" checked={form.spay_neuter_required} onChange={e=>set('spay_neuter_required',e.target.checked)} style={{width:15,height:15,accentColor:'var(--forest)',cursor:'pointer'}}/>
-                Spay/neuter required (limited registration)
-              </label>
-            </div>
-          </div>
-
-          {/* Special terms */}
-          <div className="card" style={{padding:24,marginBottom:16}}>
-            <div className="section-label" style={{marginBottom:16}}>Special Terms <span style={{fontSize:11,fontWeight:400,color:'var(--ink-4)',textTransform:'none'}}>optional</span></div>
-            <textarea className="input" rows={3} placeholder="e.g. Breeding rights included, AKC full registration, specific diet requirements…" value={form.special_terms} onChange={e=>set('special_terms',e.target.value)} style={{resize:'vertical'}}/>
-          </div>
-
-          {!user?.subscription_active && (
-            <div style={{background:'var(--amber-f)',border:'1px solid rgba(200,117,26,.3)',borderRadius:'var(--r-lg)',padding:'14px 18px',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" strokeWidth="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              <div>
-                <p style={{fontSize:14,fontWeight:600,color:'var(--amber)'}}>Pro plan required for AI contracts</p>
-                <Link href="/dashboard/upgrade" style={{fontSize:13,color:'var(--amber)',textDecoration:'none',fontWeight:500}}>Upgrade now →</Link>
-              </div>
-            </div>
-          )}
-
-          {user?.subscription_active ? (
-            <button onClick={handleGenerate} className="btn-primary" style={{fontSize:15,padding:'12px 28px'}}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              Generate with Claude
-            </button>
-          ) : (
-            <Link href="/dashboard/upgrade" className="btn-primary" style={{fontSize:15,padding:'12px 28px',textDecoration:'none'}}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              Upgrade to Pro to Generate
-            </Link>
-          )}
-        </div>
+            <div className="two-col">{[['dob', 'Date of birth'], ['go_home_date', 'Go-home date'], ['balance_due_date', 'Balance due date']].map(([key, label]) => <div className="field" key={key}><label className="label">{label}</label><input type="date" className="input" value={(form as any)[key]} onChange={e => set(key, e.target.value)} /></div>)}</div>
+            <div className="field"><label className="label">Health guarantee (months)</label><input type="number" min="1" className="input" value={form.health_guarantee_months} onChange={e => set('health_guarantee_months', e.target.value)} /></div>
+            <label><input type="checkbox" checked={form.spay_neuter_required} onChange={e => set('spay_neuter_required', e.target.checked)} /> Spay/neuter required</label>
+            <div className="field" style={{ marginTop: 16 }}><label className="label">Special terms</label><textarea className="input" value={form.special_terms} onChange={e => set('special_terms', e.target.value)} /></div>
+          </details>
+        </fieldset>
+        {isPro(user) ? <button className="btn-ghost" onClick={generate} disabled={!!busy || !!contractId}>{busy === 'generate' ? 'Drafting…' : 'Draft with AI'}</button> : <p>Manual contracts are available on every plan. <Link href="/dashboard/upgrade">Upgrade to Pro for AI drafting.</Link></p>}
       </div>
-    </>
-  )
+      <div className="card" style={{ padding: 24 }}><label className="label" htmlFor="contract-content">Contract text *</label><textarea id="contract-content" className="input" rows={22} value={content} onChange={e => setContent(e.target.value)} disabled={!!busy} placeholder="Write or paste your puppy sales agreement here…" /><p style={{ margin: '12px 0', fontSize: 13 }}>Review all terms before sending. Your buyer will receive a link to sign.</p><div style={{ display: 'flex', gap: 12 }}><button className="btn-ghost" disabled={!!busy} onClick={() => save(false)}>{busy === 'save' ? 'Saving…' : 'Save draft'}</button><button className="btn-primary" disabled={!!busy} onClick={() => save(true)}>{busy === 'send' ? 'Sending…' : 'Save & send'}</button></div></div>
+    </div></div>
+  </>
 }

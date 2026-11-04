@@ -33,7 +33,7 @@ function StatCard({ label, value, sub, color, fill, icon, href, delay = 0 }: any
 const QUICK_ACTIONS = [
   { href: '/dashboard/litters/new', label: 'New Litter', icon: Heart, color: 'var(--pink)', bg: 'var(--pink-f)' },
   { href: '/dashboard/buyers/new', label: 'Add Buyer', icon: UserPlus, color: 'var(--blue)', bg: 'var(--blue-f)' },
-  { href: '/dashboard/contracts/new', label: 'AI Contract', icon: Zap, color: 'var(--purple)', bg: 'var(--purple-f)' },
+  { href: '/dashboard/contracts/new', label: 'New contract', icon: Zap, color: 'var(--purple)', bg: 'var(--purple-f)' },
   { href: '/dashboard/dogs/new', label: 'Add Dog', icon: Dog, color: 'var(--amber)', bg: 'var(--amber-f)' },
 ]
 

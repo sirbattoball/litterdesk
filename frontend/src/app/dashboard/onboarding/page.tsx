@@ -27,6 +27,7 @@ export default function OnboardingPage() {
     try {
       const payload: any = { ...litter, num_males: Number(litter.num_males), num_females: Number(litter.num_females) }
       if (litter.puppy_price) payload.puppy_price = Number(litter.puppy_price)
+      else delete payload.puppy_price
       if (!litter.go_home_date) delete payload.go_home_date
       await littersApi.create(payload)
       setStep(2)

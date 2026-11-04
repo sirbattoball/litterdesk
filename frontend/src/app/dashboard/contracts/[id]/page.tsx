@@ -1,57 +1,35 @@
 'use client'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { contractsApi } from '@/lib/api'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { format } from 'date-fns'
-
-const BADGE: Record<string, string> = {
-  draft: 'badge-draft', sent: 'badge-sent', signed: 'badge-deposit', voided: 'badge-complete'
-}
+import toast from 'react-hot-toast'
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>()
-
-  const { data: contract, isLoading } = useQuery({
-    queryKey: ['contract', id],
-    queryFn: () => contractsApi.get(id).then(r => r.data),
-  })
-
-  if (isLoading) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',padding:64}}>
-      <div className="spinner" style={{width:32,height:32}}/>
-    </div>
-  )
-
-  if (!contract) return (
-    <div className="page-body">
-      <div className="empty">
-        <div className="empty-title">Contract not found</div>
-        <Link href="/dashboard/contracts" className="btn-primary">← Back to Contracts</Link>
-      </div>
-    </div>
-  )
-
-  return (
-    <>
-      <div className="topbar">
-        <div>
-          <div className="topbar-title">{contract.title}</div>
-          <div className="topbar-sub">
-            <span className={`badge ${BADGE[contract.status] ?? 'badge-draft'}`} style={{marginRight:8}}>{contract.status}</span>
-            {contract.sale_price ? `$${contract.sale_price.toLocaleString()}` : ''}
-            {contract.created_at ? ` · ${format(new Date(contract.created_at),'MMM d, yyyy')}` : ''}
-          </div>
-        </div>
-        <div className="topbar-right">
-          <Link href="/dashboard/contracts" className="btn-ghost">← Contracts</Link>
-        </div>
-      </div>
-      <div className="page-body">
-        <div className="card" style={{padding:32,maxWidth:800}}>
-          <pre style={{fontFamily:'var(--sans)',fontSize:13.5,lineHeight:1.9,color:'#0d1a0f',whiteSpace:'pre-wrap',wordBreak:'break-word',margin:0}}>{contract.content}</pre>
-        </div>
-      </div>
-    </>
-  )
+  const qc = useQueryClient()
+  const [text, setText] = useState<string | null>(null)
+  const [busy, setBusy] = useState('')
+  const { data: contract, isLoading } = useQuery({ queryKey: ['contract', id], queryFn: () => contractsApi.get(id).then(r => r.data) })
+  const act = async (send: boolean) => {
+    setBusy(send ? 'send' : 'save')
+    try {
+      if (contract.status === 'draft') await contractsApi.update(id, { content: text ?? contract.content })
+      if (send) await contractsApi.send(id)
+      await qc.invalidateQueries({ queryKey: ['contract', id] })
+      qc.invalidateQueries({ queryKey: ['contracts'] })
+      setText(null)
+      toast.success(send ? 'Contract sent to buyer' : 'Draft saved')
+    } catch (err: any) { toast.error(typeof err.response?.data?.detail === 'string' ? err.response.data.detail : 'Could not save the contract') } finally { setBusy('') }
+  }
+  if (isLoading) return <div className="page-body">Loading contract…</div>
+  if (!contract) return <div className="page-body"><p>Contract not found</p><Link href="/dashboard/contracts">Back to contracts</Link></div>
+  return <>
+    <div className="topbar"><div><div className="topbar-title">{contract.title}</div><div className="topbar-sub">{contract.status}</div></div><Link href="/dashboard/contracts" className="btn-ghost">← Contracts</Link></div>
+    <div className="page-body"><div className="card" style={{ padding: 32, maxWidth: 800 }}>
+      {contract.status === 'draft' ? <><label className="label" htmlFor="draft-content">Contract text</label><textarea id="draft-content" className="input" rows={24} value={text ?? contract.content ?? ''} onChange={e => setText(e.target.value)} disabled={!!busy} /></> : <pre style={{ fontFamily: 'var(--sans)', fontSize: 13.5, lineHeight: 1.9, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{contract.content}</pre>}
+      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>{contract.status === 'draft' && <button className="btn-ghost" disabled={!!busy} onClick={() => act(false)}>{busy === 'save' ? 'Saving…' : 'Save changes'}</button>}{['draft', 'sent'].includes(contract.status) && <button className="btn-primary" disabled={!!busy} onClick={() => act(true)}>{busy === 'send' ? 'Sending…' : contract.status === 'sent' ? 'Resend to buyer' : 'Save & send'}</button>}</div>
+    </div></div>
+  </>
 }

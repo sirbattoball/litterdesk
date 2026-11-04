@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from app.database import get_db
 from app.models import User, Litter, Buyer, Contract, BuyerLitterMatch
-from app.routers.auth import get_current_user
+from app.routers.auth import get_active_user as get_current_user
 from app.schemas import DashboardStats
 
 router = APIRouter()

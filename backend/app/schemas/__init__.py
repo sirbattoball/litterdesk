@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from enum import Enum
+from app.models import LitterStatus
 
 
 # ─── Auth Schemas ─────────────────────────────────────────────────────────────
@@ -135,6 +136,9 @@ class DogOut(BaseModel):
 class LitterCreate(BaseModel):
     name: Optional[str] = None
     breed: str
+    status: LitterStatus = LitterStatus.planned
+    num_males: int = Field(default=0, ge=0)
+    num_females: int = Field(default=0, ge=0)
     sire_id: Optional[str] = None
     dam_id: Optional[str] = None
     breeding_date: Optional[date] = None
@@ -148,9 +152,9 @@ class LitterCreate(BaseModel):
 
 class LitterUpdate(BaseModel):
     name: Optional[str] = None
-    status: Optional[str] = None
-    num_males: Optional[int] = None
-    num_females: Optional[int] = None
+    status: Optional[LitterStatus] = None
+    num_males: Optional[int] = Field(default=None, ge=0)
+    num_females: Optional[int] = Field(default=None, ge=0)
     whelp_date: Optional[date] = None
     go_home_date: Optional[date] = None
     puppy_price: Optional[float] = None
@@ -263,11 +267,21 @@ class BuyerOut(BaseModel):
 class ContractCreate(BaseModel):
     buyer_id: str
     litter_id: Optional[str] = None
-    sale_price: Optional[float] = None
-    deposit_amount: Optional[float] = None
+    sale_price: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    deposit_amount: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
     balance_due_date: Optional[date] = None
     content: Optional[str] = None
     status: Optional[str] = "draft"
+
+    @model_validator(mode="after")
+    def check_deposit(self):
+        if self.sale_price is not None and (self.deposit_amount or 0) > self.sale_price:
+            raise ValueError("Deposit cannot exceed sale price")
+        return self
+
+
+class ContractUpdate(BaseModel):
+    content: str = Field(min_length=1)
 
 
 class ContractOut(BaseModel):
