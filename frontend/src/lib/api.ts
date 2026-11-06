@@ -96,6 +96,7 @@ export const contractsApi = {
   create: (data: any) => api.post('/contracts/', data),  // FIX: was missing
   update: (id: string, data: any) => api.put(`/contracts/${id}`, data),
   send: (id: string) => api.post(`/contracts/${id}/send`),
+  share: (id: string) => api.post(`/contracts/${id}/share`),
   void: (id: string) => api.delete(`/contracts/${id}`),
   deletePermanently: (id: string) => api.delete(`/contracts/${id}/permanent`),
   getForSigning: (token: string) => api.get(`/contracts/sign/${token}`),
@@ -104,7 +105,7 @@ export const contractsApi = {
 
 // ─── AI ──────────────────────────────────────────────────────────────────────
 export const aiApi = {
-  generateContract: (data: any) => api.post('/ai/generate-contract', data),
+  generateContract: (data: any) => api.post('/ai/generate-contract', data, { timeout: 240000 }),
   draftEmail: (data: any) => api.post('/ai/draft-email', data),
   matchLitter: (litterId: string) => api.post(`/ai/match-litter/${litterId}`),
   litterAnnouncement: (litterId: string) => api.post(`/ai/litter-announcement/${litterId}`),
