@@ -10,8 +10,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const { user, token, setUser } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
+  const accountPage = ['/dashboard/upgrade', '/dashboard/settings', '/dashboard/payments'].includes(pathname)
   const params = useSearchParams()
   const sessionId = params.get('session_id')
+  const billingReturn = params.get('billing_return')
+  const connectReturn = params.get('connect_return')
   const [hydrated, setHydrated] = useState(false)
   const [checked, setChecked] = useState(false)
   const [error, setError] = useState('')
@@ -26,13 +29,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     const verify = async () => {
       try {
         if (sessionId) await paymentsApi.syncSubscription(sessionId)
+        if (billingReturn) await paymentsApi.refreshSubscription()
+        if (connectReturn) await paymentsApi.refreshConnect()
         const res = await authApi.me()
         if (cancelled) return
         setUser(res.data)
         setChecked(true)
-        if (!res.data.subscription_active && pathname !== '/dashboard/upgrade') {
+        if (!res.data.subscription_active && !accountPage) {
           router.replace('/dashboard/upgrade')
-        } else if (sessionId) {
+        } else if (res.data.subscription_active && !res.data.onboarding_completed && !pathname.startsWith('/dashboard/onboarding') && !accountPage) {
+          router.replace('/dashboard/onboarding')
+        } else if (sessionId || billingReturn || connectReturn) {
           router.replace(pathname)
         }
       } catch {
@@ -41,9 +48,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     }
     verify()
     return () => { cancelled = true }
-  }, [hydrated, token, sessionId, retry, router, setUser, pathname])
+  }, [hydrated, token, sessionId, billingReturn, connectReturn, accountPage, retry, router, setUser, pathname])
   if (error) return <div className="page-body"><p>{error}</p><button className="btn-primary" onClick={() => setRetry(r => r + 1)}>Try again</button><a className="btn-ghost" href="/dashboard/upgrade">Manage subscription</a></div>
-  if (!hydrated || !checked || !user || (!user.subscription_active && pathname !== '/dashboard/upgrade')) return <div style={{ padding: 64, display: 'flex', justifyContent: 'center' }}><div className="spinner" /></div>
+  if (!hydrated || !checked || !user || (!user.subscription_active && !accountPage)) return <div style={{ padding: 64, display: 'flex', justifyContent: 'center' }}><div className="spinner" /></div>
   if (pathname?.startsWith('/dashboard/onboarding')) return <>{children}</>
   return <div className="shell"><Sidebar /><div className="main-content">{pathname !== '/dashboard/upgrade' && <TrialBanner />}{children}</div></div>
 }

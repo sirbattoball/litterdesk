@@ -1,9 +1,10 @@
 'use client'
+import { QueryFailure } from '@/components/QueryFailure'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { littersApi } from '@/lib/api'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
 
@@ -62,7 +63,7 @@ function LitterCard({ litter, onDeleted }: { litter: any; onDeleted: () => void 
         {litter.go_home_date && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--ink-4)', marginTop: 12 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Go home: {format(new Date(litter.go_home_date), 'MMM d, yyyy')}
+            Go home: {format(parseISO(litter.go_home_date), 'MMM d, yyyy')}
           </div>
         )}
       </div>
@@ -72,10 +73,12 @@ function LitterCard({ litter, onDeleted }: { litter: any; onDeleted: () => void 
 
 export default function LittersPage() {
   const qc = useQueryClient()
-  const { data: litters, isLoading } = useQuery({ queryKey: ['litters'], queryFn: () => littersApi.list().then(r => r.data) })
+  const { data: litters, isLoading, isError, refetch } = useQuery({ queryKey: ['litters'], queryFn: () => littersApi.list().then(r => r.data) })
   const active = litters?.filter((l: any) => l.status !== 'complete') ?? []
   const done = litters?.filter((l: any) => l.status === 'complete') ?? []
   const refresh = () => qc.invalidateQueries({ queryKey: ['litters'] })
+
+  if (isError) return <QueryFailure retry={() => { refetch() }} />
 
   return (
     <>

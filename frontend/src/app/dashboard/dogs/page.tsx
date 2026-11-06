@@ -1,10 +1,11 @@
 'use client'
+import { QueryFailure } from '@/components/QueryFailure'
 import { useQuery } from '@tanstack/react-query'
 import { dogsApi } from '@/lib/api'
 import Link from 'next/link'
 
 export default function DogsPage() {
-  const { data: dogs, isLoading } = useQuery({
+  const { data: dogs, isLoading, isError, refetch } = useQuery({
     queryKey: ['dogs'],
     queryFn: () => dogsApi.list().then(r => r.data)
   })
@@ -36,6 +37,8 @@ export default function DogsPage() {
       </div>
     </Link>
   )
+
+  if (isError) return <QueryFailure retry={() => { refetch() }} />
 
   return (
     <>

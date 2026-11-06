@@ -14,7 +14,7 @@ celery_app = Celery(
     include=["app.tasks"]
 )
 
-celery_app.conf.beat_schedule = {
+_future_schedules = {
     # Every morning at 8am — send go-home reminders
     "go-home-reminders": {
         "task": "app.tasks.send_go_home_reminders",
@@ -43,3 +43,7 @@ celery_app.conf.beat_schedule = {
 }
 
 celery_app.conf.timezone = "America/New_York"
+
+# No background email service is deployed or offered by the current product.
+# Keep unfinished reminder/nurture jobs unscheduled.
+celery_app.conf.beat_schedule = {}

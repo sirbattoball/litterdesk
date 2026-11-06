@@ -1,9 +1,12 @@
 'use client'
+import { QueryFailure } from '@/components/QueryFailure'
+import { BuyerEditor } from '@/components/BuyerEditor'
+import { BuyerCommunications } from '@/components/BuyerCommunications'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { buyersApi, aiApi, littersApi } from '@/lib/api'
 import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { useAuthStore, isPro } from '@/lib/store'
@@ -27,6 +30,8 @@ export default function BuyerDetailPage() {
   const router = useRouter()
   const qc = useQueryClient()
 
+  const [notes, setNotes] = useState<string | null>(null)
+  const [savingNotes, setSavingNotes] = useState(false)
   const [emailDraft, setEmailDraft] = useState<any>(null)
   const [draftLoading, setDraftLoading] = useState(false)
   const [emailType, setEmailType] = useState('inquiry_response')
@@ -37,7 +42,7 @@ export default function BuyerDetailPage() {
   const [selectedLitter, setSelectedLitter] = useState('')
   const [adding, setAdding] = useState(false)
 
-  const { data: buyer, isLoading } = useQuery({
+  const { data: buyer, isLoading, isError, refetch } = useQuery({
     queryKey: ['buyer', id],
     queryFn: () => buyersApi.get(id).then(r => r.data),
   })
@@ -48,12 +53,20 @@ export default function BuyerDetailPage() {
     enabled: showAddLitter,
   })
 
+  const { data: waitlists } = useQuery({ queryKey: ['buyer-waitlists', id], queryFn: () => buyersApi.waitlists(id).then(r => r.data) })
+  const saveNotes = async () => {
+    setSavingNotes(true)
+    try { await buyersApi.update(id, { lifestyle_notes: notes ?? buyer?.lifestyle_notes ?? '' }); await qc.invalidateQueries({ queryKey: ['buyer', id] }); setNotes(null); toast.success('Notes saved') }
+    catch (err: any) { toast.error(err.response?.data?.detail || 'Could not save notes') }
+    finally { setSavingNotes(false) }
+  }
   const handleStatusChange = async (newStatus: string) => {
     setUpdatingStatus(true)
     try {
       await buyersApi.update(id, { status: newStatus })
       qc.invalidateQueries({ queryKey: ['buyer', id] })
       qc.invalidateQueries({ queryKey: ['buyers'] })
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] })
       toast.success(`Status updated to ${newStatus.replace('_',' ')}`)
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to update status')
@@ -79,17 +92,20 @@ export default function BuyerDetailPage() {
       toast.success('Added to litter waitlist!')
       setShowAddLitter(false)
       setSelectedLitter('')
+      qc.invalidateQueries({ queryKey: ['buyer-waitlists', id] })
       qc.invalidateQueries({ queryKey: ['buyer', id] })
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to add to waitlist')
     } finally { setAdding(false) }
   }
 
-  const copyEmail = () => {
+  const copyEmail = async () => {
     if (!emailDraft) return
-    navigator.clipboard.writeText(`Subject: ${emailDraft.subject}\n\n${emailDraft.body}`)
-    toast.success('Copied to clipboard!')
+    try { await navigator.clipboard.writeText(`Subject: ${emailDraft.subject}\n\n${emailDraft.body}`); toast.success('Copied to clipboard!') }
+    catch { toast.error('Copy is unavailable. Select and copy the draft text instead.') }
   }
+
+  if (isError) return <QueryFailure retry={() => { refetch() }} />
 
   if (isLoading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',padding:64}}><div className="spinner" style={{width:32,height:32}}/></div>
   if (!buyer) return (
@@ -120,13 +136,14 @@ export default function BuyerDetailPage() {
         </div>
         <div className="topbar-right">
           <button onClick={()=>setShowEmailPanel(!showEmailPanel)} className="btn-ghost">
-            ✉ Draft Email
+            ✉ Draft Email {isPro(user) ? '' : '(Pro)'}
           </button>
           <Link href="/dashboard/buyers" className="btn-ghost">← Buyers</Link>
         </div>
       </div>
 
       <div className="page-body">
+        <div className="card" style={{padding:20,marginBottom:16}}><BuyerEditor buyer={buyer} onSaved={() => {qc.invalidateQueries({queryKey:['buyer',id]});qc.invalidateQueries({queryKey:['buyers']});qc.invalidateQueries({queryKey:['dashboard-stats']})}}/></div>
         <div className="two-col">
           {/* Left: Info + Status */}
           <div style={{display:'flex',flexDirection:'column',gap:16}}>
@@ -137,8 +154,8 @@ export default function BuyerDetailPage() {
                 {[
                   ['Email', buyer.email],
                   ['Phone', buyer.phone || '—'],
-                  ['Source', buyer.source || '—'],
-                  ['Added', buyer.created_at ? format(new Date(buyer.created_at),'MMM d, yyyy') : '—'],
+                  ['Source', buyer.referral_source || '—'],
+                  ['Added', buyer.created_at ? format(parseISO(buyer.created_at),'MMM d, yyyy') : '—'],
                 ].map(([k,v]) => (
                   <div key={k} style={{display:'flex',justifyContent:'space-between',fontSize:14,padding:'10px 0',borderBottom:'1px solid var(--paper-3)'}}>
                     <span style={{color:'var(--ink-4)'}}>{k}</span>
@@ -189,11 +206,10 @@ export default function BuyerDetailPage() {
             {/* Notes */}
             <div className="card" style={{padding:20}}>
               <div className="section-label" style={{marginBottom:10}}>Notes & Application</div>
-              {buyer.notes ? (
-                <p style={{fontSize:14,color:'var(--ink-2)',lineHeight:1.7,background:'var(--paper)',padding:14,borderRadius:'var(--r-lg)'}}>{buyer.notes}</p>
-              ) : (
-                <p style={{fontSize:14,color:'var(--ink-4)'}}>No notes on file.</p>
-              )}
+              <label className="label" htmlFor="buyer-notes">Buyer notes</label>
+              <textarea id="buyer-notes" className="input" rows={5} value={notes ?? buyer.lifestyle_notes ?? ''} onChange={e => setNotes(e.target.value)} />
+              <button className="btn-primary" style={{marginTop:10}} disabled={savingNotes || notes === null} onClick={saveNotes}>{savingNotes ? 'Saving…' : 'Save notes'}</button>
+
             </div>
 
             {/* Add to waitlist */}
@@ -204,10 +220,11 @@ export default function BuyerDetailPage() {
                   {showAddLitter ? 'Cancel' : '+ Add to Litter'}
                 </button>
               </div>
+              {waitlists?.map((w:any) => <p key={w.litter_id} style={{marginBottom:10,fontSize:13}}><Link href={`/dashboard/litters/${w.litter_id}`}>{w.litter_name} · Position {w.position}{w.deposit_paid ? ' · Deposit paid' : ''}</Link></p>)}
               {showAddLitter && (
                 <div style={{marginBottom:14,padding:14,background:'var(--paper)',borderRadius:'var(--r-lg)',border:'1px solid var(--paper-3)'}}>
-                  <label className="label">Select litter</label>
-                  <select className="input" value={selectedLitter} onChange={e=>setSelectedLitter(e.target.value)} style={{marginBottom:10}}>
+                  <label className="label" htmlFor="field-select-litter-1">Select litter</label>
+                  <select id="field-select-litter-1" className="input" value={selectedLitter} onChange={e=>setSelectedLitter(e.target.value)} style={{marginBottom:10}}>
                     <option value="">Choose litter…</option>
                     {litters?.map((l:any)=><option key={l.id} value={l.id}>{l.name??l.breed} ({l.status})</option>)}
                   </select>
@@ -219,7 +236,7 @@ export default function BuyerDetailPage() {
               <div style={{display:'flex',flexDirection:'column',gap:8}}>
                 <Link href={`/dashboard/contracts/new?buyer=${id}`} className="btn-primary" style={{textDecoration:'none',justifyContent:'center',fontSize:13}}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  Generate Contract for this Buyer
+                  Create contract for this buyer
                 </Link>
               </div>
             </div>
@@ -229,8 +246,8 @@ export default function BuyerDetailPage() {
               <div className="card" style={{padding:20}}>
                 <div className="section-label" style={{marginBottom:14}}>AI Email Draft</div>
                 <div className="field">
-                  <label className="label">Email type</label>
-                  <select className="input" value={emailType} onChange={e=>setEmailType(e.target.value)}>
+                  <label className="label" htmlFor="field-email-type-2">Email type</label>
+                  <select id="field-email-type-2" className="input" value={emailType} onChange={e=>setEmailType(e.target.value)}>
                     {EMAIL_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
@@ -256,6 +273,7 @@ export default function BuyerDetailPage() {
             )}
           </div>
         </div>
+        <BuyerCommunications buyerId={id}/>
       </div>
     </>
   )

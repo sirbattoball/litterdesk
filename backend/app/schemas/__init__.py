@@ -2,20 +2,41 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, model_validato
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from enum import Enum
-from app.models import LitterStatus
+from app.models import LitterStatus, DogSex, BuyerStatus
 
 
 # ─── Auth Schemas ─────────────────────────────────────────────────────────────
 
-class UserRegister(BaseModel):
+class EmailModel(BaseModel):
+    @field_validator("full_name", check_fields=False)
+    @classmethod
+    def nonblank_name(cls, value):
+        if value is not None and not value.strip():
+            raise ValueError("Name is required")
+        return value.strip() if value else value
+
+    @field_validator("email", check_fields=False, mode="before")
+    @classmethod
+    def normalize_email(cls, value):
+        return value.strip().lower() if isinstance(value, str) else value
+
+
+def valid_password(value):
+    if len(value) < 8 or len(value.encode("utf-8")) > 72:
+        raise ValueError("Password must be at least 8 characters and no more than 72 UTF-8 bytes")
+    return value
+
+
+class UserRegister(EmailModel):
     email: EmailStr
     password: str
     full_name: str
+    _password = field_validator("password")(valid_password)
     kennel_name: Optional[str] = None
     breeds: Optional[List[str]] = []
 
 
-class UserLogin(BaseModel):
+class UserLogin(EmailModel):
     email: EmailStr
     password: str
 
@@ -36,12 +57,14 @@ class UserOut(BaseModel):
     subscription_active: bool
     stripe_onboarded: bool
     trial_ends_at: Optional[datetime] = None
+    onboarding_completed: bool = False
 
     class Config:
         from_attributes = True
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(EmailModel):
+    onboarding_completed: Optional[bool] = None
     full_name: Optional[str] = None
     kennel_name: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -54,18 +77,25 @@ class UserUpdate(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
+    _password = field_validator("new_password")(valid_password)
 
 
-class ForgotPasswordRequest(BaseModel):
+class ForgotPasswordRequest(EmailModel):
     email: EmailStr
 
 
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+    _password = field_validator("new_password")(valid_password)
 
 
 class HealthRecordCreate(BaseModel):
+    @field_validator("description")
+    @classmethod
+    def description_required(cls, value):
+        if not value.strip(): raise ValueError("Description is required")
+        return value.strip()
     record_type: str
     description: str
     administered_by: Optional[str] = None
@@ -96,13 +126,18 @@ class HealthRecordOut(BaseModel):
 # ─── Dog Schemas ──────────────────────────────────────────────────────────────
 
 class DogCreate(BaseModel):
+    @field_validator("name", "breed")
+    @classmethod
+    def required_text(cls, value):
+        if not value.strip(): raise ValueError("Name and breed are required")
+        return value.strip()
     name: str
     breed: str
-    sex: str
+    sex: DogSex
     dob: Optional[date] = None
     registered_name: Optional[str] = None
     color: Optional[str] = None
-    weight_lbs: Optional[float] = None
+    weight_lbs: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
     akc_number: Optional[str] = None
     registration_org: Optional[str] = None
     health_tests: Optional[Dict[str, Any]] = {}
@@ -145,20 +180,25 @@ class LitterCreate(BaseModel):
     due_date: Optional[date] = None
     whelp_date: Optional[date] = None
     go_home_date: Optional[date] = None
-    puppy_price: Optional[float] = None
-    deposit_amount: Optional[float] = None
+    puppy_price: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    deposit_amount: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
     notes: Optional[str] = None
 
 
 class LitterUpdate(BaseModel):
+    breed: Optional[str] = None
+    sire_id: Optional[str] = None
+    dam_id: Optional[str] = None
+    breeding_date: Optional[date] = None
+    due_date: Optional[date] = None
     name: Optional[str] = None
     status: Optional[LitterStatus] = None
     num_males: Optional[int] = Field(default=None, ge=0)
     num_females: Optional[int] = Field(default=None, ge=0)
     whelp_date: Optional[date] = None
     go_home_date: Optional[date] = None
-    puppy_price: Optional[float] = None
-    deposit_amount: Optional[float] = None
+    puppy_price: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    deposit_amount: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
     notes: Optional[str] = None
     waitlist_open: Optional[bool] = None
 
@@ -193,8 +233,8 @@ class LitterOut(BaseModel):
 class PuppyCreate(BaseModel):
     collar_color: Optional[str] = None
     name: Optional[str] = None
-    sex: Optional[str] = None
-    birth_weight_oz: Optional[float] = None
+    sex: Optional[DogSex] = None
+    birth_weight_oz: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
     color: Optional[str] = None
     markings: Optional[str] = None
     notes: Optional[str] = None
@@ -219,7 +259,17 @@ class PuppyOut(BaseModel):
 
 # ─── Buyer Schemas ────────────────────────────────────────────────────────────
 
-class BuyerCreate(BaseModel):
+class BuyerCreate(EmailModel):
+    budget_min: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    budget_max: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    timeline: Optional[str] = None
+
+    @model_validator(mode="after")
+    def check_budget(self):
+        if self.budget_min is not None and self.budget_max is not None and self.budget_min > self.budget_max:
+            raise ValueError("Minimum budget cannot exceed maximum budget")
+        return self
+
     full_name: str
     email: EmailStr
     phone: Optional[str] = None
@@ -233,15 +283,29 @@ class BuyerCreate(BaseModel):
     referral_source: Optional[str] = None
 
 
-class BuyerUpdate(BaseModel):
-    status: Optional[str] = None
-    priority_score: Optional[int] = None
+class BuyerUpdate(EmailModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    breed_preference: Optional[str] = None
+    sex_preference: Optional[str] = None
+    referral_source: Optional[str] = None
+    budget_min: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    budget_max: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    timeline: Optional[str] = None
+    status: Optional[BuyerStatus] = None
+    priority_score: Optional[int] = Field(default=None, ge=0, le=100)
     follow_up_date: Optional[datetime] = None
     lifestyle_notes: Optional[str] = None
     experience_level: Optional[str] = None
 
 
 class BuyerOut(BaseModel):
+    referral_source: Optional[str] = None
+    lifestyle_notes: Optional[str] = None
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    timeline: Optional[str] = None
     id: str
     full_name: str
     email: str
@@ -285,6 +349,8 @@ class ContractUpdate(BaseModel):
 
 
 class ContractOut(BaseModel):
+    buyer_signature: Optional[str] = None
+    balance_due_date: Optional[date] = None
     id: str
     buyer_id: str
     litter_id: Optional[str]

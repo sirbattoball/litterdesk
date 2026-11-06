@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from jose import JWTError, jwt
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+import jwt
+from jwt import InvalidTokenError as JWTError
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -44,7 +47,10 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        return pwd_context.verify(plain, hashed)
+    except (ValueError, TypeError):
+        return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -71,6 +77,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise credentials_exception
+    if payload.get("ver", 0) != user.credential_version:
+        raise credentials_exception
     return user
 
 
@@ -82,14 +90,14 @@ def get_active_user(user: User = Depends(get_current_user)) -> User:
 
 @router.post("/register", response_model=Token)
 def register(data: UserRegister, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == data.email).first()
+    existing = db.query(User).filter(func.lower(User.email) == data.email).first()
     if existing:
         # Allow an abandoned checkout to resume only after authenticating
         # the existing account. Registration must never replace its password.
         if not existing.subscription_active and not existing.trial_ends_at:
             if not verify_password(data.password, existing.hashed_password):
                 raise HTTPException(status_code=400, detail="Email already registered. Sign in or reset your password to continue.")
-            token = create_access_token({"sub": existing.id})
+            token = create_access_token({"sub": existing.id, "ver": existing.credential_version})
             return {"access_token": token, "token_type": "bearer", "user": UserOut.model_validate(existing)}
 
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -112,10 +120,14 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
     # way Stripe's trial date is always the source of truth, not ours.
 
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Email already registered")
     db.refresh(user)
 
-    token = create_access_token({"sub": user.id})
+    token = create_access_token({"sub": user.id, "ver": user.credential_version})
     return {"access_token": token, "token_type": "bearer", "user": UserOut.model_validate(user)}
 
 
@@ -124,14 +136,15 @@ def login(data: UserLogin, request: Request, db: Session = Depends(get_db)):
     client_ip = request.client.host if request.client else "unknown"
     _check_login_rate_limit(f"{client_ip}:{data.email.lower()}")
 
-    user = db.query(User).filter(User.email == data.email).first()
+    user = db.query(User).filter(func.lower(User.email) == data.email).first()
     if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    _login_attempts.pop(f"{client_ip}:{data.email.lower()}", None)
     user.last_login = datetime.now(timezone.utc)
     db.commit()
 
-    token = create_access_token({"sub": user.id})
+    token = create_access_token({"sub": user.id, "ver": user.credential_version})
     return {"access_token": token, "token_type": "bearer", "user": UserOut.model_validate(user)}
 
 
@@ -150,20 +163,24 @@ def change_password(
         raise HTTPException(400, "Current password is incorrect")
     if len(data.new_password) < 8:
         raise HTTPException(400, "New password must be at least 8 characters")
+    current_user.credential_version += 1
+    current_user.reset_token = None
+    current_user.reset_token_expires = None
     current_user.hashed_password = hash_password(data.new_password)
     db.commit()
 
 
 @router.post("/forgot-password", status_code=204)
-def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == data.email).first()
+def forgot_password(data: ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    _check_login_rate_limit(f"reset:{request.client.host if request.client else 'unknown'}:{data.email}")
+    user = db.query(User).filter(func.lower(User.email) == data.email).first()
     if user:
         from app.services import email_service
         reset_token = str(uuid.uuid4())
         user.reset_token = reset_token
         user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
         db.commit()
-        reset_url = f"https://litterdesk.vercel.app/reset-password/{reset_token}"
+        reset_url = f"{settings.APP_URL.rstrip('/')}/reset-password/{reset_token}"
         email_service.send_email(
             to=user.email,
             subject="Reset your LitterDesk password",
@@ -175,10 +192,14 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
 @router.post("/reset-password", status_code=204)
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.reset_token == data.token).first()
-    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
+    expires = user.reset_token_expires if user else None
+    if expires and expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if not user or not expires or expires < datetime.now(timezone.utc):
         raise HTTPException(400, "Invalid or expired reset link")
     if len(data.new_password) < 8:
         raise HTTPException(400, "New password must be at least 8 characters")
+    user.credential_version += 1
     user.hashed_password = hash_password(data.new_password)
     user.reset_token = None
     user.reset_token_expires = None
@@ -189,7 +210,7 @@ def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
 def update_me(data: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     update_data = data.model_dump(exclude_none=True)
     if "email" in update_data and update_data["email"] != current_user.email:
-        existing = db.query(User).filter(User.email == update_data["email"]).first()
+        existing = db.query(User).filter(func.lower(User.email) == update_data["email"], User.id != current_user.id).first()
         if existing:
             raise HTTPException(400, "That email is already in use.")
     for field, value in update_data.items():

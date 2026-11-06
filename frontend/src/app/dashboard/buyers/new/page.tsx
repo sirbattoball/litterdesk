@@ -1,4 +1,5 @@
 'use client'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { buyersApi } from '@/lib/api'
@@ -10,6 +11,7 @@ const SOURCES = ['Instagram','Facebook','AKC Marketplace','Referral','Website','
 
 export default function NewBuyerPage() {
   const router = useRouter()
+  const qc = useQueryClient()
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ full_name:'', email:'', phone:'', breed_preference:'Golden Retriever', sex_preference:'', budget_min:'', budget_max:'', timeline:'', source:'', notes:'', status:'inquiry' })
   const set = (k: string, v: any) => setForm(f => ({...f,[k]:v}))
@@ -18,13 +20,17 @@ export default function NewBuyerPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      const payload: any = { ...form }
+      const { source, notes, ...fields } = form
+      const payload: any = { ...fields, referral_source: source, lifestyle_notes: notes }
       if (form.budget_min) payload.budget_min = Number(form.budget_min)
       if (form.budget_max) payload.budget_max = Number(form.budget_max)
       if (!form.phone) delete payload.phone
       if (!form.budget_min) delete payload.budget_min
       if (!form.budget_max) delete payload.budget_max
       await buyersApi.create(payload)
+      qc.invalidateQueries({queryKey:['buyers']})
+      qc.invalidateQueries({queryKey:['dashboard-stats']})
+      qc.invalidateQueries({queryKey:['dashboard-activity']})
       toast.success('Buyer added!')
       router.push('/dashboard/buyers')
     } catch (err: any) {
@@ -43,14 +49,14 @@ export default function NewBuyerPage() {
           <form onSubmit={handleSubmit}>
             <div className="card" style={{padding:24,marginBottom:16}}>
               <div className="section-label" style={{marginBottom:16}}>Contact Info</div>
-              <div className="field"><label className="label">Full name *</label><input className="input" placeholder="Jane Smith" value={form.full_name} onChange={e=>set('full_name',e.target.value)} required /></div>
+              <div className="field"><label className="label" htmlFor="field-full-name-1">Full name *</label><input id="field-full-name-1" className="input" placeholder="Jane Smith" value={form.full_name} onChange={e=>set('full_name',e.target.value)} required /></div>
               <div className="two-col">
-                <div className="field"><label className="label">Email *</label><input type="email" className="input" placeholder="jane@email.com" value={form.email} onChange={e=>set('email',e.target.value)} required /></div>
-                <div className="field"><label className="label">Phone</label><input className="input" placeholder="(555) 000-0000" value={form.phone} onChange={e=>set('phone',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-email-2">Email *</label><input id="field-email-2" type="email" className="input" placeholder="jane@email.com" value={form.email} onChange={e=>set('email',e.target.value)} required /></div>
+                <div className="field"><label className="label" htmlFor="field-phone-3">Phone</label><input id="field-phone-3" className="input" placeholder="(555) 000-0000" value={form.phone} onChange={e=>set('phone',e.target.value)} /></div>
               </div>
               <div className="field">
-                <label className="label">How did they hear about you?</label>
-                <select className="input" value={form.source} onChange={e=>set('source',e.target.value)}>
+                <label className="label" htmlFor="field-how-did-they-hear-about-you-4">How did they hear about you?</label>
+                <select id="field-how-did-they-hear-about-you-4" className="input" value={form.source} onChange={e=>set('source',e.target.value)}>
                   <option value="">Select source…</option>
                   {SOURCES.map(s=><option key={s} value={s.toLowerCase()}>{s}</option>)}
                 </select>
@@ -61,14 +67,14 @@ export default function NewBuyerPage() {
               <div className="section-label" style={{marginBottom:16}}>Puppy Preferences</div>
               <div className="two-col">
                 <div className="field">
-                  <label className="label">Breed preference</label>
-                  <select className="input" value={form.breed_preference} onChange={e=>set('breed_preference',e.target.value)}>
+                  <label className="label" htmlFor="field-breed-preference-5">Breed preference</label>
+                  <select id="field-breed-preference-5" className="input" value={form.breed_preference} onChange={e=>set('breed_preference',e.target.value)}>
                     {BREEDS.map(b=><option key={b}>{b}</option>)}
                   </select>
                 </div>
                 <div className="field">
-                  <label className="label">Sex preference</label>
-                  <select className="input" value={form.sex_preference} onChange={e=>set('sex_preference',e.target.value)}>
+                  <label className="label" htmlFor="field-sex-preference-6">Sex preference</label>
+                  <select id="field-sex-preference-6" className="input" value={form.sex_preference} onChange={e=>set('sex_preference',e.target.value)}>
                     <option value="">No preference</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -76,10 +82,10 @@ export default function NewBuyerPage() {
                 </div>
               </div>
               <div className="two-col">
-                <div className="field"><label className="label">Budget min ($)</label><input type="number" className="input" placeholder="2000" value={form.budget_min} onChange={e=>set('budget_min',e.target.value)} /></div>
-                <div className="field"><label className="label">Budget max ($)</label><input type="number" className="input" placeholder="4000" value={form.budget_max} onChange={e=>set('budget_max',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-budget-min-7">Budget min ($)</label><input id="field-budget-min-7" type="number" className="input" placeholder="2000" value={form.budget_min} onChange={e=>set('budget_min',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-budget-max-8">Budget max ($)</label><input id="field-budget-max-8" type="number" className="input" placeholder="4000" value={form.budget_max} onChange={e=>set('budget_max',e.target.value)} /></div>
               </div>
-              <div className="field"><label className="label">Timeline</label><input className="input" placeholder="e.g. Ready in spring 2025" value={form.timeline} onChange={e=>set('timeline',e.target.value)} /></div>
+              <div className="field"><label className="label" htmlFor="field-timeline-9">Timeline</label><input id="field-timeline-9" className="input" placeholder="e.g. Ready in spring 2025" value={form.timeline} onChange={e=>set('timeline',e.target.value)} /></div>
             </div>
 
             <div className="card" style={{padding:24,marginBottom:24}}>

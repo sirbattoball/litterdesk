@@ -68,6 +68,8 @@ def ensure_timezone_aware_columns():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.schema_updates import ensure_customer_columns
+    ensure_customer_columns(engine)
     Base.metadata.create_all(bind=engine)
     ensure_timezone_aware_columns()
     yield
@@ -86,7 +88,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS + ["https://litterdesk.vercel.app"],
-    allow_origin_regex=r"https://litterdesk.*\\.vercel\\.app",
+    allow_origin_regex=r"https://litterdesk(?:-[a-z0-9-]+)?-sirbattoballs-projects\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

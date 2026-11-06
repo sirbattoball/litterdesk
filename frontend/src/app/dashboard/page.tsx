@@ -1,9 +1,10 @@
 'use client'
+import { QueryFailure } from '@/components/QueryFailure'
 
 import { useQuery } from '@tanstack/react-query'
 import { dashboardApi } from '@/lib/api'
 import { useAuthStore } from '@/lib/store'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
 import { Heart, Users, TrendingUp, Bell, UserPlus, Zap, Dog } from 'lucide-react'
 
@@ -39,8 +40,10 @@ const QUICK_ACTIONS = [
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
-  const { data: stats } = useQuery({ queryKey: ['dashboard-stats'], queryFn: () => dashboardApi.stats().then(r => r.data) })
-  const { data: activity } = useQuery({ queryKey: ['dashboard-activity'], queryFn: () => dashboardApi.recentActivity().then(r => r.data) })
+  const { data: stats, isError: statsError, refetch: retryStats } = useQuery({ queryKey: ['dashboard-stats'], queryFn: () => dashboardApi.stats().then(r => r.data) })
+  const { data: activity, isError: activityError, refetch: retryActivity } = useQuery({ queryKey: ['dashboard-activity'], queryFn: () => dashboardApi.recentActivity().then(r => r.data) })
+
+  if (statsError || activityError) return <QueryFailure retry={() => { retryStats(); retryActivity() }} />
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -71,11 +74,11 @@ export default function DashboardPage() {
           <StatCard delay={60} label="Total Buyers" value={stats?.total_buyers} sub="↑ in your pipeline" color="var(--blue)" fill="var(--blue-f)" href="/dashboard/buyers"
             icon={<Users size={17} color="var(--blue)" strokeWidth={2}/>}
           />
-          <StatCard delay={120} label="Deposits Collected" value={stats?.buyers_with_deposit} sub="via Stripe Connect" color="var(--forest-ll)" fill="var(--sage-l)"
+          <StatCard delay={120} label="Buyers with deposits" value={stats?.buyers_with_deposit} sub="across your litter waitlists" color="var(--forest-ll)" fill="var(--sage-l)"
             icon={<TrendingUp size={17} color="var(--forest-ll)" strokeWidth={2}/>}
           />
-          <StatCard delay={180} label="Follow-ups Due" value={stats?.follow_ups_due ?? 0}
-            sub={stats?.follow_ups_due > 0 ? '⚠ Action needed' : '✓ All caught up'}
+          <StatCard delay={180} label="Follow-ups Due" value={stats?.follow_ups_due}
+            sub={stats ? (stats.follow_ups_due > 0 ? '⚠ Action needed' : '✓ All caught up') : 'Loading…'}
             color={stats?.follow_ups_due > 0 ? 'var(--red)' : 'var(--forest-ll)'}
             fill={stats?.follow_ups_due > 0 ? 'var(--red-f)' : 'var(--sage-l)'}
             href="/dashboard/buyers"
@@ -95,7 +98,7 @@ export default function DashboardPage() {
                 <div className="activity-dot" style={{background: i%3===0?'var(--forest-ll)':i%3===1?'var(--blue)':'var(--amber)'}}/>
                 <div>
                   <div className="activity-text">{item.description}</div>
-                  <div className="activity-time">{format(new Date(item.timestamp),'MMM d, h:mm a')}</div>
+                  <div className="activity-time">{format(parseISO(item.timestamp),'MMM d, h:mm a')}</div>
                 </div>
               </div>
             )) : (

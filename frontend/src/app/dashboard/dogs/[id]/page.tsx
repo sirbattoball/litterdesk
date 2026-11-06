@@ -1,9 +1,10 @@
 'use client'
+import { QueryFailure } from '@/components/QueryFailure'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { dogsApi } from '@/lib/api'
+import { dogsApi, littersApi } from '@/lib/api'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { format, isPast } from 'date-fns'
+import { format, isBefore, startOfDay, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 
@@ -30,12 +31,13 @@ export default function DogDetailPage() {
     notes: '',
   })
 
-  const { data: dog, isLoading } = useQuery({
+  const { data: dog, isLoading, isError, refetch } = useQuery({
     queryKey: ['dog', id],
     queryFn: () => dogsApi.get(id).then(r => r.data),
   })
 
-  const { data: healthRecords, refetch: refetchRecords } = useQuery({
+  const { data: allLitters } = useQuery({queryKey:['litters'],queryFn:()=>littersApi.list().then(r=>r.data)})
+  const { data: healthRecords, isError: healthError, refetch: refetchRecords } = useQuery({
     queryKey: ['dog-health-records', id],
     queryFn: () => dogsApi.listHealthRecords(id).then(r => r.data),
     enabled: !!id,
@@ -78,12 +80,12 @@ export default function DogDetailPage() {
   // Populate edit form when dog loads
   useEffect(() => {
     if (dog && !editForm) setEditForm({ ...dog })
-  }, [dog])
+  }, [dog, editForm])
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      await dogsApi.update(id, editForm)
+      await dogsApi.update(id, { ...editForm, weight_lbs: editForm.weight_lbs === '' ? null : editForm.weight_lbs })
       qc.invalidateQueries({ queryKey: ['dog', id] })
       qc.invalidateQueries({ queryKey: ['dogs'] })
       toast.success('Dog updated!')
@@ -110,10 +112,12 @@ export default function DogDetailPage() {
     if (!editForm) return
     const tests = { ...(editForm.health_tests || {}) }
     const key = h.split(' ')[0]
-    if (tests[key]) delete tests[key]
+    if (tests[key] === h) delete tests[key]
     else tests[key] = h
     setEditForm({ ...editForm, health_tests: tests })
   }
+
+  if (isError) return <QueryFailure retry={() => { refetch() }} />
 
   if (isLoading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',padding:64}}>
@@ -178,7 +182,7 @@ export default function DogDetailPage() {
                 {[
                   ['Breed', dog.breed],
                   ['Sex', dog.sex === 'female' ? 'Female (Dam)' : 'Male (Sire)'],
-                  ['Date of birth', dog.dob ? format(new Date(dog.dob),'MMM d, yyyy') : '—'],
+                  ['Date of birth', dog.dob ? format(parseISO(dog.dob),'MMM d, yyyy') : '—'],
                   ['Color', dog.color || '—'],
                   ['Weight', dog.weight_lbs ? `${dog.weight_lbs} lbs` : '—'],
                   ['AKC / Reg #', dog.akc_number || '—'],
@@ -192,13 +196,13 @@ export default function DogDetailPage() {
               </div>
             ) : editForm && (
               <div>
-                <div className="field"><label className="label">Call name</label><input className="input" value={editForm.name||''} onChange={e=>setEditForm({...editForm,name:e.target.value})}/></div>
-                <div className="field"><label className="label">Registered name</label><input className="input" value={editForm.registered_name||''} onChange={e=>setEditForm({...editForm,registered_name:e.target.value})}/></div>
+                <div className="field"><label className="label" htmlFor="field-call-name-1">Call name</label><input id="field-call-name-1" className="input" value={editForm.name||''} onChange={e=>setEditForm({...editForm,name:e.target.value})}/></div>
+                <div className="field"><label className="label" htmlFor="field-registered-name-2">Registered name</label><input id="field-registered-name-2" className="input" value={editForm.registered_name||''} onChange={e=>setEditForm({...editForm,registered_name:e.target.value})}/></div>
                 <div className="two-col">
-                  <div className="field"><label className="label">Color</label><input className="input" value={editForm.color||''} onChange={e=>setEditForm({...editForm,color:e.target.value})}/></div>
-                  <div className="field"><label className="label">Weight (lbs)</label><input type="number" className="input" value={editForm.weight_lbs||''} onChange={e=>setEditForm({...editForm,weight_lbs:e.target.value})}/></div>
+                  <div className="field"><label className="label" htmlFor="field-color-3">Color</label><input id="field-color-3" className="input" value={editForm.color||''} onChange={e=>setEditForm({...editForm,color:e.target.value})}/></div>
+                  <div className="field"><label className="label" htmlFor="field-weight-lbs-4">Weight (lbs)</label><input id="field-weight-lbs-4" type="number" className="input" value={editForm.weight_lbs||''} onChange={e=>setEditForm({...editForm,weight_lbs:e.target.value})}/></div>
                 </div>
-                <div className="field"><label className="label">AKC / Reg #</label><input className="input" value={editForm.akc_number||''} onChange={e=>setEditForm({...editForm,akc_number:e.target.value})}/></div>
+                <div className="field"><label className="label" htmlFor="field-akc-reg-5">AKC / Reg #</label><input id="field-akc-reg-5" className="input" value={editForm.akc_number||''} onChange={e=>setEditForm({...editForm,akc_number:e.target.value})}/></div>
               </div>
             )}
           </div>
@@ -234,7 +238,8 @@ export default function DogDetailPage() {
 
             <div style={{paddingTop:16,borderTop:'1px solid var(--paper-3)'}}>
               <div className="section-label" style={{marginBottom:12}}>Litters with {dog.name}</div>
-              <Link href={`/dashboard/litters/new`} className="btn-primary" style={{textDecoration:'none',justifyContent:'center',fontSize:13,display:'flex'}}>
+              {allLitters?.filter((l:any)=>l.dam_id===id||l.sire_id===id).map((l:any)=><p key={l.id} style={{marginBottom:10}}><Link href={`/dashboard/litters/${l.id}`}>{l.name||l.breed} · {l.status}</Link></p>)}
+              <Link href={`/dashboard/litters/new?${dog.sex === 'female' ? 'dam' : 'sire'}=${id}`} className="btn-primary" style={{textDecoration:'none',justifyContent:'center',fontSize:13,display:'flex'}}>
                 + Create Litter
               </Link>
             </div>
@@ -253,29 +258,29 @@ export default function DogDetailPage() {
             <form onSubmit={handleAddRecord} style={{background:'var(--paper-2)',borderRadius:12,padding:20,marginBottom:20}}>
               <div className="two-col">
                 <div className="field">
-                  <label className="label">Type</label>
-                  <select className="input" value={recordForm.record_type} onChange={e=>setRecordForm({...recordForm,record_type:e.target.value})}>
+                  <label className="label" htmlFor="field-type-6">Type</label>
+                  <select id="field-type-6" className="input" value={recordForm.record_type} onChange={e=>setRecordForm({...recordForm,record_type:e.target.value})}>
                     {RECORD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div className="field">
-                  <label className="label">Description</label>
-                  <input className="input" placeholder="e.g. Rabies vaccine" value={recordForm.description} onChange={e=>setRecordForm({...recordForm,description:e.target.value})} required/>
+                  <label className="label" htmlFor="field-description-7">Description</label>
+                  <input id="field-description-7" className="input" placeholder="e.g. Rabies vaccine" value={recordForm.description} onChange={e=>setRecordForm({...recordForm,description:e.target.value})} required/>
                 </div>
               </div>
               <div className="two-col">
                 <div className="field">
-                  <label className="label">Date administered</label>
-                  <input type="date" className="input" value={recordForm.administered_at} onChange={e=>setRecordForm({...recordForm,administered_at:e.target.value})} required/>
+                  <label className="label" htmlFor="field-date-administered-8">Date administered</label>
+                  <input id="field-date-administered-8" type="date" className="input" value={recordForm.administered_at} onChange={e=>setRecordForm({...recordForm,administered_at:e.target.value})} onInput={e=>setRecordForm({...recordForm,administered_at:(e.target as HTMLInputElement).value})} required/>
                 </div>
                 <div className="field">
-                  <label className="label">Next due (optional)</label>
-                  <input type="date" className="input" value={recordForm.next_due} onChange={e=>setRecordForm({...recordForm,next_due:e.target.value})}/>
+                  <label className="label" htmlFor="field-next-due-optional-9">Next due (optional)</label>
+                  <input id="field-next-due-optional-9" type="date" className="input" value={recordForm.next_due} onChange={e=>setRecordForm({...recordForm,next_due:e.target.value})} onInput={e=>setRecordForm({...recordForm,next_due:(e.target as HTMLInputElement).value})}/>
                 </div>
               </div>
               <div className="field">
-                <label className="label">Administered by (optional)</label>
-                <input className="input" placeholder="Vet or clinic name" value={recordForm.administered_by} onChange={e=>setRecordForm({...recordForm,administered_by:e.target.value})}/>
+                <label className="label" htmlFor="field-administered-by-optional-10">Administered by (optional)</label>
+                <input id="field-administered-by-optional-10" className="input" placeholder="Vet or clinic name" value={recordForm.administered_by} onChange={e=>setRecordForm({...recordForm,administered_by:e.target.value})}/>
               </div>
               <button type="submit" disabled={savingRecord} className="btn-primary" style={{marginTop:4}}>
                 {savingRecord ? 'Saving…' : 'Save Record'}
@@ -283,23 +288,23 @@ export default function DogDetailPage() {
             </form>
           )}
 
-          {healthRecords && healthRecords.length > 0 ? (
+          {healthError ? <p>Could not load health records. <button onClick={()=>refetchRecords()}>Try again</button></p> : healthRecords && healthRecords.length > 0 ? (
             <div>
               {healthRecords.map((r: any) => {
-                const overdue = r.next_due && isPast(new Date(r.next_due))
+                const overdue = r.next_due && isBefore(parseISO(r.next_due), startOfDay(new Date()))
                 return (
                   <div key={r.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--paper-3)'}}>
                     <div>
                       <div style={{fontSize:14,fontWeight:600,color:'var(--ink)'}}>{r.description}</div>
                       <div style={{fontSize:12,color:'var(--ink-4)',marginTop:2}}>
-                        {r.record_type} · {format(new Date(r.administered_at),'MMM d, yyyy')}
+                        {r.record_type} · {format(parseISO(r.administered_at),'MMM d, yyyy')}
                         {r.administered_by ? ` · ${r.administered_by}` : ''}
                       </div>
                     </div>
                     <div style={{display:'flex',alignItems:'center',gap:12}}>
                       {r.next_due && (
                         <span className={`badge ${overdue ? 'badge-complete' : 'badge-ready'}`} style={overdue ? {background:'var(--red-f)',color:'var(--red)'} : {}}>
-                          {overdue ? 'Overdue' : `Due ${format(new Date(r.next_due),'MMM d')}`}
+                          {overdue ? 'Overdue' : `Due ${format(parseISO(r.next_due),'MMM d')}`}
                         </span>
                       )}
                       <button onClick={()=>handleDeleteRecord(r.id)} style={{border:'none',background:'none',cursor:'pointer',color:'var(--red)',fontSize:12,padding:4}}>Delete</button>

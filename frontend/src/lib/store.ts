@@ -8,6 +8,7 @@ interface User {
   full_name: string
   kennel_name?: string
   breeds?: string[]
+  onboarding_completed?: boolean
   subscription_plan: string
   subscription_active: boolean
   stripe_onboarded: boolean

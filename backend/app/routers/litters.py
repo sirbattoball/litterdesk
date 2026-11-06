@@ -4,7 +4,7 @@ from typing import List
 import uuid
 
 from app.database import get_db
-from app.models import Litter, Puppy, BuyerLitterMatch, Dog, DepositPayment
+from app.models import Litter, Puppy, BuyerLitterMatch, Dog, DepositPayment, Contract
 from app.schemas import LitterCreate, LitterUpdate, LitterOut, PuppyCreate, PuppyOut
 from app.routers.auth import get_active_user as get_current_user
 from app.models import User
@@ -54,7 +54,7 @@ def create_litter(
 
     for dog_id, sex in [(data.dam_id, "female"), (data.sire_id, "male")]:
         if dog_id:
-            dog = db.query(Dog).filter(Dog.id == dog_id, Dog.owner_id == current_user.id).first()
+            dog = db.query(Dog).filter(Dog.id == dog_id, Dog.owner_id == current_user.id, Dog.is_active == True).first()
             if not dog or dog.sex != sex:
                 raise HTTPException(404, f"{sex.title()} parent not found")
     litter = Litter(id=str(uuid.uuid4()), breeder_id=current_user.id, **data.model_dump())
@@ -81,7 +81,14 @@ def update_litter(
     current_user: User = Depends(get_current_user)
 ):
     litter = check_litter_access(litter_id, current_user, db)
-    for field, value in data.model_dump(exclude_none=True).items():
+    values = data.model_dump(exclude_unset=True)
+    for required in ("breed", "status", "num_males", "num_females", "waitlist_open"):
+        if required in values and values[required] is None:
+            raise HTTPException(422, f"{required} cannot be empty")
+    for field, sex in [("dam_id", "female"), ("sire_id", "male")]:
+        if values.get(field) and not db.query(Dog).filter(Dog.id == values[field], Dog.owner_id == current_user.id, Dog.sex == sex, Dog.is_active == True).first():
+            raise HTTPException(404, f"{sex.title()} parent not found")
+    for field, value in values.items():
         setattr(litter, field, value)
     db.commit()
     db.refresh(litter)
@@ -97,6 +104,9 @@ def delete_litter(
     litter = check_litter_access(litter_id, current_user, db)
     if db.query(DepositPayment).filter(DepositPayment.litter_id == litter_id).first():
         raise HTTPException(400, "Litters with deposit records must be retained")
+    if db.query(Contract).filter(Contract.litter_id == litter_id).first():
+        raise HTTPException(400, "Litters with contracts must be retained. Remove the contracts first.")
+    db.query(BuyerLitterMatch).filter(BuyerLitterMatch.litter_id == litter_id).delete(synchronize_session=False)
     db.delete(litter)
     db.commit()
 

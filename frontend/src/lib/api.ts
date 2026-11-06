@@ -5,6 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 export const api = axios.create({
   baseURL: `${API_URL}/api`,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 90000,
 })
 
 // Inject auth token
@@ -20,7 +21,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
+    const detail = error.response?.data?.detail
+    if (Array.isArray(detail)) error.response.data.detail = detail.map((item: any) => item.msg || 'Invalid value').join('; ')
+    if (error.response?.status === 401 && !['/auth/login', '/auth/register'].includes(error.config?.url) && typeof window !== 'undefined') {
       localStorage.removeItem('ld_token')
       window.location.href = '/login'
     }
@@ -80,9 +83,10 @@ export const buyersApi = {
   addToWaitlist: (buyerId: string, litterId: string) =>
     api.post(`/buyers/${buyerId}/add-to-waitlist`, null, { params: { litter_id: litterId } }),
   delete: (id: string) => api.delete(`/buyers/${id}`),
+  waitlists: (id: string) => api.get(`/buyers/${id}/waitlists`),
   communications: (id: string) => api.get(`/buyers/${id}/communications`),
   logContact: (id: string, data: any) =>
-    api.post(`/buyers/${id}/log-contact`, null, { params: data }),
+    api.post(`/buyers/${id}/log-contact`, data),
 }
 
 // ─── Contracts ───────────────────────────────────────────────────────────────
@@ -110,6 +114,8 @@ export const aiApi = {
 export const paymentsApi = {
   createSubscription: (plan: string, newSignup: boolean = false) =>
     api.post(`/payments/create-subscription/${plan}${newSignup ? '?new_signup=true' : ''}`),
+  refreshSubscription: () => api.post('/payments/refresh-subscription'),
+  refreshConnect: () => api.post('/payments/stripe-connect/refresh'),
   syncSubscription: (sessionId: string) => api.post('/payments/sync-subscription', null, { params: { session_id: sessionId } }),
   deposits: () => api.get('/payments/deposits'),
   createPortal: () => api.post('/payments/create-portal'),

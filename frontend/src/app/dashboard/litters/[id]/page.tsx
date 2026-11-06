@@ -1,11 +1,15 @@
 'use client'
+import { QueryFailure } from '@/components/QueryFailure'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { littersApi, buyersApi, aiApi } from '@/lib/api'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
+import { LitterEditor } from '@/components/LitterEditor'
+import { PuppyRoster } from '@/components/PuppyRoster'
+import { useAuthStore, isPro } from '@/lib/store'
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   planned:  { label: 'Planned',      cls: 'badge-planned' },
@@ -24,6 +28,7 @@ const STATUS_NEXT: Record<string, string> = {
 export default function LitterDetailPage() {
   const { id } = useParams<{ id: string }>()
   const qc = useQueryClient()
+  const { user } = useAuthStore()
   const [counts, setCounts] = useState<{males: string, females: string} | null>(null)
   const [savingCounts, setSavingCounts] = useState(false)
   const [announcing, setAnnouncing] = useState(false)
@@ -33,7 +38,7 @@ export default function LitterDetailPage() {
   const [adding, setAdding] = useState(false)
   const [announcement, setAnnouncement] = useState<{email:string,social:string}|null>(null)
 
-  const { data: litter, isLoading } = useQuery({
+  const { data: litter, isLoading, isError, refetch } = useQuery({
     queryKey: ['litter', id],
     queryFn: () => littersApi.get(id).then(r => r.data)
   })
@@ -104,6 +109,8 @@ export default function LitterDetailPage() {
     } finally { setAdding(false) }
   }
 
+  if (isError) return <QueryFailure retry={() => { refetch() }} />
+
   if (isLoading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',padding:64}}>
       <div className="spinner" style={{width:32,height:32}}/>
@@ -138,23 +145,24 @@ export default function LitterDetailPage() {
               {updatingStatus ? 'Updating…' : `Mark as ${nextStatus} →`}
             </button>
           )}
-          <button onClick={handleAnnounce} disabled={announcing} className="btn-ghost">
+          <button onClick={handleAnnounce} disabled={announcing || !isPro(user)} className="btn-ghost">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            {announcing ? 'Drafting…' : 'AI Announcement'}
+            {announcing ? 'Drafting…' : 'AI Announcement (Pro)'}
           </button>
           <Link href="/dashboard/litters" className="btn-ghost">← Litters</Link>
         </div>
       </div>
 
       <div className="page-body">
+        <div className="card" style={{padding:20,marginBottom:20}}><LitterEditor litter={litter} onSaved={() => { qc.invalidateQueries({queryKey:['litter',id]}); qc.invalidateQueries({queryKey:['litters']}); qc.invalidateQueries({queryKey:['dashboard-stats']}) }}/></div>
         {/* Stats */}
         <div className="three-col litter-metrics" style={{marginBottom:20}}>
           {[
             ['Puppies', total || '—'],
             ['Sex split', total ? `${litter.num_males}M / ${litter.num_females}F` : '—'],
             ['Price each', litter.puppy_price ? `$${litter.puppy_price.toLocaleString()}` : '—'],
-            ['Whelp date', litter.whelp_date ? format(new Date(litter.whelp_date),'MMM d, yyyy') : '—'],
-            ['Go-home', litter.go_home_date ? format(new Date(litter.go_home_date),'MMM d, yyyy') : '—'],
+            ['Whelp date', litter.whelp_date ? format(parseISO(litter.whelp_date),'MMM d, yyyy') : '—'],
+            ['Go-home', litter.go_home_date ? format(parseISO(litter.go_home_date),'MMM d, yyyy') : '—'],
             ['Waitlist', waitlist?.length ?? 0],
           ].map(([l,v]: any) => (
             <div key={l} className="stat-card">
@@ -168,7 +176,8 @@ export default function LitterDetailPage() {
           {counts ? <form onSubmit={saveCounts}><div className="two-col"><div className="field"><label className="label" htmlFor="male-count">Males</label><input id="male-count" className="input" type="number" min="0" step="1" required value={counts.males} onChange={e=>setCounts({...counts,males:e.target.value})}/></div><div className="field"><label className="label" htmlFor="female-count">Females</label><input id="female-count" className="input" type="number" min="0" step="1" required value={counts.females} onChange={e=>setCounts({...counts,females:e.target.value})}/></div></div><button className="btn-primary" disabled={savingCounts} type="submit">{savingCounts ? 'Saving…' : 'Save counts'}</button><button className="btn-ghost" disabled={savingCounts} type="button" onClick={()=>setCounts(null)}>Cancel</button></form> : <button className="btn-ghost" onClick={()=>setCounts({males:String(litter.num_males ?? 0),females:String(litter.num_females ?? 0)})}>Edit puppy counts</button>}
         </div>
 
-        <div className="two-col">
+        <PuppyRoster litterId={id}/>
+        <div className="two-col" style={{marginTop:20}}>
           {/* Waitlist */}
           <div className="card" style={{padding:20}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
@@ -180,8 +189,8 @@ export default function LitterDetailPage() {
 
             {showAddBuyer && (
               <div style={{background:'var(--paper)',borderRadius:'var(--r-lg)',padding:14,marginBottom:14,border:'1px solid var(--paper-3)'}}>
-                <label className="label">Select buyer to add</label>
-                <select className="input" value={addingBuyerId} onChange={e=>setAddingBuyerId(e.target.value)} style={{marginBottom:10}}>
+                <label className="label" htmlFor="field-select-buyer-to-add-1">Select buyer to add</label>
+                <select id="field-select-buyer-to-add-1" className="input" value={addingBuyerId} onChange={e=>setAddingBuyerId(e.target.value)} style={{marginBottom:10}}>
                   <option value="">Choose buyer…</option>
                   {allBuyers?.map((b:any)=><option key={b.id} value={b.id}>{b.full_name} ({b.email})</option>)}
                 </select>

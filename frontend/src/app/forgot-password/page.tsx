@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
       await authApi.forgotPassword({ email })
       setSent(true)
     } catch {
-      setSent(true)
+      toast.error('Could not request a reset link. Check your connection and try again.')
     } finally {
       setLoading(false)
     }
@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
             <>
               <h1 className="auth-title">Check your email</h1>
               <p className="auth-sub">
-                If an account exists for that email, we&apos;ve sent a link to reset your password. The link expires in 1 hour.
+                If an account exists for that email, you will receive a reset link. The link expires in 1 hour. If it does not arrive, check spam or contact litterdesk.hello@gmail.com.
               </p>
               <div className="divider" />
               <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--ink-4)' }}>
@@ -51,8 +51,8 @@ export default function ForgotPasswordPage() {
 
               <form onSubmit={handleSubmit}>
                 <div className="field">
-                  <label className="label">Email address</label>
-                  <input type="email" className="input" placeholder="you@kennel.com"
+                  <label className="label" htmlFor="field-email-address-1">Email address</label>
+                  <input id="field-email-address-1" type="email" className="input" placeholder="you@kennel.com"
                     value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />
                 </div>
 

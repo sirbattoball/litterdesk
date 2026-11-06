@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List
 
 from app.database import get_db
@@ -8,9 +8,21 @@ from app.models import User, Buyer, Litter, Contract
 from app.routers.auth import get_current_user
 from app.services import ai_service
 import uuid
-from datetime import datetime
+import anthropic
+from functools import wraps
+from datetime import datetime, date
 
 router = APIRouter()
+
+
+def ai_errors(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except (anthropic.APIError, ValueError, KeyError, IndexError, TypeError):
+            raise HTTPException(502, "AI drafting is temporarily unavailable. Please try again; your saved records are unchanged.")
+    return wrapped
 
 
 class ContractGenerateRequest(BaseModel):
@@ -18,14 +30,22 @@ class ContractGenerateRequest(BaseModel):
     litter_id: Optional[str] = None
     puppy_name: Optional[str] = None
     puppy_sex: str
-    dob: str
-    go_home_date: str
-    sale_price: float
-    deposit_amount: float
-    balance_due_date: str
+    dob: date
+    go_home_date: date
+    sale_price: float = Field(ge=0, allow_inf_nan=False)
+    deposit_amount: float = Field(ge=0, allow_inf_nan=False)
+    balance_due_date: date
     spay_neuter_required: bool = True
-    health_guarantee_months: int = 24
+    health_guarantee_months: int = Field(default=24, ge=1, le=120)
     special_terms: Optional[str] = None
+
+    @model_validator(mode="after")
+    def valid_terms(self):
+        if self.deposit_amount > self.sale_price:
+            raise ValueError("Deposit cannot exceed sale price")
+        if self.go_home_date < self.dob:
+            raise ValueError("Go-home date must not precede date of birth")
+        return self
 
 
 class FollowupRequest(BaseModel):
@@ -39,6 +59,7 @@ class MatchRequest(BaseModel):
 
 
 @router.post("/generate-contract")
+@ai_errors
 def generate_contract(
     req: ContractGenerateRequest,
     db: Session = Depends(get_db),
@@ -73,13 +94,13 @@ def generate_contract(
         breed=litter.breed if litter else buyer.breed_preference or "Mixed",
         puppy_name=req.puppy_name,
         puppy_sex=req.puppy_sex,
-        dob=req.dob,
+        dob=str(req.dob),
         sire_name=litter.sire.name if litter and litter.sire else "TBD",
         dam_name=litter.dam.name if litter and litter.dam else "TBD",
         sale_price=req.sale_price,
         deposit_amount=req.deposit_amount,
-        balance_due_date=req.balance_due_date,
-        go_home_date=req.go_home_date,
+        balance_due_date=str(req.balance_due_date),
+        go_home_date=str(req.go_home_date),
         health_guarantee_months=req.health_guarantee_months,
         spay_neuter_required=req.spay_neuter_required,
         special_terms=req.special_terms,
@@ -90,6 +111,7 @@ def generate_contract(
 
 
 @router.post("/draft-email")
+@ai_errors
 def draft_email(
     req: FollowupRequest,
     db: Session = Depends(get_db),
@@ -117,6 +139,7 @@ def draft_email(
 
 
 @router.post("/match-litter/{litter_id}")
+@ai_errors
 def match_litter(
     litter_id: str,
     db: Session = Depends(get_db),
@@ -162,6 +185,7 @@ def match_litter(
 
 
 @router.post("/litter-announcement/{litter_id}")
+@ai_errors
 def litter_announcement(
     litter_id: str,
     db: Session = Depends(get_db),

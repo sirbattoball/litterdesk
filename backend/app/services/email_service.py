@@ -5,6 +5,7 @@ Clean transactional emails for LitterDesk.
 import resend
 from app.config import settings
 import logging
+from html import escape
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +38,11 @@ def send_email(
   <div style="background: #f0fdf4; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; display: inline-block;">
     <span style="color: #15803d; font-weight: 600;">🐾 LitterDesk</span>
   </div>
-  <div style="white-space: pre-wrap; line-height: 1.6;">{body}</div>
+  <div style="white-space: pre-wrap; line-height: 1.6;">{escape(body)}</div>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
   <p style="font-size: 12px; color: #9ca3af;">
     LitterDesk · Breeder Operations Platform<br>
-    <a href="https://litterdesk.com/unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
+    Account and puppy-purchase notifications.
   </p>
 </body>
 </html>"""
@@ -67,6 +68,8 @@ def send_contract_email(
     puppy_details: str,
 ) -> bool:
     """Send a contract signing invitation to a buyer."""
+    subject_kennel = kennel_name
+    buyer_name, breeder_name, kennel_name, puppy_details = map(escape, (buyer_name, breeder_name, kennel_name, puppy_details))
     html = f"""
 <!DOCTYPE html>
 <html>
@@ -91,8 +94,7 @@ def send_contract_email(
   </div>
 
   <p style="font-size: 14px; color: #6b7280;">
-    This link is unique to you. If you have questions, reply directly to this email
-    and {breeder_name} will get back to you.
+    This link is unique to you. If you have questions, contact {breeder_name} directly using the contact details in your agreement.
   </p>
 
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
@@ -104,7 +106,7 @@ def send_contract_email(
 
     return send_email(
         to=buyer_email,
-        subject=f"Action required: Sign your puppy contract from {kennel_name}",
+        subject=f"Action required: Sign your puppy contract from {subject_kennel}",
         body="",
         html=html,
     )

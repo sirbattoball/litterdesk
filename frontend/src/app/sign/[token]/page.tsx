@@ -2,11 +2,11 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
-const API = 'https://litterdesk.onrender.com/api'
+const API = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api`
 
 type ContractData = {
   contract_id: string; title: string; content: string; buyer_name: string
-  kennel_name: string; breeder_name: string; sale_price: number; deposit_amount: number; status: string
+  kennel_name: string; breeder_name: string; sale_price: number; deposit_amount: number; status: string; buyer_signature?: string; signed_at?: string
 }
 
 export default function SignContractPage() {
@@ -32,6 +32,8 @@ export default function SignContractPage() {
     try {
       const r = await fetch(`${API}/contracts/sign/${token}?buyer_name=${encodeURIComponent(typedName)}`, { method: 'POST' })
       if (!r.ok) { const d = await r.json().catch(()=>({})); throw new Error(d.detail||'Signing failed') }
+      const result = await r.json()
+      setContract(c => c ? {...c, buyer_signature:typedName.trim(), signed_at:result.signed_at, status:'signed'} : c)
       setStep('signed')
     } catch(e: any) { setError(e.message) } finally { setSigning(false) }
   }
@@ -52,17 +54,17 @@ export default function SignContractPage() {
 
   if (step==='loading') return shell(<div style={{textAlign:'center',padding:'80px 0'}}><div style={{width:32,height:32,border:'3px solid #c4d9c8',borderTopColor:'#1a4730',borderRadius:'50%',animation:'spin .65s linear infinite',margin:'0 auto 16px'}}/><p style={{color:'#7a9070',fontSize:14}}>Loading your contract…</p></div>)
   if (step==='error') return shell(<div style={{textAlign:'center',padding:'80px 20px'}}><h2 style={{fontFamily:"'Instrument Serif',Georgia,serif",fontSize:24,color:'#0d1a0f',marginBottom:8}}>Contract Unavailable</h2><p style={{color:'#7a9070',fontSize:14}}>{error||'This link is invalid or has already been completed.'}</p></div>)
-  if (step==='signed') return shell(<div style={{textAlign:'center',padding:'80px 20px'}}><div style={{width:64,height:64,background:'#dcfce7',borderRadius:20,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><h2 style={{fontFamily:"'Instrument Serif',Georgia,serif",fontSize:28,color:'#0d1a0f',marginBottom:8}}>Contract Signed!</h2><p style={{color:'#4a5e4c',fontSize:15}}>{contract?`Thank you, ${contract.buyer_name}. Your contract with ${contract.kennel_name} is complete.`:'This contract has been signed.'}</p><p style={{color:'#7a9070',fontSize:13,marginTop:6}}>Congratulations on your new puppy! 🐾</p></div>)
+  if (step==='signed') return shell(<div><div style={{textAlign:'center',padding:'28px 0'}}><h1 className="auth-title">Contract signed</h1><p style={{marginTop:12}}>Signed by {contract?.buyer_signature || contract?.buyer_name}{contract?.signed_at ? ` · ${new Date(contract.signed_at).toLocaleString()}` : ''}.</p><p>You can return to this link to view your agreement.</p></div><article className="card" style={{padding:24,whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{contract?.content}</article><button className="btn-ghost" style={{marginTop:20}} onClick={()=>window.print()}>Print or save your copy</button></div>)
   if (!contract) return null
 
-  const balance = contract.sale_price && contract.deposit_amount ? contract.sale_price - contract.deposit_amount : null
+  const balance = contract.sale_price != null ? contract.sale_price - (contract.deposit_amount ?? 0) : null
 
   return shell(<>
     <div style={{background:'#fff',border:'1px solid rgba(230,223,212,.8)',borderRadius:20,padding:'24px 28px',marginBottom:20,boxShadow:'0 1px 3px rgba(13,26,15,.05),0 2px 8px rgba(13,26,15,.04)'}}>
       <div style={{marginBottom:12}}><div style={{fontSize:11,fontWeight:700,color:'#7a9070',textTransform:'uppercase',letterSpacing:'.6px',marginBottom:4}}>Puppy Sale Agreement</div><h1 style={{fontFamily:"'Instrument Serif',Georgia,serif",fontSize:22,color:'#0d1a0f',margin:0}}>{contract.title}</h1><p style={{fontSize:13,color:'#7a9070',marginTop:4}}>From {contract.kennel_name} · {contract.breeder_name}</p></div>
       <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
-        {contract.sale_price&&<div style={{background:'#f8f6f1',borderRadius:12,padding:'10px 16px'}}><div style={{fontSize:11,color:'#7a9070',fontWeight:600,textTransform:'uppercase',letterSpacing:'.4px'}}>Sale Price</div><div style={{fontSize:20,fontWeight:700,color:'#0d1a0f'}}>${contract.sale_price.toLocaleString()}</div></div>}
-        {contract.deposit_amount&&<div style={{background:'#f8f6f1',borderRadius:12,padding:'10px 16px'}}><div style={{fontSize:11,color:'#7a9070',fontWeight:600,textTransform:'uppercase',letterSpacing:'.4px'}}>Deposit Paid</div><div style={{fontSize:20,fontWeight:700,color:'#16a34a'}}>${contract.deposit_amount.toLocaleString()}</div></div>}
+        {contract.sale_price != null &&<div style={{background:'#f8f6f1',borderRadius:12,padding:'10px 16px'}}><div style={{fontSize:11,color:'#7a9070',fontWeight:600,textTransform:'uppercase',letterSpacing:'.4px'}}>Sale Price</div><div style={{fontSize:20,fontWeight:700,color:'#0d1a0f'}}>${contract.sale_price.toLocaleString()}</div></div>}
+        {contract.deposit_amount != null &&<div style={{background:'#f8f6f1',borderRadius:12,padding:'10px 16px'}}><div style={{fontSize:11,color:'#7a9070',fontWeight:600,textTransform:'uppercase',letterSpacing:'.4px'}}>Deposit Paid</div><div style={{fontSize:20,fontWeight:700,color:'#16a34a'}}>${contract.deposit_amount.toLocaleString()}</div></div>}
         {balance!==null&&balance>0&&<div style={{background:'#f8f6f1',borderRadius:12,padding:'10px 16px'}}><div style={{fontSize:11,color:'#7a9070',fontWeight:600,textTransform:'uppercase',letterSpacing:'.4px'}}>Balance Due</div><div style={{fontSize:20,fontWeight:700,color:'#0d1a0f'}}>${balance.toLocaleString()}</div></div>}
       </div>
     </div>
