@@ -3,7 +3,6 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/lib/store'
-import { paymentsApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 
 const PERKS = [
@@ -11,7 +10,7 @@ const PERKS = [
   { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, text: 'Buyer CRM — one pipeline for every inquiry' },
   { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>`, text: 'Manual contracts on both plans · AI drafting on Pro' },
   { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`, text: 'Stripe deposit collection on Pro' },
-  { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`, text: '7-day free trial · Cancel anytime' },
+  { icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`, text: '7-day free trial · No card required' },
 ]
 
 const PLANS = {
@@ -34,10 +33,8 @@ function RegisterForm() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await register(form)
-      const res = await paymentsApi.createSubscription(plan, true)
-      if (res.data.switched) router.push('/dashboard/onboarding')
-      else window.location.href = res.data.checkout_url
+      await register({ ...form, plan })
+      router.push('/dashboard/onboarding')
     } catch (err: any) {
       setSubmitting(false)
       toast.error(err.response?.data?.detail || 'Something went wrong')
@@ -83,11 +80,11 @@ function RegisterForm() {
             </div>
             <div className="auth-card">
               <h1 className="auth-title">Start your free trial</h1>
-              <p className="auth-sub">7 days free, then {PLANS[plan].price}/mo · Card required · Cancel anytime</p>
+              <p className="auth-sub">7 days free · No card required · {PLANS[plan].price}/mo if you subscribe</p>
 
               {wasCancelled && (
                 <div style={{background:'var(--amber-f)',color:'var(--amber)',fontSize:13,fontWeight:600,padding:'10px 14px',borderRadius:10,marginBottom:16}}>
-                  Checkout was cancelled — pick a plan and try again whenever you&apos;re ready.
+                  No payment was made. Start your free trial without a card.
                 </div>
               )}
 
@@ -106,7 +103,7 @@ function RegisterForm() {
                 <div className="field"><label className="label" htmlFor="register-email">Email address</label><input id="register-email" autoComplete="email" type="email" className="input" placeholder="you@kennel.com" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} required/></div>
                 <div className="field"><label className="label" htmlFor="register-password">Password</label><input id="register-password" autoComplete="new-password" type="password" className="input" placeholder="Min. 8 characters" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} minLength={8} required/></div>
                 <button type="submit" disabled={busy} className="btn-primary" style={{width:'100%',justifyContent:'center',padding:'13px',fontSize:15,marginTop:4}}>
-                  {busy?<span style={{display:'flex',alignItems:'center',gap:8}}><span className="spinner" style={{width:14,height:14,borderColor:'rgba(255,255,255,.4)',borderTopColor:'#fff'}}/>Setting up your trial…</span>:`Continue to payment →`}
+                  {busy?<span style={{display:'flex',alignItems:'center',gap:8}}><span className="spinner" style={{width:14,height:14,borderColor:'rgba(255,255,255,.4)',borderTopColor:'#fff'}}/>Setting up your trial…</span>:`Start free trial →`}
                 </button>
               </form>
               <div className="divider"/>
@@ -114,7 +111,7 @@ function RegisterForm() {
             </div>
             <p style={{textAlign:'center',fontSize:12,color:'var(--ink-4)',marginTop:16,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              7 days to find your flow · Cancel anytime
+              No automatic charges · Subscribe only if it fits
             </p>
           </div>
         </div>

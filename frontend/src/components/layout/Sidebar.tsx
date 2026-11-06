@@ -39,7 +39,7 @@ export function Sidebar() {
 
   const planLabel = (() => {
     // Once they've actually subscribed, show the real plan name.
-    if (user?.subscription_active && user?.subscription_plan) {
+    if (user?.has_subscription && user?.subscription_active && user?.subscription_plan) {
       return user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
     }
     // Otherwise, if they're within their trial window, say so explicitly —

@@ -79,6 +79,9 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     if payload.get("ver", 0) != user.credential_version:
         raise credentials_exception
+    from app.services.subscriptions import expire_local_trial
+    if expire_local_trial(user):
+        db.commit()
     return user
 
 
@@ -97,6 +100,9 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
         if not existing.subscription_active and not existing.trial_ends_at:
             if not verify_password(data.password, existing.hashed_password):
                 raise HTTPException(status_code=400, detail="Email already registered. Sign in or reset your password to continue.")
+            from app.services.subscriptions import start_local_trial
+            start_local_trial(existing, data.plan)
+            db.commit()
             token = create_access_token({"sub": existing.id, "ver": existing.credential_version})
             return {"access_token": token, "token_type": "bearer", "user": UserOut.model_validate(existing)}
 
@@ -112,12 +118,9 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
         subscription_plan="free",
         subscription_active=False,
     )
-    # No trial is granted here anymore. Registration just creates the
-    # account; the frontend immediately sends the user to Stripe Checkout
-    # to pick Starter or Pro and start their 7-day trial with a card on
-    # file. trial_ends_at gets set from the real Stripe subscription once
-    # checkout completes (see the webhook handler in payments.py) — that
-    # way Stripe's trial date is always the source of truth, not ours.
+    # A no-card trial is local until the customer explicitly chooses to subscribe.
+    from app.services.subscriptions import start_local_trial
+    start_local_trial(user, data.plan)
 
     db.add(user)
     try:
@@ -141,6 +144,8 @@ def login(data: UserLogin, request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     _login_attempts.pop(f"{client_ip}:{data.email.lower()}", None)
+    from app.services.subscriptions import expire_local_trial
+    expire_local_trial(user)
     user.last_login = datetime.now(timezone.utc)
     db.commit()
 

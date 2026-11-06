@@ -9,7 +9,7 @@ from app.config import settings
 from app.database import get_db
 from app.models import User, Buyer, BuyerLitterMatch, Litter, DepositPayment
 from app.routers.auth import get_current_user
-from app.services.subscriptions import plan_prices, sync_subscription
+from app.services.subscriptions import plan_prices, sync_subscription, trial_deadline
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 router = APIRouter()
@@ -76,7 +76,12 @@ def create_subscription(plan: str, new_signup: bool = False, db: Session = Depen
 
         used_trial = bool(user.trial_ends_at or user.stripe_subscription_id or history)
         subscription_data = {"metadata": {"user_id": user.id}}
-        if not used_trial:
+        remaining_trial = trial_deadline(user)
+        if not user.stripe_subscription_id and not history and remaining_trial and remaining_trial.timestamp() > datetime.now(timezone.utc).timestamp() + 48 * 3600:
+            # Preserve the original no-card trial deadline; never grant a second week.
+            subscription_data["trial_end"] = int(remaining_trial.timestamp())
+        elif not used_trial:
+            # Backward-compatible checkout for pre-existing accounts without a trial.
             subscription_data["trial_period_days"] = 7
         # Reuse an open session instead of creating duplicate checkout tabs.
         sessions = stripe.checkout.Session.list(customer=user.stripe_customer_id, status="open", limit=100)
@@ -298,14 +303,14 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 @router.post("/refresh-subscription")
 def refresh_subscription(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if not current_user.stripe_customer_id:
-        return {"subscription_active": False}
+        return {"subscription_active": current_user.subscription_active}
     try:
         history = list(stripe.Subscription.list(customer=current_user.stripe_customer_id, status="all", limit=100).auto_paging_iter())
         ongoing = [s for s in history if s["status"] not in ("canceled", "incomplete_expired")]
         chosen = max(ongoing or history, key=lambda s: s.get("created", 0), default=None)
         if chosen:
             sync_subscription(current_user, chosen)
-        else:
+        elif not (trial_deadline(current_user) and trial_deadline(current_user) > datetime.now(timezone.utc) and not current_user.stripe_subscription_id):
             current_user.subscription_active = False
             current_user.subscription_plan = "free"
         db.commit()

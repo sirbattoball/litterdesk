@@ -11,6 +11,7 @@ interface User {
   onboarding_completed?: boolean
   subscription_plan: string
   subscription_active: boolean
+  has_subscription?: boolean
   stripe_onboarded: boolean
   trial_ends_at?: string | null
 }

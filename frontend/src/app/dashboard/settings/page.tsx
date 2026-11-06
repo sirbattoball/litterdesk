@@ -123,7 +123,7 @@ export default function SettingsPage() {
               <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
                 <span className="plan-chip" style={{fontSize:14,padding:'6px 16px'}}>
                   {(() => {
-                    if (user?.subscription_active && user?.subscription_plan) {
+                    if (user?.has_subscription && user?.subscription_active && user?.subscription_plan) {
                       return user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
                     }
                     if (user?.trial_ends_at) {
@@ -137,12 +137,12 @@ export default function SettingsPage() {
                 {user?.subscription_active && <span style={{fontSize:13,color:'var(--forest-ll)',fontWeight:500}}>✓ Active</span>}
               </div>
               <Link href="/dashboard/payments" className="btn-ghost" style={{marginBottom:12}}>Manage billing →</Link>
-              {user?.subscription_active ? (
+              {user?.has_subscription ? (
                 <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Manage billing, download invoices, or cancel your subscription.</p>
               ) : (
-                <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Upgrade to Pro to unlock AI contracts, litter announcements, and Stripe deposit collection.</p>
+                <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Your trial will end without a charge. Choose Starter or Pro when you are ready to subscribe.</p>
               )}
-              {!user?.subscription_active && (
+              {!user?.has_subscription && (
                 <Link href="/dashboard/upgrade" className="btn-primary" style={{textDecoration:'none',fontSize:13}}>{user?.trial_ends_at ? 'Subscribe →' : 'Upgrade to Pro →'}</Link>
               )}
             </div>

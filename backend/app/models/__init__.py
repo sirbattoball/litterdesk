@@ -90,6 +90,10 @@ class User(Base):
     subscription_active = Column(Boolean, default=False)
     trial_ends_at = Column(DateTime(timezone=True))
 
+    @property
+    def has_subscription(self):
+        return bool(self.stripe_subscription_id)
+
     # Stripe Connect (for deposit collection)
     stripe_account_id = Column(String)
     stripe_onboarded = Column(Boolean, default=False)
