@@ -1,0 +1,22 @@
+name: Backend checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  clean-install:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - name: Check application imports from declared dependencies
+        run: python -c "from app.main import app; assert app"
+      - run: python -m unittest discover -s tests
