@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime, date
 from enum import Enum
 from app.models import LitterStatus, DogSex, BuyerStatus
@@ -28,6 +28,7 @@ def valid_password(value):
 
 
 class UserRegister(EmailModel):
+    plan: Literal["starter", "pro"] = "starter"
     email: EmailStr
     password: str
     full_name: str
@@ -55,6 +56,7 @@ class UserOut(BaseModel):
     breeds: Optional[List[str]] = []
     subscription_plan: str
     subscription_active: bool
+    has_subscription: bool = False
     stripe_onboarded: bool
     trial_ends_at: Optional[datetime] = None
     onboarding_completed: bool = False

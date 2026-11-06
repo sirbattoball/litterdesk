@@ -32,10 +32,57 @@ class CustomerJourneyTests(unittest.TestCase):
         body={'full_name':'New Owner','email':'New@Example.com','password':'new-password'}
         r=self.client.post('/api/auth/register',json=body);self.assertEqual(r.status_code,200,r.text)
         self.assertEqual(r.json()['user']['email'],'new@example.com')
-        self.assertFalse(r.json()['user']['subscription_active']);self.assertFalse(r.json()['user']['onboarding_completed'])
+        self.assertTrue(r.json()['user']['subscription_active']);self.assertFalse(r.json()['user']['onboarding_completed'])
         self.assertEqual(self.login('new-password','NEW@example.com').status_code,200)
         for field,value in [('password','x'),('password','🙂'*40),('full_name','  ')]:
             self.assertEqual(self.client.post('/api/auth/register',json={**body,field:value}).status_code,422)
+
+    def test_no_card_trial_starts_once_and_expires_with_records_preserved(self):
+        body={'full_name':'Trial Owner','email':'trial@example.com','password':'trial-password','plan':'pro'}
+        with patch.object(workflows.stripe.Customer,'create') as customer:
+            r=self.client.post('/api/auth/register',json=body)
+            self.assertEqual(r.status_code,200,r.text);customer.assert_not_called()
+        data=r.json(); self.assertEqual(data['user']['subscription_plan'],'pro')
+        self.assertFalse(data['user']['has_subscription'])
+        end=datetime.fromisoformat(data['user']['trial_ends_at'].replace('Z','+00:00'))
+        if end.tzinfo is None:end=end.replace(tzinfo=timezone.utc)
+        self.assertAlmostEqual((end-datetime.now(timezone.utc)).total_seconds(),7*86400,delta=10)
+        headers={'Authorization':'Bearer '+data['access_token']}
+        created=self.client.post('/api/litters/',json={'breed':'Poodle'},headers=headers)
+        self.assertEqual(created.status_code,201,created.text)
+        self.assertEqual(self.client.post('/api/auth/register',json=body).status_code,400)
+        with self.Session() as db:
+            db.get(User,data['user']['id']).trial_ends_at=datetime.now(timezone.utc)-timedelta(seconds=1);db.commit()
+        me=self.client.get('/api/auth/me',headers=headers)
+        self.assertFalse(me.json()['subscription_active'])
+        self.assertEqual(self.client.get('/api/litters/',headers=headers).status_code,403)
+        with self.Session() as db:
+            self.assertIsNotNone(db.get(workflows.Litter,created.json()['id']))
+        self.assertFalse(self.login('trial-password','trial@example.com').json()['user']['subscription_active'])
+
+    def test_local_trial_checkout_preserves_deadline_without_second_trial(self):
+        import stripe
+        from test_workflows import Obj, page
+        end=datetime.now(timezone.utc)+timedelta(days=5)
+        with self.Session() as db:
+            db.get(User,'breeder').trial_ends_at=end;db.commit()
+        with patch.object(stripe.Customer,'retrieve',return_value=Obj(id='cus_owner')), patch.object(stripe.Subscription,'list',return_value=page([])), patch.object(stripe.checkout.Session,'list',return_value=page([])), patch.object(stripe.checkout.Session,'create',return_value=Obj(id='cs_trial',url='https://checkout.stripe.com/test')) as checkout:
+            r=self.post('payments/create-subscription/starter')
+            self.assertEqual(r.status_code,200,r.text)
+            params=checkout.call_args.kwargs['subscription_data']
+            self.assertEqual(params['trial_end'],int(end.timestamp()))
+            self.assertNotIn('trial_period_days',params)
+        with self.Session() as db:
+            db.get(User,'breeder').trial_ends_at=datetime.now(timezone.utc)-timedelta(days=1);db.commit()
+        with patch.object(stripe.Customer,'retrieve',return_value=Obj(id='cus_owner')), patch.object(stripe.Subscription,'list',return_value=page([])), patch.object(stripe.checkout.Session,'list',return_value=page([])), patch.object(stripe.checkout.Session,'create',return_value=Obj(id='cs_paid',url='https://checkout.stripe.com/test')) as checkout:
+            self.assertEqual(self.post('payments/create-subscription/starter').status_code,200)
+            self.assertNotIn('trial_end',checkout.call_args.kwargs['subscription_data'])
+            self.assertNotIn('trial_period_days',checkout.call_args.kwargs['subscription_data'])
+
+    def test_paid_access_not_expired_by_local_trial_rule(self):
+        with self.Session() as db:
+            user=db.get(User,'breeder');user.stripe_subscription_id='sub_paid';user.trial_ends_at=datetime.now(timezone.utc)-timedelta(days=1);db.commit()
+        me=self.get('auth/me');self.assertTrue(me.json()['subscription_active']);self.assertTrue(me.json()['has_subscription'])
 
     def test_reset_one_time_expiry_new_login_and_session_revocation(self):
         with patch('app.services.email_service.send_email',return_value=True) as mail:

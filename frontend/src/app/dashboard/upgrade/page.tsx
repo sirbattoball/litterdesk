@@ -9,13 +9,15 @@ const PLANS = [
   { key:'starter', name:'Starter', price:39, desc:'Everything you need to get organized',
     features:['Unlimited litters','Unlimited buyer CRM','Dog & health records','Waitlist management','Go-home date tracking','Contract drafting & e-sign'], cta:'Get started' },
   { key:'pro', name:'Pro', price:89, desc:'Starter, plus AI drafting & deposits', popular:true,
-    features:['Everything in Starter','Instant AI contract drafting','AI litter announcements','AI buyer email drafting','Stripe deposit collection','AI buyer-match suggestions'], cta:'Start Pro trial' },
+    features:['Everything in Starter','Instant AI contract drafting','AI litter announcements','AI buyer email drafting','Stripe deposit collection','AI buyer-match suggestions'], cta:'Choose Pro' },
 ]
 
 export default function UpgradePage() {
   const { user, refreshUser } = useAuthStore()
   const [loading, setLoading] = useState<string|null>(null)
   const hasUsedTrial = !!user?.trial_ends_at
+  const paidAccount = !!user?.has_subscription
+  const trialRunning = !paidAccount && !!user?.subscription_active
   const manageBilling = async () => {
     setLoading('billing')
     try { const res = await paymentsApi.createPortal(); window.location.href = res.data.portal_url }
@@ -47,11 +49,11 @@ export default function UpgradePage() {
   return (
     <div className="page-enter">
       <div className="topbar">
-        <div><div className="topbar-title">{user?.subscription_active ? 'Change Plan' : 'Upgrade Plan'}</div><div className="topbar-sub">{user?.subscription_active ? 'Switch between Starter and Pro anytime' : hasUsedTrial ? 'Pick a plan to continue' : 'Every plan includes a 7-day free trial'}</div></div>
+        <div><div className="topbar-title">{paidAccount && user?.subscription_active ? 'Change Plan' : 'Choose your plan'}</div><div className="topbar-sub">{trialRunning ? 'Your trial ends without a charge. Subscribe when you are ready.' : paidAccount && user?.subscription_active ? 'Switch between Starter and Pro anytime' : 'Pick a plan to continue'}</div></div>
         <div className="topbar-right"><Link href="/dashboard" className="btn-ghost">← Back</Link></div>
       </div>
       <div className="page-body" style={{background:'radial-gradient(ellipse at 15% 0%,rgba(196,217,200,.22) 0%,transparent 55%),radial-gradient(ellipse at 85% 15%,rgba(200,117,26,.06) 0%,transparent 50%)'}}>
-        <p style={{textAlign:'center',marginBottom:20}}>Already have a billing account? <button className="btn-ghost" onClick={manageBilling} disabled={loading !== null}>Manage billing or cancel</button></p>
+        {paidAccount && <p style={{textAlign:'center',marginBottom:20}}>Already have a billing account? <button className="btn-ghost" onClick={manageBilling} disabled={loading !== null}>Manage billing or cancel</button></p>}
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:22,marginBottom:32,marginTop:8,flexWrap:'wrap'}}>
           {[
             {icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, text:'SSL secured'},
@@ -63,9 +65,10 @@ export default function UpgradePage() {
             <span key={t.text} style={{display:'flex',alignItems:'center',gap:6,fontSize:13,color:'var(--ink-3)',fontWeight:500}}>{t.icon}{t.text}</span>
           ))}
         </div>
+        {trialRunning && <p style={{textAlign:'center',fontSize:13,marginBottom:24}}>Checkout shows your first charge date before you confirm. Subscribing in the final 48 hours of a trial starts paid billing immediately.</p>}
         <div className="two-col animate-fade-in-up" style={{maxWidth:820,margin:'0 auto 48px',gap:20}}>
           {PLANS.map((p,i)=>{
-            const isCurrent = user?.subscription_active && user?.subscription_plan === p.key
+            const isCurrent = paidAccount && user?.subscription_active && user?.subscription_plan === p.key
             return (
             <div key={p.key} className="animate-fade-in-up" style={{animationDelay:`${i*80}ms`,position:'relative'}}>
               {p.popular&&<div style={{position:'absolute',top:-13,left:'50%',transform:'translateX(-50%)',background:'linear-gradient(135deg,var(--amber),#e8891e)',color:'#fff',fontSize:11.5,fontWeight:700,padding:'4px 16px',borderRadius:20,whiteSpace:'nowrap',zIndex:1}}>✦ AI & deposits</div>}
@@ -77,7 +80,7 @@ export default function UpgradePage() {
                 </div>
                 <p style={{fontSize:13,color:p.popular?'rgba(250,248,243,.6)':'var(--ink-4)',marginBottom:20,lineHeight:1.5}}>{p.desc}</p>
                 <button onClick={()=>handleUpgrade(p.key)} disabled={loading !== null || isCurrent} style={{width:'100%',padding:'12px',borderRadius:'var(--r-xl)',border:'none',cursor:isCurrent?'default':'pointer',opacity:isCurrent?0.6:1,fontFamily:'var(--sans)',fontSize:14,fontWeight:600,marginBottom:22,transition:'all var(--t-base) var(--ease-out)',...(p.popular?{background:'var(--cream)',color:'var(--forest)'}:{background:'linear-gradient(135deg,var(--forest-l),var(--forest))',color:'#fff',boxShadow:'0 2px 8px rgba(26,71,48,.25)'})}}>
-                  {loading===p.key?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span className="spinner" style={{width:14,height:14}}/>{user?.subscription_active?'Switching…':'Opening…'}</span>:isCurrent?'Current plan':(user?.subscription_active?`Switch to ${p.name}`:hasUsedTrial?'Subscribe':p.cta)}
+                  {loading===p.key?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span className="spinner" style={{width:14,height:14}}/>{paidAccount && user?.subscription_active?'Switching…':'Opening…'}</span>:isCurrent?'Current plan':(paidAccount && user?.subscription_active?`Switch to ${p.name}`:'Subscribe')}
                 </button>
                 <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:9}}>
                   {p.features.map(f=>(

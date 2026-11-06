@@ -14,17 +14,9 @@ export function TrialBanner() {
   const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24))
   const expired = msLeft <= 0
 
-  // Two kinds of accounts can reach this point:
-  // - New-flow signups already have a card on file (Stripe trial ==
-  //   subscription_active from day one), so once the trial window ends,
-  //   billing has already started normally — nothing to nag about.
-  // - Legacy no-card accounts never had subscription_active flip true, so
-  //   once their trial ends they're stuck on free-tier limits until they
-  //   actually upgrade — keep nudging those.
-  if (expired && user.subscription_active) return null
+  if (expired && user.has_subscription && user.subscription_active) return null
 
   const urgent = !expired && daysLeft <= 2
-  const hasCardOnFile = user.subscription_active
 
   const bg = expired
     ? 'var(--red-f)'
@@ -37,12 +29,12 @@ export function TrialBanner() {
   const message = expired
     ? "Your free trial has ended. Upgrade to keep using LitterDesk — your data is safe and waiting."
     : daysLeft === 1
-    ? "Your free trial ends tomorrow."
+    ? "Your free trial ends within 24 hours."
     : urgent
     ? `Your free trial ends in ${daysLeft} days.`
     : `${daysLeft} days left in your free trial.`
 
-  const ctaText = expired ? 'Upgrade now →' : hasCardOnFile ? 'Manage plan →' : 'Add payment method →'
+  const ctaText = user.has_subscription ? 'Manage plan →' : 'Choose a paid plan →'
 
   return (
     <div
@@ -59,7 +51,7 @@ export function TrialBanner() {
         flexWrap: 'wrap',
       }}
     >
-      <span style={{ fontWeight: 500 }}>{message}</span>
+      <span style={{ fontWeight: 500 }}>{message}{!user.has_subscription && ' No automatic charges.'}</span>
       <Link
         href="/dashboard/upgrade"
         style={{

@@ -5,6 +5,30 @@ from fastapi import HTTPException
 from app.config import settings
 
 
+def trial_deadline(user):
+    value = user.trial_ends_at
+    if value and value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def expire_local_trial(user):
+    """Enforce the no-card deadline on requests, without a scheduled worker."""
+    end = trial_deadline(user)
+    if not user.stripe_subscription_id and end and end <= datetime.now(timezone.utc) and (user.subscription_active or user.subscription_plan != "free"):
+        user.subscription_active = False
+        user.subscription_plan = "free"
+        return True
+    return False
+
+
+def start_local_trial(user, plan):
+    user.subscription_plan = plan
+    user.subscription_active = True
+    from datetime import timedelta
+    user.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=7)
+
+
 def plan_prices():
     return {"starter": settings.STRIPE_PRICE_STARTER, "pro": settings.STRIPE_PRICE_PRO,
             "kennel": settings.STRIPE_PRICE_KENNEL}
