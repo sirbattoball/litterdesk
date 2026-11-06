@@ -18,6 +18,11 @@ export default function UpgradePage() {
   const hasUsedTrial = !!user?.trial_ends_at
   const paidAccount = !!user?.has_subscription
   const trialRunning = !paidAccount && !!user?.subscription_active
+  const trialEnd = user?.trial_ends_at ? new Date(user.trial_ends_at) : null
+  const keepsTrial = trialRunning && trialEnd && trialEnd.getTime() > Date.now() + 48 * 60 * 60 * 1000
+  const firstCharge = keepsTrial
+    ? trialEnd.toLocaleString(undefined, { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit', timeZoneName:'short' })
+    : 'today, when you confirm checkout'
   const manageBilling = async () => {
     setLoading('billing')
     try { const res = await paymentsApi.createPortal(); window.location.href = res.data.portal_url }
@@ -49,7 +54,7 @@ export default function UpgradePage() {
   return (
     <div className="page-enter">
       <div className="topbar">
-        <div><div className="topbar-title">{paidAccount && user?.subscription_active ? 'Change Plan' : 'Choose your plan'}</div><div className="topbar-sub">{trialRunning ? 'Your trial ends without a charge. Subscribe when you are ready.' : paidAccount && user?.subscription_active ? 'Switch between Starter and Pro anytime' : 'Pick a plan to continue'}</div></div>
+        <div><div className="topbar-title">{paidAccount && user?.subscription_active ? 'Change Plan' : 'Choose your plan'}</div><div className="topbar-sub">{trialRunning ? 'No card needed for your trial. You can choose a paid plan anytime.' : paidAccount && user?.subscription_active ? 'Switch between Starter and Pro anytime' : 'Pick a plan to continue'}</div></div>
         <div className="topbar-right"><Link href="/dashboard" className="btn-ghost">← Back</Link></div>
       </div>
       <div className="page-body" style={{background:'radial-gradient(ellipse at 15% 0%,rgba(196,217,200,.22) 0%,transparent 55%),radial-gradient(ellipse at 85% 15%,rgba(200,117,26,.06) 0%,transparent 50%)'}}>
@@ -65,7 +70,10 @@ export default function UpgradePage() {
             <span key={t.text} style={{display:'flex',alignItems:'center',gap:6,fontSize:13,color:'var(--ink-3)',fontWeight:500}}>{t.icon}{t.text}</span>
           ))}
         </div>
-        {trialRunning && <p style={{textAlign:'center',fontSize:13,marginBottom:24}}>Checkout shows your first charge date before you confirm. Subscribing in the final 48 hours of a trial starts paid billing immediately.</p>}
+        {!paidAccount && <div className="card" style={{maxWidth:820,margin:'0 auto 28px',padding:20}}>
+          <p style={{fontWeight:600,marginBottom:6}}>If you subscribe now, your first payment is {firstCharge}.</p>
+          <p style={{fontSize:13,lineHeight:1.6,color:'var(--ink-3)'}}>{keepsTrial ? 'You keep the rest of your trial. After that, your selected plan bills monthly.' : trialRunning ? 'Choosing a subscription in the final 48 hours starts paid billing immediately. You can keep using your free trial without subscribing.' : 'Your selected plan bills monthly after you confirm.'} Review the final amount and charge date at checkout before confirming.</p>
+        </div>}
         <div className="two-col animate-fade-in-up" style={{maxWidth:820,margin:'0 auto 48px',gap:20}}>
           {PLANS.map((p,i)=>{
             const isCurrent = paidAccount && user?.subscription_active && user?.subscription_plan === p.key
@@ -80,7 +88,7 @@ export default function UpgradePage() {
                 </div>
                 <p style={{fontSize:13,color:p.popular?'rgba(250,248,243,.6)':'var(--ink-4)',marginBottom:20,lineHeight:1.5}}>{p.desc}</p>
                 <button onClick={()=>handleUpgrade(p.key)} disabled={loading !== null || isCurrent} style={{width:'100%',padding:'12px',borderRadius:'var(--r-xl)',border:'none',cursor:isCurrent?'default':'pointer',opacity:isCurrent?0.6:1,fontFamily:'var(--sans)',fontSize:14,fontWeight:600,marginBottom:22,transition:'all var(--t-base) var(--ease-out)',...(p.popular?{background:'var(--cream)',color:'var(--forest)'}:{background:'linear-gradient(135deg,var(--forest-l),var(--forest))',color:'#fff',boxShadow:'0 2px 8px rgba(26,71,48,.25)'})}}>
-                  {loading===p.key?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span className="spinner" style={{width:14,height:14}}/>{paidAccount && user?.subscription_active?'Switching…':'Opening…'}</span>:isCurrent?'Current plan':(paidAccount && user?.subscription_active?`Switch to ${p.name}`:'Subscribe')}
+                  {loading===p.key?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span className="spinner" style={{width:14,height:14}}/>{paidAccount && user?.subscription_active?'Switching…':'Opening…'}</span>:isCurrent?'Current plan':(paidAccount && user?.subscription_active?`Switch to ${p.name}`:'Continue to checkout →')}
                 </button>
                 <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:9}}>
                   {p.features.map(f=>(

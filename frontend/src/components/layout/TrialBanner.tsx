@@ -34,7 +34,7 @@ export function TrialBanner() {
     ? `Your free trial ends in ${daysLeft} days.`
     : `${daysLeft} days left in your free trial.`
 
-  const ctaText = user.has_subscription ? 'Manage plan →' : 'Choose a paid plan →'
+  const ctaText = user.has_subscription ? 'Manage plan →' : 'View plans →'
 
   return (
     <div
@@ -51,7 +51,10 @@ export function TrialBanner() {
         flexWrap: 'wrap',
       }}
     >
-      <span style={{ fontWeight: 500 }}>{message}{!user.has_subscription && ' No automatic charges.'}</span>
+      <div>
+        <div style={{ fontWeight: 600 }}>{message}{!user.has_subscription && ' No automatic charges.'}</div>
+        {!expired && !user.has_subscription && <div style={{fontSize:12,marginTop:4}}>No card needed. Add your first litter and buyers, then choose a plan anytime if it fits.</div>}
+      </div>
       <Link
         href="/dashboard/upgrade"
         style={{
