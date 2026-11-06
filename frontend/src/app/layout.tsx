@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from '@/components/Providers'
+import { HomeLink } from '@/components/HomeLink'
 import { Toaster } from 'react-hot-toast'
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           {children}
+          <HomeLink />
           <Toaster position="top-right" toastOptions={{
             style: {
               background: '#0d1a0f',

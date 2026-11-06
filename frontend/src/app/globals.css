@@ -763,3 +763,10 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px soli
  .login-botanical { left:-95px; bottom:-80px; opacity:.13; }
  .login-form-panel .auth-logo { margin-bottom:26px; }
 }
+
+/* Available throughout the app, including account and public result screens. */
+.site-home-link { position:fixed; right:20px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); z-index:60; display:inline-flex; align-items:center; gap:7px; padding:11px 16px; background:var(--cream); color:var(--forest); border:1px solid var(--paper-3); border-radius:999px; box-shadow:0 3px 14px #173a2620; font-size:13px; font-weight:600; line-height:20px; text-decoration:none; }
+.site-home-link:hover { background:var(--sage-l); border-color:var(--moss); }
+.site-home-link:focus-visible { outline:3px solid var(--forest-l); outline-offset:3px; }
+@media(max-width:768px) { .site-home-link { right:14px; } .site-home-link.above-mobile-nav { bottom:calc(82px + env(safe-area-inset-bottom, 0px)); } }
+@media print { .site-home-link { display:none; } }
