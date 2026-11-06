@@ -1,4 +1,5 @@
 'use client'
+import { QueryFailure } from '@/components/QueryFailure'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { buyersApi } from '@/lib/api'
@@ -30,7 +31,7 @@ export default function BuyersPage() {
   const [status, setStatus] = useState('')
   const qc = useQueryClient()
 
-  const { data: buyers, isLoading } = useQuery({
+  const { data: buyers, isLoading, isError, refetch } = useQuery({
     queryKey: ['buyers', search, status],
     queryFn: () => buyersApi.list({ search: search || undefined, status: status || undefined }).then(r => r.data),
   })
@@ -41,8 +42,10 @@ export default function BuyersPage() {
       await buyersApi.delete(id)
       toast.success('Buyer deleted')
       qc.invalidateQueries({ queryKey: ['buyers'] })
-    } catch { toast.error('Failed to delete buyer') }
+    } catch (err: any) { toast.error(err.response?.data?.detail || 'Failed to delete buyer') }
   }
+
+  if (isError) return <QueryFailure retry={() => { refetch() }} />
 
   return (
     <>
@@ -79,7 +82,7 @@ export default function BuyersPage() {
           <div className="empty">
             <div className="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
             <div className="empty-title">No buyers yet</div>
-            <div className="empty-sub">Add buyers manually or share your inquiry page</div>
+            <div className="empty-sub">Add a buyer to keep their details, notes, and waitlist status together.</div>
             <Link href="/dashboard/buyers/new" className="btn-primary">Add First Buyer</Link>
           </div>
         )}

@@ -1,7 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { littersApi, dogsApi, buyersApi } from '@/lib/api'
+import { littersApi, dogsApi, authApi } from '@/lib/api'
 import { useAuthStore } from '@/lib/store'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -12,14 +13,32 @@ const BREEDS = ['Golden Retriever','Labrador Retriever','French Bulldog','German
 const STATUSES = ['planned','pregnant','born','ready']
 
 export default function OnboardingPage() {
-  const { user } = useAuthStore()
+  const { user, setUser } = useAuthStore()
+  const [litterId, setLitterId] = useState('')
+  const [resuming, setResuming] = useState(true)
+  const [resumeError, setResumeError] = useState(false)
   const router = useRouter()
+  const qc = useQueryClient()
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [litter, setLitter] = useState({ breed: 'Golden Retriever', status: 'planned', num_males: '', num_females: '', puppy_price: '', go_home_date: '' })
   const [dog, setDog] = useState({ name: '', breed: 'Golden Retriever', sex: 'female' })
   const [skipDog, setSkipDog] = useState(false)
 
+  useEffect(() => {
+    let live = true
+    Promise.all([littersApi.list(), dogsApi.list()]).then(([litters, dogs]) => {
+      if (!live) return
+      if (litters.data.length) { const saved = litters.data[0]; setLitterId(saved.id); setLitter({breed:saved.breed,status:saved.status,num_males:String(saved.num_males),num_females:String(saved.num_females),puppy_price:saved.puppy_price == null ? '' : String(saved.puppy_price),go_home_date:saved.go_home_date || ''}); setStep(dogs.data.length ? 3 : 2) }
+    }).catch(() => setResumeError(true)).finally(() => { if(live) setResuming(false) })
+    return () => { live = false }
+  }, [])
+  const finish = async () => {
+    setSaving(true)
+    try { const res = await authApi.updateMe({ onboarding_completed: true }); setUser(res.data); qc.invalidateQueries(); router.push('/dashboard') }
+    catch { toast.error('Could not finish setup. Please try again.') }
+    finally { setSaving(false) }
+  }
   const firstName = user?.full_name?.split(' ')[0] ?? 'there'
 
   const handleLitter = async () => {
@@ -29,7 +48,8 @@ export default function OnboardingPage() {
       if (litter.puppy_price) payload.puppy_price = Number(litter.puppy_price)
       else delete payload.puppy_price
       if (!litter.go_home_date) delete payload.go_home_date
-      await littersApi.create(payload)
+      const res = litterId ? await littersApi.update(litterId, payload) : await littersApi.create(payload)
+      setLitterId(res.data.id)
       setStep(2)
     } catch { toast.error('Failed — try again') }
     finally { setSaving(false) }
@@ -40,13 +60,16 @@ export default function OnboardingPage() {
     if (!dog.name) { toast.error('Enter your dog\'s name'); return }
     setSaving(true)
     try {
-      await dogsApi.create({ ...dog, health_tests: {} })
+      const res = await dogsApi.create({ ...dog, health_tests: {} })
+      if (litterId) await littersApi.update(litterId, { [dog.sex === 'female' ? 'dam_id' : 'sire_id']: res.data.id })
       setStep(3)
     } catch { toast.error('Failed — try again') }
     finally { setSaving(false) }
   }
 
-  const handleFinish = () => router.push('/dashboard')
+  const handleFinish = finish
+  if (resumeError) return <div className="page-body"><p>Could not restore setup progress.</p><button className="btn-primary" onClick={()=>window.location.reload()}>Try again</button></div>
+  if (resuming) return <div className="page-body">Restoring setup…</div>
 
   const progress = (step / (STEPS.length - 1)) * 100
 
@@ -85,8 +108,8 @@ export default function OnboardingPage() {
               Welcome, {firstName}!
             </h2>
             <p style={{fontSize:16,color:'var(--ink-3)',lineHeight:1.65,marginBottom:28}}>
-              Let's get your kennel set up in 3 minutes.<br/>
-              We'll add your first litter and dog, then you're ready to go.
+              Let&apos;s get your kennel set up in 3 minutes.<br/>
+              We&apos;ll add your first litter and dog, then you&apos;re ready to go.
             </p>
             <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
               {['Add your first litter to start tracking','Add your dam or sire','Then invite buyers from your dashboard'].map((item, i) => (
@@ -99,7 +122,7 @@ export default function OnboardingPage() {
               ))}
             </div>
             <button onClick={() => setStep(1)} className="btn-primary" style={{width:'100%',justifyContent:'center',padding:'13px',fontSize:15}}>
-              Let's set up your kennel →
+              Let&apos;s set up your kennel →
             </button>
           </div>
         )}
@@ -115,25 +138,25 @@ export default function OnboardingPage() {
 
             <div className="two-col">
               <div className="field">
-                <label className="label">Breed</label>
-                <select className="input" value={litter.breed} onChange={e=>setLitter(l=>({...l,breed:e.target.value}))}>
+                <label className="label" htmlFor="field-breed-1">Breed</label>
+                <select id="field-breed-1" className="input" value={litter.breed} onChange={e=>setLitter(l=>({...l,breed:e.target.value}))}>
                   {BREEDS.map(b=><option key={b}>{b}</option>)}
                 </select>
               </div>
               <div className="field">
-                <label className="label">Status</label>
-                <select className="input" value={litter.status} onChange={e=>setLitter(l=>({...l,status:e.target.value}))}>
+                <label className="label" htmlFor="field-status-2">Status</label>
+                <select id="field-status-2" className="input" value={litter.status} onChange={e=>setLitter(l=>({...l,status:e.target.value}))}>
                   {STATUSES.map(s=><option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
                 </select>
               </div>
             </div>
             <div className="two-col">
-              <div className="field"><label className="label">Males</label><input type="number" className="input" min={0} value={litter.num_males} onChange={e=>setLitter(l=>({...l,num_males:e.target.value}))} /></div>
-              <div className="field"><label className="label">Females</label><input type="number" className="input" min={0} value={litter.num_females} onChange={e=>setLitter(l=>({...l,num_females:e.target.value}))} /></div>
+              <div className="field"><label className="label" htmlFor="field-males-3">Males</label><input id="field-males-3" type="number" className="input" min={0} value={litter.num_males} onChange={e=>setLitter(l=>({...l,num_males:e.target.value}))} /></div>
+              <div className="field"><label className="label" htmlFor="field-females-4">Females</label><input id="field-females-4" type="number" className="input" min={0} value={litter.num_females} onChange={e=>setLitter(l=>({...l,num_females:e.target.value}))} /></div>
             </div>
             <div className="two-col">
-              <div className="field"><label className="label">Puppy price ($)</label><input type="number" className="input" placeholder="2800" value={litter.puppy_price} onChange={e=>setLitter(l=>({...l,puppy_price:e.target.value}))} /></div>
-              <div className="field"><label className="label">Go-home date</label><input type="date" className="input" value={litter.go_home_date} onChange={e=>setLitter(l=>({...l,go_home_date:e.target.value}))} /></div>
+              <div className="field"><label className="label" htmlFor="field-puppy-price-5">Puppy price ($)</label><input id="field-puppy-price-5" type="number" className="input" placeholder="2800" value={litter.puppy_price} onChange={e=>setLitter(l=>({...l,puppy_price:e.target.value}))} /></div>
+              <div className="field"><label className="label" htmlFor="field-go-home-date-6">Go-home date</label><input id="field-go-home-date-6" type="date" className="input" value={litter.go_home_date} onChange={e=>setLitter(l=>({...l,go_home_date:e.target.value}))} onInput={e=>setLitter(l=>({...l,go_home_date:(e.target as HTMLInputElement).value}))} /></div>
             </div>
 
             <div style={{display:'flex',gap:10}}>
@@ -156,17 +179,17 @@ export default function OnboardingPage() {
 
             {!skipDog ? (
               <>
-                <div className="field"><label className="label">Call name</label><input className="input" placeholder="Bella" value={dog.name} onChange={e=>setDog(d=>({...d,name:e.target.value}))} /></div>
+                <div className="field"><label className="label" htmlFor="field-call-name-7">Call name</label><input id="field-call-name-7" className="input" placeholder="Bella" value={dog.name} onChange={e=>setDog(d=>({...d,name:e.target.value}))} /></div>
                 <div className="two-col">
                   <div className="field">
-                    <label className="label">Breed</label>
-                    <select className="input" value={dog.breed} onChange={e=>setDog(d=>({...d,breed:e.target.value}))}>
+                    <label className="label" htmlFor="field-breed-8">Breed</label>
+                    <select id="field-breed-8" className="input" value={dog.breed} onChange={e=>setDog(d=>({...d,breed:e.target.value}))}>
                       {BREEDS.map(b=><option key={b}>{b}</option>)}
                     </select>
                   </div>
                   <div className="field">
-                    <label className="label">Sex</label>
-                    <select className="input" value={dog.sex} onChange={e=>setDog(d=>({...d,sex:e.target.value}))}>
+                    <label className="label" htmlFor="field-sex-9">Sex</label>
+                    <select id="field-sex-9" className="input" value={dog.sex} onChange={e=>setDog(d=>({...d,sex:e.target.value}))}>
                       <option value="female">Female (Dam)</option>
                       <option value="male">Male (Sire)</option>
                     </select>
@@ -200,15 +223,15 @@ export default function OnboardingPage() {
             <div style={{width:64,height:64,borderRadius:'50%',background:'var(--sage-l)',border:'2px solid var(--sage)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',animation:'check-pop .4s cubic-bezier(0.34,1.56,0.64,1) both'}}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <h2 style={{fontFamily:'var(--serif)',fontSize:28,color:'var(--ink)',marginBottom:10}}>You're all set!</h2>
+            <h2 style={{fontFamily:'var(--serif)',fontSize:28,color:'var(--ink)',marginBottom:10}}>You&apos;re all set!</h2>
             <p style={{fontSize:15,color:'var(--ink-3)',lineHeight:1.65,marginBottom:28,maxWidth:380,margin:'0 auto 28px'}}>
               Your kennel is live. Add buyers to your waitlist, generate contracts, and collect deposits — all from your dashboard.
             </p>
             <div style={{display:'flex',flexDirection:'column',gap:10}}>
-              <button onClick={() => router.push('/dashboard')} className="btn-primary" style={{justifyContent:'center',padding:'13px',fontSize:15}}>
+              <button onClick={finish} disabled={saving} className="btn-primary" style={{justifyContent:'center',padding:'13px',fontSize:15}}>
                 Go to my dashboard →
               </button>
-              <Link href="/dashboard/buyers/new" style={{fontSize:14,color:'var(--forest)',fontWeight:500,textDecoration:'none',padding:'8px'}}>
+              <Link href="/dashboard/buyers/new" onClick={async e => { e.preventDefault(); try { const res = await authApi.updateMe({onboarding_completed:true}); setUser(res.data); router.push('/dashboard/buyers/new') } catch { toast.error('Could not finish setup') } }} style={{fontSize:14,color:'var(--forest)',fontWeight:500,textDecoration:'none',padding:'8px'}}>
                 Add your first buyer →
               </Link>
             </div>

@@ -50,9 +50,7 @@ export function Sidebar() {
       if (daysLeft > 0) return `Trial · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`
       return 'Trial expired'
     }
-    return user?.subscription_plan
-      ? user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1) + ' Plan'
-      : 'Free Trial'
+    return 'Choose a plan'
   })()
 
   return (
@@ -97,7 +95,7 @@ export function Sidebar() {
           {!user?.subscription_active && (
             <Link href="/dashboard/upgrade" className="upgrade-strip">
               <svg viewBox="0 0 24 24" fill="currentColor" style={{width:14,height:14}}><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              Upgrade to Pro
+              Choose a plan
             </Link>
           )}
           <div style={{display:'flex',alignItems:'center',gap:9,padding:'6px 4px'}}>

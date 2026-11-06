@@ -87,7 +87,7 @@ function RegisterForm() {
 
               {wasCancelled && (
                 <div style={{background:'var(--amber-f)',color:'var(--amber)',fontSize:13,fontWeight:600,padding:'10px 14px',borderRadius:10,marginBottom:16}}>
-                  Checkout was cancelled — pick a plan and try again whenever you're ready.
+                  Checkout was cancelled — pick a plan and try again whenever you&apos;re ready.
                 </div>
               )}
 

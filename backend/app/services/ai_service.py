@@ -86,8 +86,7 @@ IMPORTANT FORMATTING RULES:
         messages=[{"role": "user", "content": prompt}]
     )
     if message.stop_reason == "max_tokens":
-        import logging
-        logging.getLogger(__name__).warning("Contract generation hit max_tokens and was truncated")
+        raise ValueError("Contract generation was incomplete; please retry")
     return message.content[0].text
 
 

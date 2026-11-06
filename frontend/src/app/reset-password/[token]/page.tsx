@@ -58,13 +58,13 @@ export default function ResetPasswordPage() {
 
               <form onSubmit={handleSubmit}>
                 <div className="field">
-                  <label className="label">New password</label>
-                  <input type="password" className="input" placeholder="••••••••"
+                  <label className="label" htmlFor="field-new-password-1">New password</label>
+                  <input id="field-new-password-1" type="password" className="input" placeholder="••••••••"
                     value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
                 </div>
                 <div className="field">
-                  <label className="label">Confirm new password</label>
-                  <input type="password" className="input" placeholder="••••••••"
+                  <label className="label" htmlFor="field-confirm-new-password-2">Confirm new password</label>
+                  <input id="field-confirm-new-password-2" type="password" className="input" placeholder="••••••••"
                     value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
                 </div>
 

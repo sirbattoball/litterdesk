@@ -1,3 +1,4 @@
+from html import escape
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
@@ -35,12 +36,12 @@ WELCOME_EMAIL_HTML = f"""
     <a href="{TEMPLATE_DOWNLOAD_URL}" style="background:#1a4730;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;">Download the template →</a>
   </p>
   <p>It's a Word doc, so feel free to edit it however fits your kennel. And it's worth having a local attorney glance over your final version — laws around pet sales vary by state.</p>
-  <p>I'll send a couple more emails over the next week or so with things breeders in your position usually run into — screening buyers, tracking deposits, that kind of thing. No spam, just useful stuff.</p>
+  <p>This requested template email does not subscribe you to marketing messages.</p>
   <p>— The LitterDesk team</p>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
   <p style="font-size: 12px; color: #9ca3af;">
     LitterDesk · Breeder Operations Platform<br>
-    <a href="https://litterdesk.com/unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
+    Requested template delivery.
   </p>
 </body>
 </html>
@@ -104,18 +105,17 @@ def submit_contact(req: ContactRequest, db: Session = Depends(get_db)):
     db.add(entry)
     db.commit()
 
-    # NOTE: while the Resend test-inbox override is active in email_service,
-    # this lands in the founder's test inbox anyway, so it works pre-domain.
+    # The message is retained even if notification delivery is unavailable.
     email_service.send_email(
         to="jhighroller9@gmail.com",
         subject=f"LitterDesk contact form — {name or req.email}",
         body="",
         html=(
             "<p><strong>New contact form submission:</strong></p>"
-            f"<p>From: {name + ' — ' if name else ''}{req.email}</p>"
-            f"<p style='white-space:pre-wrap'>{message}</p>"
+            f"<p>From: {escape(name + ' — ' if name else '')}{escape(str(req.email))}</p>"
+            f"<p style='white-space:pre-wrap'>{escape(message)}</p>"
             "<p>Reply to them directly at their email above.</p>"
         ),
     )
 
-    return {"status": "sent"}
+    return {"status": "received"}

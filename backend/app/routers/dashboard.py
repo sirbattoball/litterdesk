@@ -49,7 +49,7 @@ def get_stats(
     follow_ups_due = db.query(Buyer).filter(
         Buyer.breeder_id == current_user.id,
         Buyer.follow_up_date <= datetime.now(timezone.utc) + timedelta(days=1),
-        Buyer.follow_up_date >= datetime.now(timezone.utc) - timedelta(days=7),
+        ~Buyer.status.in_(["complete", "declined"]),
     ).count()
 
     return DashboardStats(

@@ -32,7 +32,8 @@ export default function SettingsPage() {
         current_password: pwForm.current_password,
         new_password: pwForm.new_password,
       })
-      toast.success('Password changed!')
+      toast.success('Password changed. Please sign in again.')
+      useAuthStore.getState().logout()
       setPwForm({ current_password: '', new_password: '', confirm_password: '' })
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to change password')
@@ -48,7 +49,7 @@ export default function SettingsPage() {
         email: res.data.email ?? '',
       })
     }).catch(() => {})
-  }, [])
+  }, [setUser])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,16 +76,16 @@ export default function SettingsPage() {
             <div className="card" style={{padding:24}}>
               <form onSubmit={handleSave}>
                 <div className="field">
-                  <label className="label">Your name</label>
-                  <input className="input" value={form.full_name} onChange={e=>setForm(f=>({...f,full_name:e.target.value}))} required/>
+                  <label className="label" htmlFor="field-your-name-1">Your name</label>
+                  <input id="field-your-name-1" className="input" value={form.full_name} onChange={e=>setForm(f=>({...f,full_name:e.target.value}))} required/>
                 </div>
                 <div className="field">
-                  <label className="label">Kennel name</label>
-                  <input className="input" value={form.kennel_name} onChange={e=>setForm(f=>({...f,kennel_name:e.target.value}))} placeholder="Oakwood Goldens"/>
+                  <label className="label" htmlFor="field-kennel-name-2">Kennel name</label>
+                  <input id="field-kennel-name-2" className="input" value={form.kennel_name} onChange={e=>setForm(f=>({...f,kennel_name:e.target.value}))} placeholder="Oakwood Goldens"/>
                 </div>
                 <div className="field">
-                  <label className="label">Email address</label>
-                  <input type="email" className="input" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} required/>
+                  <label className="label" htmlFor="field-email-address-3">Email address</label>
+                  <input id="field-email-address-3" type="email" className="input" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} required/>
                   <p style={{fontSize:12,color:'var(--ink-4)',marginTop:4}}>Used for login and contract notifications.</p>
                 </div>
                 <button type="submit" disabled={saving} className="btn-primary">
@@ -97,18 +98,18 @@ export default function SettingsPage() {
             <div className="card" style={{padding:24}}>
               <form onSubmit={handleChangePassword}>
                 <div className="field">
-                  <label className="label">Current password</label>
-                  <input type="password" className="input" value={pwForm.current_password}
+                  <label className="label" htmlFor="field-current-password-4">Current password</label>
+                  <input id="field-current-password-4" type="password" className="input" value={pwForm.current_password}
                     onChange={e=>setPwForm(f=>({...f,current_password:e.target.value}))} required/>
                 </div>
                 <div className="field">
-                  <label className="label">New password</label>
-                  <input type="password" className="input" value={pwForm.new_password}
+                  <label className="label" htmlFor="field-new-password-5">New password</label>
+                  <input id="field-new-password-5" type="password" className="input" value={pwForm.new_password}
                     onChange={e=>setPwForm(f=>({...f,new_password:e.target.value}))} required minLength={8}/>
                 </div>
                 <div className="field">
-                  <label className="label">Confirm new password</label>
-                  <input type="password" className="input" value={pwForm.confirm_password}
+                  <label className="label" htmlFor="field-confirm-new-password-6">Confirm new password</label>
+                  <input id="field-confirm-new-password-6" type="password" className="input" value={pwForm.confirm_password}
                     onChange={e=>setPwForm(f=>({...f,confirm_password:e.target.value}))} required minLength={8}/>
                 </div>
                 <button type="submit" disabled={changingPw} className="btn-primary">
@@ -130,11 +131,12 @@ export default function SettingsPage() {
                       if (daysLeft > 0) return `Trial · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`
                       return 'Trial expired'
                     }
-                    return 'Free Trial'
+                    return 'No active plan'
                   })()}
                 </span>
                 {user?.subscription_active && <span style={{fontSize:13,color:'var(--forest-ll)',fontWeight:500}}>✓ Active</span>}
               </div>
+              <Link href="/dashboard/payments" className="btn-ghost" style={{marginBottom:12}}>Manage billing →</Link>
               {user?.subscription_active ? (
                 <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Manage billing, download invoices, or cancel your subscription.</p>
               ) : (
@@ -148,27 +150,8 @@ export default function SettingsPage() {
 
           {/* Notifications */}
           <div>
-            <div className="section-label" style={{display:'flex',alignItems:'center',gap:8}}>
-              Email Notifications
-              <span style={{fontSize:10.5,fontWeight:600,background:'var(--amber-f)',color:'var(--amber)',border:'1px solid rgba(200,117,26,.25)',padding:'2px 8px',borderRadius:20,letterSpacing:'.2px'}}>Coming soon</span>
-            </div>
-            <div className="card" style={{padding:'4px 20px',opacity:.6,pointerEvents:'none'}}>
-              {[
-                { label: 'Go-home reminders', sub: '7 and 3 days before go-home date' },
-                { label: 'Follow-up nudges', sub: 'Daily digest of buyers needing contact' },
-                { label: 'New inquiry alerts', sub: 'Instant alert on new buyer inquiry' },
-                { label: 'Deposit confirmations', sub: 'When a buyer pays their deposit' },
-                { label: 'Weekly digest', sub: 'Summary of kennel activity every Monday' },
-              ].map((n) => (
-                <div key={n.label} className="settings-row">
-                  <div>
-                    <div style={{fontSize:14,color:'var(--ink-2)',fontWeight:500}}>{n.label}</div>
-                    <div style={{fontSize:12,color:'var(--ink-4)',marginTop:2}}>{n.sub}</div>
-                  </div>
-                  <button className="toggle toggle-off" disabled><div className="toggle-knob"/></button>
-                </div>
-              ))}
-            </div>
+            <div className="section-label">Email & communication</div>
+            <div className="card" style={{padding:20}}><h4 style={{marginBottom:8}}>Keep the conversation personal</h4><p style={{fontSize:13,lineHeight:1.7}}>Send a contract invitation from its contract page. Pro can also draft buyer emails for you to review and copy into your email app. Log calls and conversations on each buyer’s page.</p><p style={{fontSize:13,lineHeight:1.7,marginTop:12}}>Password recovery uses the email address in your profile. Keep that address up to date.</p></div>
 
             <div className="section-label" style={{marginTop:20}}>Danger Zone</div>
             <div className="card" style={{padding:20}}>
@@ -177,7 +160,7 @@ export default function SettingsPage() {
                 Permanently delete your LitterDesk account and all data. This cannot be undone.
               </p>
               <button
-                onClick={() => toast.error('Please contact litterdesk.hello@gmail.com to delete your account.')}
+                onClick={() => { window.location.href = 'mailto:litterdesk.hello@gmail.com?subject=LitterDesk%20account%20deletion%20request' }}
                 style={{fontSize:13,color:'var(--red)',background:'none',border:'1px solid rgba(196,64,64,.3)',borderRadius:'var(--r-lg)',padding:'8px 16px',cursor:'pointer',fontFamily:'var(--sans)'}}>
                 Request account deletion
               </button>

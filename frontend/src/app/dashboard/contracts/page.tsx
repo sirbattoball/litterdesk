@@ -1,8 +1,9 @@
 'use client'
+import { QueryFailure } from '@/components/QueryFailure'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { contractsApi } from '@/lib/api'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
 
@@ -13,7 +14,7 @@ const BADGE: Record<string, string> = {
 export default function ContractsPage() {
   const qc = useQueryClient()
   const [actionId, setActionId] = useState<string|null>(null)
-  const { data: contracts, isLoading } = useQuery({
+  const { data: contracts, isLoading, isError, refetch } = useQuery({
     queryKey: ['contracts'],
     queryFn: () => contractsApi.list().then(r => r.data)
   })
@@ -70,6 +71,8 @@ export default function ContractsPage() {
     } finally { setActionId(null) }
   }
 
+  if (isError) return <QueryFailure retry={() => { refetch() }} />
+
   return (
     <>
       <div className="topbar">
@@ -104,8 +107,8 @@ export default function ContractsPage() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             </div>
             <div className="empty-title">No contracts yet</div>
-            <div className="empty-sub">Generate your first AI contract — breed-specific, legally-informed, ready in 90 seconds</div>
-            <Link href="/dashboard/contracts/new" className="btn-primary">Generate First Contract</Link>
+            <div className="empty-sub">Write or paste your first sales agreement. Pro also includes AI drafting.</div>
+            <Link href="/dashboard/contracts/new" className="btn-primary">Create first contract</Link>
           </div>
         )}
 
@@ -117,7 +120,7 @@ export default function ContractsPage() {
                   <div style={{fontWeight:600,fontSize:14,color:'var(--ink)'}}>{c.title ?? 'Puppy Sale Contract'}</div>
                   <div style={{fontSize:12.5,color:'var(--ink-4)',marginTop:2}}>
                     {c.sale_price ? `$${c.sale_price.toLocaleString()}` : ''}
-                    {c.created_at ? ` · ${format(new Date(c.created_at),'MMM d, yyyy')}` : ''}
+                    {c.created_at ? ` · ${format(parseISO(c.created_at),'MMM d, yyyy')}` : ''}
                     {c.buyer_name ? ` · ${c.buyer_name}` : ''}
                   </div>
                 </div>

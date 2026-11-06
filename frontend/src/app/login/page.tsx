@@ -17,8 +17,8 @@ export default function LoginPage() {
     try {
       await login(email, password)
       router.push('/dashboard')
-    } catch {
-      toast.error('Invalid email or password')
+    } catch (err: any) {
+      toast.error(err.response?.status === 401 ? 'Invalid email or password' : err.response?.data?.detail || 'Could not sign in. Please try again.')
     }
   }
 

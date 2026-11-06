@@ -14,8 +14,8 @@ export default function PaymentsPage() {
   const [litterId, setLitterId] = useState('')
   const [amount, setAmount] = useState('')
   const [checkoutUrl, setCheckoutUrl] = useState('')
-  const { data: buyers } = useQuery({ queryKey: ['buyers'], queryFn: () => buyersApi.list().then(r => r.data) })
-  const { data: litters } = useQuery({ queryKey: ['litters'], queryFn: () => littersApi.list().then(r => r.data) })
+  const { data: buyers } = useQuery({ queryKey: ['buyers'], queryFn: () => buyersApi.list().then(r => r.data), enabled: !!user?.subscription_active })
+  const { data: litters } = useQuery({ queryKey: ['litters'], queryFn: () => littersApi.list().then(r => r.data), enabled: !!user?.subscription_active })
   const { data: deposits, isLoading, isError } = useQuery({ queryKey: ['deposits'], queryFn: () => paymentsApi.deposits().then(r => r.data), refetchInterval: 15000 })
   useQuery({ queryKey: ['payment-account'], queryFn: async () => { const res = await authApi.me(); setUser(res.data); return res.data } })
   const error = (err: any) => toast.error(typeof err.response?.data?.detail === 'string' ? err.response.data.detail : 'Please try again')
@@ -44,7 +44,7 @@ export default function PaymentsPage() {
     <div className="topbar"><div><div className="topbar-title">Payments</div><div className="topbar-sub">Buyer deposits and subscription billing</div></div></div>
     <div className="page-body">
       <div className="two-col" style={{ marginBottom: 20 }}>
-        <div className="card" style={{ padding: 24 }}><h3>Your subscription</h3><p style={{ margin: '12px 0' }}>{user?.subscription_plan} · {user?.subscription_active ? 'Active' : 'Inactive'}</p><button className="btn-ghost" onClick={openBilling} disabled={!!busy}>Manage billing</button></div>
+        <div className="card" style={{ padding: 24 }}><h3>Your subscription</h3><p style={{ margin: '12px 0' }}>{user?.subscription_active ? `${user.subscription_plan} · Active` : 'No active subscription'}</p><button className="btn-ghost" onClick={openBilling} disabled={!!busy}>Manage billing</button></div>
         <div className="card" style={{ padding: 24 }}><h3>Bank account</h3><p style={{ margin: '12px 0' }}>{user?.stripe_onboarded ? 'Connected for deposits' : 'Connect your bank account to receive buyer deposits.'}</p>{isPro(user) ? <button className="btn-ghost" onClick={connect} disabled={!!busy}>{user?.stripe_onboarded ? 'Update bank details' : 'Connect bank account'}</button> : <Link href="/dashboard/upgrade">Upgrade to Pro for deposits</Link>}</div>
       </div>
       {isPro(user) && user?.stripe_onboarded && <div className="card" style={{ padding: 24, marginBottom: 20 }}><h3 style={{ marginBottom: 12 }}>Create a buyer payment link</h3><p style={{ marginBottom: 16 }}>Add the buyer to the litter waitlist first. Share the link so they can pay securely on Stripe. Links expire after 24 hours.</p><form onSubmit={createLink}>

@@ -76,6 +76,9 @@ class User(Base):
     breeds = Column(JSON, default=list)  # ["Golden Retriever", "Labrador"]
     bio = Column(Text)
 
+    credential_version = Column(Integer, nullable=False, default=0)
+    onboarding_completed = Column(Boolean, nullable=False, default=False)
+
     # Password reset
     reset_token = Column(String, unique=True, nullable=True)
     reset_token_expires = Column(DateTime(timezone=True), nullable=True)
@@ -243,6 +246,9 @@ class Buyer(Base):
     sex_preference = Column(String)  # male, female, either
     color_preference = Column(String)
     lifestyle_notes = Column(Text)
+    budget_min = Column(Float)
+    budget_max = Column(Float)
+    timeline = Column(String)
     experience_level = Column(String)  # first-time, experienced, breeder
 
     # Status

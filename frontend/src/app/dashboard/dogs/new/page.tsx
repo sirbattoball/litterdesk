@@ -1,4 +1,5 @@
 'use client'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { dogsApi } from '@/lib/api'
@@ -10,12 +11,13 @@ const HEALTH_OPTIONS = ['OFA Excellent','OFA Good','OFA Fair','CAER Clear','Emba
 
 export default function NewDogPage() {
   const router = useRouter()
+  const qc = useQueryClient()
   const [saving, setSaving] = useState(false)
   const [health, setHealth] = useState<string[]>([])
   const [form, setForm] = useState({ name:'', registered_name:'', breed:'Golden Retriever', sex:'female', dob:'', akc_number:'', color:'', weight_lbs:'', is_external:false, health_notes:'' })
   const set = (k: string, v: any) => setForm(f => ({...f,[k]:v}))
 
-  const toggleHealth = (h: string) => setHealth(prev => prev.includes(h) ? prev.filter(x=>x!==h) : [...prev, h])
+  const toggleHealth = (h: string) => setHealth(prev => prev.includes(h) ? prev.filter(x=>x!==h) : [...prev.filter(x=>x.split(' ')[0]!==h.split(' ')[0]), h])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,10 +27,14 @@ export default function NewDogPage() {
       health.forEach(h => { health_tests[h.split(' ')[0]] = h })
       const payload: any = { ...form, health_tests }
       if (form.weight_lbs) payload.weight_lbs = Number(form.weight_lbs)
+      else delete payload.weight_lbs
       if (!form.dob) delete payload.dob
       if (!form.akc_number) delete payload.akc_number
       if (!form.registered_name) delete payload.registered_name
       await dogsApi.create(payload)
+      qc.invalidateQueries({queryKey:['dogs']})
+      qc.invalidateQueries({queryKey:['dashboard-stats']})
+      qc.invalidateQueries({queryKey:['dashboard-activity']})
       toast.success('Dog added!')
       router.push('/dashboard/dogs')
     } catch (err: any) {
@@ -48,31 +54,31 @@ export default function NewDogPage() {
             <div className="card" style={{padding:24,marginBottom:16}}>
               <div className="section-label" style={{marginBottom:16}}>Basic Info</div>
               <div className="two-col">
-                <div className="field"><label className="label">Call name *</label><input className="input" placeholder="Bella" value={form.name} onChange={e=>set('name',e.target.value)} required /></div>
-                <div className="field"><label className="label">Registered name</label><input className="input" placeholder="Sunrise Bella of the Valley" value={form.registered_name} onChange={e=>set('registered_name',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-call-name-1">Call name *</label><input id="field-call-name-1" className="input" placeholder="Bella" value={form.name} onChange={e=>set('name',e.target.value)} required /></div>
+                <div className="field"><label className="label" htmlFor="field-registered-name-2">Registered name</label><input id="field-registered-name-2" className="input" placeholder="Sunrise Bella of the Valley" value={form.registered_name} onChange={e=>set('registered_name',e.target.value)} /></div>
               </div>
               <div className="two-col">
                 <div className="field">
-                  <label className="label">Breed</label>
-                  <select className="input" value={form.breed} onChange={e=>set('breed',e.target.value)}>
+                  <label className="label" htmlFor="field-breed-3">Breed</label>
+                  <select id="field-breed-3" className="input" value={form.breed} onChange={e=>set('breed',e.target.value)}>
                     {BREEDS.map(b=><option key={b}>{b}</option>)}
                   </select>
                 </div>
                 <div className="field">
-                  <label className="label">Sex</label>
-                  <select className="input" value={form.sex} onChange={e=>set('sex',e.target.value)}>
+                  <label className="label" htmlFor="field-sex-4">Sex</label>
+                  <select id="field-sex-4" className="input" value={form.sex} onChange={e=>set('sex',e.target.value)}>
                     <option value="female">Female (Dam)</option>
                     <option value="male">Male (Sire)</option>
                   </select>
                 </div>
               </div>
               <div className="two-col">
-                <div className="field"><label className="label">Date of birth</label><input type="date" className="input" value={form.dob} onChange={e=>set('dob',e.target.value)} /></div>
-                <div className="field"><label className="label">Color / markings</label><input className="input" placeholder="Golden, cream" value={form.color} onChange={e=>set('color',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-date-of-birth-5">Date of birth</label><input id="field-date-of-birth-5" type="date" className="input" value={form.dob} onChange={e=>set('dob',e.target.value)} onInput={e=>set('dob',(e.target as HTMLInputElement).value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-color-markings-6">Color / markings</label><input id="field-color-markings-6" className="input" placeholder="Golden, cream" value={form.color} onChange={e=>set('color',e.target.value)} /></div>
               </div>
               <div className="two-col">
-                <div className="field"><label className="label">AKC / registration #</label><input className="input" placeholder="SR12345678" value={form.akc_number} onChange={e=>set('akc_number',e.target.value)} /></div>
-                <div className="field"><label className="label">Weight (lbs)</label><input type="number" className="input" placeholder="65" value={form.weight_lbs} onChange={e=>set('weight_lbs',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-akc-registration-7">AKC / registration #</label><input id="field-akc-registration-7" className="input" placeholder="SR12345678" value={form.akc_number} onChange={e=>set('akc_number',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-weight-lbs-8">Weight (lbs)</label><input id="field-weight-lbs-8" type="number" className="input" placeholder="65" value={form.weight_lbs} onChange={e=>set('weight_lbs',e.target.value)} /></div>
               </div>
               <div className="field" style={{display:'flex',alignItems:'center',gap:10}}>
                 <input type="checkbox" id="external" checked={form.is_external} onChange={e=>set('is_external',e.target.checked)} style={{width:16,height:16,accentColor:'var(--forest)'}} />

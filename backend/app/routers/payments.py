@@ -69,7 +69,7 @@ def create_subscription(plan: str, new_signup: bool = False, db: Session = Depen
                 return {"switched": True, "plan": user.subscription_plan}
             # Resolve failed/paused/incomplete subscriptions through billing, not a second checkout.
             portal = stripe.billing_portal.Session.create(customer=user.stripe_customer_id,
-                return_url=f"{frontend_url()}/dashboard/upgrade")
+                return_url=f"{frontend_url()}/dashboard/upgrade?billing_return=true")
             sync_subscription(user, sub)
             db.commit()
             return {"checkout_url": portal.url}
@@ -128,7 +128,7 @@ def create_portal(db: Session = Depends(get_db), current_user: User = Depends(ge
         raise HTTPException(400, "No billing account found")
     try:
         session = stripe.billing_portal.Session.create(customer=current_user.stripe_customer_id,
-            return_url=f"{frontend_url()}/dashboard/settings")
+            return_url=f"{frontend_url()}/dashboard/upgrade?billing_return=true")
         return {"portal_url": session.url}
     except stripe.error.StripeError as exc:
         raise stripe_failure(exc)
@@ -202,7 +202,7 @@ def collect_deposit(buyer_id: str, litter_id: str, amount_cents: int = Query(ge=
             payment_intent_data={"receipt_email": buyer.email, "transfer_data": {"destination": current_user.stripe_account_id},
                 "application_fee_amount": pending.amount_cents * 15 // 1000, "metadata": metadata},
             metadata=metadata,
-            success_url=f"{frontend_url()}/deposit-result?paid=true",
+            success_url=f"{frontend_url()}/deposit-result?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{frontend_url()}/deposit-result?cancelled=true",
             idempotency_key=f"deposit-{pending.id}")
         pending.stripe_session_id = session.id
@@ -236,7 +236,7 @@ def stripe_connect_onboard(db: Session = Depends(get_db), current_user: User = D
             current_user.stripe_account_id = account.id
             db.commit()
         link = stripe.AccountLink.create(account=current_user.stripe_account_id,
-            refresh_url=f"{frontend_url()}/dashboard/payments", return_url=f"{frontend_url()}/dashboard/payments", type="account_onboarding")
+            refresh_url=f"{frontend_url()}/dashboard/payments", return_url=f"{frontend_url()}/dashboard/payments?connect_return=true", type="account_onboarding")
         return {"onboard_url": link.url}
     except stripe.error.StripeError as exc:
         raise stripe_failure(exc)
@@ -293,3 +293,51 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         # Non-2xx makes Stripe retry instead of silently losing billing changes.
         raise stripe_failure(exc)
     return {"received": True}
+
+
+@router.post("/refresh-subscription")
+def refresh_subscription(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not current_user.stripe_customer_id:
+        return {"subscription_active": False}
+    try:
+        history = list(stripe.Subscription.list(customer=current_user.stripe_customer_id, status="all", limit=100).auto_paging_iter())
+        ongoing = [s for s in history if s["status"] not in ("canceled", "incomplete_expired")]
+        chosen = max(ongoing or history, key=lambda s: s.get("created", 0), default=None)
+        if chosen:
+            sync_subscription(current_user, chosen)
+        else:
+            current_user.subscription_active = False
+            current_user.subscription_plan = "free"
+        db.commit()
+        return {"subscription_active": current_user.subscription_active}
+    except stripe.error.StripeError as exc:
+        raise stripe_failure(exc)
+
+
+@router.post("/stripe-connect/refresh")
+def refresh_connect(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    require_pro(current_user)
+    if not current_user.stripe_account_id:
+        return {"connected": False}
+    try:
+        account = stripe.Account.retrieve(current_user.stripe_account_id)
+        current_user.stripe_onboarded = bool(account.get("charges_enabled") and account.get("payouts_enabled"))
+        db.commit()
+        return {"connected": current_user.stripe_onboarded}
+    except stripe.error.StripeError as exc:
+        raise stripe_failure(exc)
+
+
+@router.get("/deposit-status")
+def public_deposit_status(session_id: str, db: Session = Depends(get_db)):
+    payment = db.query(DepositPayment).filter(DepositPayment.stripe_session_id == session_id).first()
+    if not payment:
+        raise HTTPException(404, "Payment link not found")
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        reconcile_deposit(payment, session, db)
+        db.commit()
+        # The unguessable Checkout session ID is a receipt capability; no buyer data.
+        return {"status": payment.status, "amount_cents": payment.amount_cents}
+    except stripe.error.StripeError as exc:
+        raise stripe_failure(exc)

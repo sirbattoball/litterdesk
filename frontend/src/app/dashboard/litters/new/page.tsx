@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { littersApi, dogsApi } from '@/lib/api'
@@ -11,12 +12,14 @@ const STATUSES = ['planned','pregnant','born','weaning','ready','complete']
 
 export default function NewLitterPage() {
   const router = useRouter()
+  const qc = useQueryClient()
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ name:'', breed:'Golden Retriever', status:'planned', whelp_date:'', go_home_date:'', num_males:0, num_females:0, puppy_price:'', dam_id:'', sire_id:'', notes:'' })
   const { data: dogs } = useQuery({ queryKey:['dogs'], queryFn: () => dogsApi.list().then(r=>r.data) })
   const females = dogs?.filter((d:any) => d.sex==='female') ?? []
   const males = dogs?.filter((d:any) => d.sex==='male' || d.is_external) ?? []
 
+  useEffect(()=>{const params = new URLSearchParams(window.location.search);setForm(f=>({...f,dam_id:params.get('dam')||f.dam_id,sire_id:params.get('sire')||f.sire_id}))},[])
   const set = (k: string, v: any) => setForm(f => ({...f, [k]: v}))
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,6 +34,9 @@ export default function NewLitterPage() {
       if (!form.whelp_date) delete payload.whelp_date
       if (!form.go_home_date) delete payload.go_home_date
       await littersApi.create(payload)
+      qc.invalidateQueries({queryKey:['litters']})
+      qc.invalidateQueries({queryKey:['dashboard-stats']})
+      qc.invalidateQueries({queryKey:['dashboard-activity']})
       toast.success('Litter created!')
       router.push('/dashboard/litters')
     } catch (err: any) {
@@ -57,42 +63,42 @@ export default function NewLitterPage() {
               <div className="field"><label className="label">Litter name <span style={{color:'var(--ink-4)',fontWeight:400}}>(optional)</span></label><input className="input" placeholder="e.g. Spring Litter '25" value={form.name} onChange={e=>set('name',e.target.value)} /></div>
               <div className="two-col">
                 <div className="field">
-                  <label className="label">Breed</label>
-                  <select className="input" value={form.breed} onChange={e=>set('breed',e.target.value)}>
+                  <label className="label" htmlFor="field-breed-1">Breed</label>
+                  <select id="field-breed-1" className="input" value={form.breed} onChange={e=>set('breed',e.target.value)}>
                     {BREEDS.map(b=><option key={b}>{b}</option>)}
                   </select>
                 </div>
                 <div className="field">
-                  <label className="label">Status</label>
-                  <select className="input" value={form.status} onChange={e=>set('status',e.target.value)}>
+                  <label className="label" htmlFor="field-status-2">Status</label>
+                  <select id="field-status-2" className="input" value={form.status} onChange={e=>set('status',e.target.value)}>
                     {STATUSES.map(s=><option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
                   </select>
                 </div>
               </div>
               <div className="two-col">
-                <div className="field"><label className="label">Whelp date</label><input type="date" className="input" value={form.whelp_date} onChange={e=>set('whelp_date',e.target.value)} /></div>
-                <div className="field"><label className="label">Go-home date</label><input type="date" className="input" value={form.go_home_date} onChange={e=>set('go_home_date',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-whelp-date-3">Whelp date</label><input id="field-whelp-date-3" type="date" className="input" value={form.whelp_date} onChange={e=>set('whelp_date',e.target.value)} onInput={e=>set('whelp_date',(e.target as HTMLInputElement).value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-go-home-date-4">Go-home date</label><input id="field-go-home-date-4" type="date" className="input" value={form.go_home_date} onChange={e=>set('go_home_date',e.target.value)} onInput={e=>set('go_home_date',(e.target as HTMLInputElement).value)} /></div>
               </div>
               <div className="two-col">
-                <div className="field"><label className="label">Males</label><input type="number" className="input" min={0} value={form.num_males} onChange={e=>set('num_males',e.target.value)} /></div>
-                <div className="field"><label className="label">Females</label><input type="number" className="input" min={0} value={form.num_females} onChange={e=>set('num_females',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-males-5">Males</label><input id="field-males-5" type="number" className="input" min={0} value={form.num_males} onChange={e=>set('num_males',e.target.value)} /></div>
+                <div className="field"><label className="label" htmlFor="field-females-6">Females</label><input id="field-females-6" type="number" className="input" min={0} value={form.num_females} onChange={e=>set('num_females',e.target.value)} /></div>
               </div>
-              <div className="field"><label className="label">Price per puppy ($)</label><input type="number" className="input" placeholder="e.g. 2800" value={form.puppy_price} onChange={e=>set('puppy_price',e.target.value)} /></div>
+              <div className="field"><label className="label" htmlFor="field-price-per-puppy-7">Price per puppy ($)</label><input id="field-price-per-puppy-7" type="number" className="input" placeholder="e.g. 2800" value={form.puppy_price} onChange={e=>set('puppy_price',e.target.value)} /></div>
             </div>
 
             <div className="card" style={{ padding: 24, marginBottom: 16 }}>
               <div className="section-label" style={{ marginBottom: 16 }}>Parents</div>
               <div className="two-col">
                 <div className="field">
-                  <label className="label">Dam (mother)</label>
-                  <select className="input" value={form.dam_id} onChange={e=>set('dam_id',e.target.value)}>
+                  <label className="label" htmlFor="field-dam-mother-8">Dam (mother)</label>
+                  <select id="field-dam-mother-8" className="input" value={form.dam_id} onChange={e=>set('dam_id',e.target.value)}>
                     <option value="">Select dam…</option>
                     {females.map((d:any)=><option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
                 <div className="field">
-                  <label className="label">Sire (father)</label>
-                  <select className="input" value={form.sire_id} onChange={e=>set('sire_id',e.target.value)}>
+                  <label className="label" htmlFor="field-sire-father-9">Sire (father)</label>
+                  <select id="field-sire-father-9" className="input" value={form.sire_id} onChange={e=>set('sire_id',e.target.value)}>
                     <option value="">Select sire…</option>
                     {males.map((d:any)=><option key={d.id} value={d.id}>{d.name}{d.is_external?' (external)':''}</option>)}
                   </select>

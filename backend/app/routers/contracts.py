@@ -35,7 +35,7 @@ def get_contract_for_signing(token: str, db: Session = Depends(get_db)):
     contract = db.query(Contract).filter(Contract.sign_token == token).first()
     if not contract:
         raise HTTPException(404, "Contract not found")
-    if contract.status != "sent":
+    if contract.status not in ("sent", "signed"):
         raise HTTPException(400, "Contract is not available for signing")
     return {
         "contract_id": contract.id,
@@ -47,6 +47,9 @@ def get_contract_for_signing(token: str, db: Session = Depends(get_db)):
         "sale_price": contract.sale_price,
         "deposit_amount": contract.deposit_amount,
         "status": contract.status,
+        "buyer_signature": contract.buyer_signature,
+        "signed_at": contract.signed_at,
+        "balance_due": contract.balance_due,
     }
 
 
@@ -62,7 +65,7 @@ def sign_contract(token: str, buyer_name: str, db: Session = Depends(get_db)):
     contract.status = "signed"
     contract.signed_at = datetime.now(timezone.utc)
     contract.buyer_signature = buyer_name
-    if contract.buyer:
+    if contract.buyer and contract.buyer.status in ("inquiry", "waitlisted", "deposit_paid"):
         contract.buyer.status = "contract_sent"
     db.commit()
     return {"message": "Contract signed successfully", "signed_at": contract.signed_at}
@@ -89,7 +92,7 @@ def send_contract(contract_id: str, db: Session = Depends(get_db), current_user:
         raise HTTPException(400, "Contract has no buyer attached")
     if not contract.sign_token:
         contract.sign_token = str(uuid.uuid4())
-    sign_url = f"{FRONTEND_URL}/sign/{contract.sign_token}"
+    sign_url = f"{settings.APP_URL.rstrip('/')}/sign/{contract.sign_token}"
     if not settings.RESEND_API_KEY:
         raise HTTPException(503, "Email delivery is not configured")
     kennel = current_user.kennel_name or f"{current_user.full_name}'s Kennel"
@@ -105,6 +108,8 @@ def send_contract(contract_id: str, db: Session = Depends(get_db), current_user:
         raise HTTPException(502, "Email delivery failed. Please try again.")
     contract.status = "sent"
     contract.sent_at = datetime.now(timezone.utc)
+    if contract.buyer.status in ("inquiry", "waitlisted", "deposit_paid"):
+        contract.buyer.status = "contract_sent"
     db.commit()
     return {"message": "Contract sent to buyer", "sign_url": sign_url}
 

@@ -8,14 +8,20 @@ import Link from 'next/link'
 const PLANS = [
   { key:'starter', name:'Starter', price:39, desc:'Everything you need to get organized',
     features:['Unlimited litters','Unlimited buyer CRM','Dog & health records','Waitlist management','Go-home date tracking','Contract drafting & e-sign'], cta:'Get started' },
-  { key:'pro', name:'Pro', price:89, desc:'Starter, plus AI contracts & automation', popular:true,
-    features:['Everything in Starter','Instant AI contract drafting','AI litter announcements','AI buyer email drafting','Stripe deposit collection','Priority support'], cta:'Start Pro trial' },
+  { key:'pro', name:'Pro', price:89, desc:'Starter, plus AI drafting & deposits', popular:true,
+    features:['Everything in Starter','Instant AI contract drafting','AI litter announcements','AI buyer email drafting','Stripe deposit collection','AI buyer-match suggestions'], cta:'Start Pro trial' },
 ]
 
 export default function UpgradePage() {
   const { user, refreshUser } = useAuthStore()
   const [loading, setLoading] = useState<string|null>(null)
   const hasUsedTrial = !!user?.trial_ends_at
+  const manageBilling = async () => {
+    setLoading('billing')
+    try { const res = await paymentsApi.createPortal(); window.location.href = res.data.portal_url }
+    catch (err: any) { toast.error(err.response?.data?.detail || 'Could not open billing') }
+    finally { setLoading(null) }
+  }
   const handleUpgrade = async (plan: string) => {
     setLoading(plan)
     try {
@@ -45,6 +51,7 @@ export default function UpgradePage() {
         <div className="topbar-right"><Link href="/dashboard" className="btn-ghost">← Back</Link></div>
       </div>
       <div className="page-body" style={{background:'radial-gradient(ellipse at 15% 0%,rgba(196,217,200,.22) 0%,transparent 55%),radial-gradient(ellipse at 85% 15%,rgba(200,117,26,.06) 0%,transparent 50%)'}}>
+        <p style={{textAlign:'center',marginBottom:20}}>Already have a billing account? <button className="btn-ghost" onClick={manageBilling} disabled={loading !== null}>Manage billing or cancel</button></p>
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:22,marginBottom:32,marginTop:8,flexWrap:'wrap'}}>
           {[
             {icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--forest-l)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, text:'SSL secured'},
@@ -61,7 +68,7 @@ export default function UpgradePage() {
             const isCurrent = user?.subscription_active && user?.subscription_plan === p.key
             return (
             <div key={p.key} className="animate-fade-in-up" style={{animationDelay:`${i*80}ms`,position:'relative'}}>
-              {p.popular&&<div style={{position:'absolute',top:-13,left:'50%',transform:'translateX(-50%)',background:'linear-gradient(135deg,var(--amber),#e8891e)',color:'#fff',fontSize:11.5,fontWeight:700,padding:'4px 16px',borderRadius:20,whiteSpace:'nowrap',zIndex:1}}>✦ Most Popular</div>}
+              {p.popular&&<div style={{position:'absolute',top:-13,left:'50%',transform:'translateX(-50%)',background:'linear-gradient(135deg,var(--amber),#e8891e)',color:'#fff',fontSize:11.5,fontWeight:700,padding:'4px 16px',borderRadius:20,whiteSpace:'nowrap',zIndex:1}}>✦ AI & deposits</div>}
               <div style={{borderRadius:'var(--r-2xl)',padding:28,height:'100%',...(p.popular?{background:'linear-gradient(160deg,var(--forest-l) 0%,var(--forest) 100%)',border:'2px solid rgba(255,255,255,.1)',boxShadow:'0 8px 32px rgba(26,71,48,.35)'}:{background:'var(--white)',border:'1px solid rgba(230,223,212,.7)',boxShadow:'var(--sh-sm)'})}}>
                 <div style={{fontSize:12,fontWeight:700,color:p.popular?'rgba(250,248,243,.6)':'var(--ink-4)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>{p.name}</div>
                 <div style={{display:'flex',alignItems:'baseline',gap:3,marginBottom:6}}>
@@ -69,7 +76,7 @@ export default function UpgradePage() {
                   <span style={{fontSize:14,color:p.popular?'rgba(250,248,243,.5)':'var(--ink-4)'}}>/mo</span>
                 </div>
                 <p style={{fontSize:13,color:p.popular?'rgba(250,248,243,.6)':'var(--ink-4)',marginBottom:20,lineHeight:1.5}}>{p.desc}</p>
-                <button onClick={()=>handleUpgrade(p.key)} disabled={loading===p.key || isCurrent} style={{width:'100%',padding:'12px',borderRadius:'var(--r-xl)',border:'none',cursor:isCurrent?'default':'pointer',opacity:isCurrent?0.6:1,fontFamily:'var(--sans)',fontSize:14,fontWeight:600,marginBottom:22,transition:'all var(--t-base) var(--ease-out)',...(p.popular?{background:'var(--cream)',color:'var(--forest)'}:{background:'linear-gradient(135deg,var(--forest-l),var(--forest))',color:'#fff',boxShadow:'0 2px 8px rgba(26,71,48,.25)'})}}>
+                <button onClick={()=>handleUpgrade(p.key)} disabled={loading !== null || isCurrent} style={{width:'100%',padding:'12px',borderRadius:'var(--r-xl)',border:'none',cursor:isCurrent?'default':'pointer',opacity:isCurrent?0.6:1,fontFamily:'var(--sans)',fontSize:14,fontWeight:600,marginBottom:22,transition:'all var(--t-base) var(--ease-out)',...(p.popular?{background:'var(--cream)',color:'var(--forest)'}:{background:'linear-gradient(135deg,var(--forest-l),var(--forest))',color:'#fff',boxShadow:'0 2px 8px rgba(26,71,48,.25)'})}}>
                   {loading===p.key?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span className="spinner" style={{width:14,height:14}}/>{user?.subscription_active?'Switching…':'Opening…'}</span>:isCurrent?'Current plan':(user?.subscription_active?`Switch to ${p.name}`:hasUsedTrial?'Subscribe':p.cta)}
                 </button>
                 <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:9}}>

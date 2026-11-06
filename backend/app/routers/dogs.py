@@ -62,7 +62,7 @@ def update_dog(
     dog = db.query(Dog).filter(Dog.id == dog_id, Dog.owner_id == current_user.id).first()
     if not dog:
         raise HTTPException(404, "Dog not found")
-    for field, value in data.model_dump(exclude_none=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(dog, field, value)
     db.commit()
     db.refresh(dog)

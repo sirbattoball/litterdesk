@@ -165,3 +165,33 @@ production endpoint. The live Stripe environment must be authorized separately
 for read-only verification before changing production billing configuration.
 The dashboard lists RESEND_API_KEY but no FROM_EMAIL or APP_URL override, so
 verified-sender and actual return-origin checks remain release requirements.
+
+### November 4 retry
+
+Live Stripe reads work. The existing enabled webhook points to the correct
+Render backend and still has its original five events. The user explicitly
+approved adding the nine lifecycle events. Two write attempts returned an
+authentication-accepted/retry response rather than success; a subsequent read
+confirmed the events have not changed. This is a connector authentication
+blocker, not missing user approval. Do not report the webhook update complete.
+
+The signed-in Resend Domains page reports "No domains yet". Production buyer
+email requires an owned, verified sending domain and a matching FROM_EMAIL.
+No domain was purchased, email sent, or production deployment performed.
+
+### Approved production release — November 4
+
+After explicit deployment approval, PR #1 was merged as
+6b8a0489a64357f76bf64a2ae9d1ddeb2db18d8c. Vercel production deployment
+dpl_ALmgQfBpcbMZKdszxE3neFGCv5rx is Ready on litterdesk.vercel.app. Render
+deployment dep-dblqj5mof33c73el5gp0 is live on the primary backend. APP_URL was
+merged into the existing environment as https://litterdesk.vercel.app, preserving
+all other values. Health returned healthy; the new deposit-history route
+returned 401 without authentication. No error logs appeared in the checked
+release window. Stripe webhook and Resend sender limitations above remain.
+
+See SITE_AUDIT.md for the subsequent site/design/workflow audit and its limits.
+
+### November 5 customer audit update
+
+The earlier webhook-write blocker above is resolved: the explicitly approved live endpoint update was saved through the dashboard and API readback confirmed 14 events. The current customer-workflow release is separate from the previously deployed releases and remains unpublished pending approval. See [CUSTOMER_WORKFLOW_AUDIT.md](CUSTOMER_WORKFLOW_AUDIT.md) for tested paths, fixes, dependency scans, additive migration notes and remaining sender-domain/billing verification limits.
