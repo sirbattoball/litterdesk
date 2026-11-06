@@ -157,6 +157,20 @@ class CustomerJourneyTests(unittest.TestCase):
         with patch('app.services.ai_service.match_buyers_to_litter',return_value=[{'buyer_name':'Buyer','puppy_collar':'Pink','match_reason':'Preference','match_score':90}]):self.assertEqual(len(self.post('ai/match-litter/litter').json()['matches']),1)
         with patch('app.services.ai_service.generate_litter_update',side_effect=ValueError('Invalid output')):self.assertEqual(self.post('ai/litter-announcement/litter').status_code,502)
 
+    def test_contract_link_sharing_does_not_require_email(self):
+        from app.config import settings
+        contract=self.new_contract()
+        with patch.object(settings,'RESEND_API_KEY',''), patch('app.services.email_service.send_contract_email') as email:
+            first=self.post('contracts/'+contract+'/share')
+            self.assertEqual(first.status_code,200,first.text);email.assert_not_called()
+            second=self.post('contracts/'+contract+'/share')
+            self.assertEqual(first.json()['sign_url'],second.json()['sign_url'])
+        token=first.json()['sign_url'].rsplit('/',1)[1]
+        self.assertEqual(self.client.get('/api/contracts/sign/'+token).status_code,200)
+        self.assertEqual(self.client.post('/api/contracts/'+contract+'/share',headers={'Authorization':'Bearer '+auth.create_access_token({'sub':'other'})}).status_code,404)
+        self.delete('contracts/'+contract)
+        self.assertEqual(self.post('contracts/'+contract+'/share').status_code,400)
+
     def test_signed_contract_reopens_and_cannot_be_signed_twice(self):
         c=self.new_contract()
         with patch('app.services.email_service.send_contract_email',return_value=True):self.post('contracts/'+c+'/send')

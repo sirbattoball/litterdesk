@@ -79,6 +79,26 @@ def get_contract(contract_id: str, db: Session = Depends(get_db), current_user: 
     return contract
 
 
+@router.post("/{contract_id}/share")
+def share_contract(contract_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Activate a signing link for the breeder to share through their own email/text."""
+    contract = db.query(Contract).filter(Contract.id == contract_id, Contract.breeder_id == current_user.id).with_for_update().first()
+    if not contract:
+        raise HTTPException(404, "Contract not found")
+    if contract.status not in ("draft", "sent", "signed"):
+        raise HTTPException(400, "Voided contracts cannot be shared")
+    if not contract.content or not contract.content.strip() or not contract.buyer:
+        raise HTTPException(400, "Contract text and buyer are required")
+    if not contract.sign_token:
+        contract.sign_token = str(uuid.uuid4())
+    if contract.status == "draft":
+        contract.status = "sent"
+        if contract.buyer.status in ("inquiry", "waitlisted", "deposit_paid"):
+            contract.buyer.status = "contract_sent"
+    db.commit()
+    return {"sign_url": f"{settings.APP_URL.rstrip('/')}/sign/{contract.sign_token}", "message": "Signing link ready. No email was sent."}
+
+
 @router.post("/{contract_id}/send")
 def send_contract(contract_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     contract = db.query(Contract).filter(Contract.id == contract_id, Contract.breeder_id == current_user.id).with_for_update().first()
