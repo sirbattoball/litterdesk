@@ -7,9 +7,9 @@ import Link from 'next/link'
 
 const PLANS = [
   { key:'starter', name:'Starter', price:39, desc:'Everything you need to get organized',
-    features:['Unlimited litters','Unlimited buyer CRM','Dog & health records','Waitlist management','Go-home date tracking','Contract drafting & e-sign'], cta:'Get started' },
-  { key:'pro', name:'Pro', price:89, desc:'Starter, plus AI drafting & deposits', popular:true,
-    features:['Everything in Starter','Instant AI contract drafting','AI litter announcements','AI buyer email drafting','Stripe deposit collection','AI buyer-match suggestions'], cta:'Choose Pro' },
+    features:['Unlimited litters','Unlimited buyer CRM','Dog & health records','Waitlist management','Manual deposit tracking','Go-home date tracking','Contract drafting & e-sign'], cta:'Get started' },
+  { key:'pro', name:'Pro', price:89, desc:'Starter, plus AI drafting & buyer matching', popular:true,
+    features:['Everything in Starter','Instant AI contract drafting','AI litter announcements','AI buyer email drafting','AI buyer-match suggestions'], cta:'Choose Pro' },
 ]
 
 export default function UpgradePage() {

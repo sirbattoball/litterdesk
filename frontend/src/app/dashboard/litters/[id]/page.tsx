@@ -36,6 +36,7 @@ export default function LitterDetailPage() {
   const [showAddBuyer, setShowAddBuyer] = useState(false)
   const [addingBuyerId, setAddingBuyerId] = useState('')
   const [adding, setAdding] = useState(false)
+  const [savingDeposit, setSavingDeposit] = useState('')
   const [announcement, setAnnouncement] = useState<{email:string,social:string}|null>(null)
 
   const { data: litter, isLoading, isError, refetch } = useQuery({
@@ -107,6 +108,23 @@ export default function LitterDetailPage() {
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to add buyer to waitlist')
     } finally { setAdding(false) }
+  }
+
+  const saveDeposit = async (buyerId: string, paid: boolean) => {
+    setSavingDeposit(buyerId)
+    try {
+      await littersApi.recordDeposit(id, buyerId, paid)
+      await Promise.all([
+        refetchWaitlist(),
+        qc.invalidateQueries({ queryKey: ['buyer-waitlists', buyerId] }),
+        qc.invalidateQueries({ queryKey: ['dashboard-stats'] }),
+      ])
+      toast.success(paid ? 'Deposit marked as received' : 'Deposit marked as awaiting payment')
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Could not update the deposit')
+    } finally {
+      setSavingDeposit('')
+    }
   }
 
   if (isError) return <QueryFailure retry={() => { refetch() }} />
@@ -207,6 +225,7 @@ export default function LitterDetailPage() {
               </p>
             )}
 
+            {!!waitlist?.length && <p className="activity-time">Record deposits after you receive payment from the buyer.</p>}
             {waitlist?.map((w:any, i:number) => (
               <div key={w.id ?? i} className="activity-item">
                 <div style={{width:28,height:28,borderRadius:'50%',background:'linear-gradient(135deg,var(--forest),var(--forest-ll))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#fff',fontWeight:700,flexShrink:0}}>
@@ -217,6 +236,13 @@ export default function LitterDetailPage() {
                     {w.buyer_name ?? `Buyer ${i+1}`}
                   </Link>
                   <div className="activity-time">{w.sex_preference ? `Wants: ${w.sex_preference}` : 'No sex preference'}</div>
+                  <div className="activity-time">{w.deposit_paid ? 'Deposit received' : 'Deposit awaiting payment'}{w.online_deposit ? ' · Stripe' : ''}</div>
+                  {!w.online_deposit && (
+                    <button type="button" className="btn-ghost" disabled={!!savingDeposit}
+                      onClick={() => saveDeposit(w.buyer_id, !w.deposit_paid)}>
+                      {savingDeposit === w.buyer_id ? 'Saving…' : w.deposit_paid ? 'Undo deposit received' : 'Mark deposit received'}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

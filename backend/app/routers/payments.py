@@ -163,6 +163,8 @@ def reconcile_deposit(payment, session, db):
 @router.post("/collect-deposit")
 def collect_deposit(buyer_id: str, litter_id: str, amount_cents: int = Query(ge=50, le=99999999),
                     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not settings.STRIPE_DEPOSIT_COLLECTION_ENABLED:
+        raise HTTPException(409, "Online deposit collection is paused. Track deposits on the litter waitlist.")
     require_pro(current_user)
     if not current_user.stripe_onboarded or not current_user.stripe_account_id:
         raise HTTPException(400, "Complete Stripe Connect setup first")
@@ -233,6 +235,8 @@ def list_deposits(db: Session = Depends(get_db), current_user: User = Depends(ge
 
 @router.post("/stripe-connect/onboard")
 def stripe_connect_onboard(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not settings.STRIPE_DEPOSIT_COLLECTION_ENABLED:
+        raise HTTPException(409, "Online deposit collection is paused. Track deposits on the litter waitlist.")
     require_pro(current_user)
     try:
         if not current_user.stripe_account_id:

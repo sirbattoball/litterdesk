@@ -225,7 +225,7 @@ export default function OnboardingPage() {
             </div>
             <h2 style={{fontFamily:'var(--serif)',fontSize:28,color:'var(--ink)',marginBottom:10}}>You&apos;re all set!</h2>
             <p style={{fontSize:15,color:'var(--ink-3)',lineHeight:1.65,marginBottom:28,maxWidth:380,margin:'0 auto 28px'}}>
-              Your kennel is live. Add buyers to your waitlist, generate contracts, and collect deposits — all from your dashboard.
+              Your kennel is live. Add buyers to your waitlist, generate contracts, and track deposits — all from your dashboard.
             </p>
             <div style={{display:'flex',flexDirection:'column',gap:10}}>
               <button onClick={finish} disabled={saving} className="btn-primary" style={{justifyContent:'center',padding:'13px',fontSize:15}}>

@@ -43,7 +43,8 @@ class WorkflowTests(unittest.TestCase):
                         Dog(id='foreign-dam', owner_id='other', name='Dam', breed='Poodle', sex='female')])
             db.commit()
         for key, value in dict(STRIPE_SECRET_KEY='sk_test_mock', STRIPE_WEBHOOK_SECRET='whsec_test',
-                               STRIPE_PRICE_STARTER='price_starter', STRIPE_PRICE_PRO='price_pro', RESEND_API_KEY='mock').items():
+                               STRIPE_PRICE_STARTER='price_starter', STRIPE_PRICE_PRO='price_pro', RESEND_API_KEY='mock',
+                               STRIPE_DEPOSIT_COLLECTION_ENABLED=True).items():
             self.enterContext(patch.object(settings, key, value))
         # Every Stripe request must be explicitly mocked; never reach the network.
         self.enterContext(patch('stripe._api_requestor._APIRequestor.request', side_effect=AssertionError('Unexpected Stripe network call')))
@@ -138,6 +139,46 @@ class WorkflowTests(unittest.TestCase):
             db.commit()
         self.assertEqual(self.post('litters/?subscribed=true', {'breed': 'Poodle'}).status_code, 403)
         self.assertEqual(self.post('contracts/', {'buyer_id': 'buyer', 'content': 'Text'}).status_code, 403)
+
+    def test_online_deposit_routes_are_blocked_when_paused(self):
+        self.pro()
+        self.waitlist()
+        with patch.object(settings, 'STRIPE_DEPOSIT_COLLECTION_ENABLED', False):
+            params = {'buyer_id': 'buyer', 'litter_id': 'litter', 'amount_cents': 20000}
+            self.assertEqual(self.post('payments/collect-deposit', params=params).status_code, 409)
+            self.assertEqual(self.post('payments/stripe-connect/onboard').status_code, 409)
+            self.assertEqual(self.client.get('/api/payments/deposits', headers=self.headers).json(), [])
+
+    def test_starter_can_record_and_undo_a_deposit_on_own_litter(self):
+        self.waitlist()
+        url = '/api/litters/litter/waitlist/buyer/deposit'
+        for paid in (True, True, False):
+            response = self.client.put(url, json={'deposit_paid': paid}, headers=self.headers)
+            self.assertEqual(response.status_code, 204)
+            entries = self.client.get('/api/litters/litter/waitlist', headers=self.headers).json()
+            self.assertEqual(entries[0]['deposit_paid'], paid)
+            self.assertFalse(entries[0]['online_deposit'])
+        self.assertEqual(self.client.put(
+            url.replace('/litter/', '/foreign-litter/'), json={'deposit_paid': True}, headers=self.headers
+        ).status_code, 404)
+
+    def test_manual_edit_cannot_override_a_pending_or_paid_online_deposit(self):
+        self.waitlist()
+        url = '/api/litters/litter/waitlist/buyer/deposit'
+        for status in ('pending', 'paid'):
+            with self.Session() as db:
+                db.add(DepositPayment(id=status, breeder_id='breeder', buyer_id='buyer',
+                                      litter_id='litter', amount_cents=20000, status=status))
+                db.commit()
+            entries = self.client.get('/api/litters/litter/waitlist', headers=self.headers).json()
+            self.assertTrue(entries[0]['online_deposit'])
+            self.assertEqual(self.client.put(
+                url, json={'deposit_paid': True}, headers=self.headers
+            ).status_code, 409)
+            with self.Session() as db:
+                self.assertFalse(db.query(BuyerLitterMatch).one().deposit_paid)
+                db.delete(db.get(DepositPayment, status))
+                db.commit()
 
     def test_deposit_requires_pro_waitlist_ownership_and_positive_amount(self):
         params = {'buyer_id': 'buyer', 'litter_id': 'litter', 'amount_cents': 20000}
