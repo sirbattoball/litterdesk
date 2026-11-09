@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 import uuid
 
 from app.database import get_db
-from app.models import Litter, Puppy, BuyerLitterMatch, Dog, DepositPayment, Contract
+from app.models import Buyer, Litter, Puppy, BuyerLitterMatch, Dog, DepositPayment, Contract
 from app.schemas import LitterCreate, LitterUpdate, LitterOut, PuppyCreate, PuppyOut
 from app.routers.auth import get_active_user as get_current_user
 from app.models import User
@@ -149,6 +149,13 @@ def get_waitlist(
         BuyerLitterMatch.litter_id == litter_id
     ).order_by(BuyerLitterMatch.position).all()
 
+    online_buyers = {buyer_id for (buyer_id,) in db.query(DepositPayment.buyer_id).filter(
+        DepositPayment.litter_id == litter_id,
+        DepositPayment.status.in_(("pending", "paid")),
+    )}
+
+    online_buyers.update(m.buyer_id for m in matches if m.stripe_payment_intent_id)
+
     return [
         {
             "position": m.position,
@@ -156,8 +163,44 @@ def get_waitlist(
             "buyer_name": m.buyer.full_name if m.buyer else None,
             "buyer_email": m.buyer.email if m.buyer else None,
             "deposit_paid": m.deposit_paid,
+            "online_deposit": m.buyer_id in online_buyers,
             "match_score": m.match_score,
             "puppy_id": m.puppy_id,
         }
         for m in matches
     ]
+
+
+@router.put("/{litter_id}/waitlist/{buyer_id}/deposit", status_code=204)
+def record_waitlist_deposit(
+    litter_id: str,
+    buyer_id: str,
+    deposit_paid: bool = Body(embed=True),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    litter = db.query(Litter).filter(
+        Litter.id == litter_id, Litter.breeder_id == current_user.id
+    ).with_for_update().first()
+    if not litter:
+        raise HTTPException(404, "Litter not found")
+    buyer = db.query(Buyer.id).filter_by(id=buyer_id, breeder_id=current_user.id).first()
+    if not buyer:
+        raise HTTPException(404, "Buyer not found")
+    matches = db.query(BuyerLitterMatch).filter_by(
+        litter_id=litter_id, buyer_id=buyer_id
+    ).with_for_update().all()
+    if not matches:
+        raise HTTPException(404, "Buyer is not on this litter's waitlist")
+
+    online_payment = db.query(DepositPayment.id).filter(
+        DepositPayment.litter_id == litter_id,
+        DepositPayment.buyer_id == buyer_id,
+        DepositPayment.status.in_(("pending", "paid")),
+    ).first()
+    if online_payment or any(match.stripe_payment_intent_id for match in matches):
+        raise HTTPException(409, "This deposit is tracked through Stripe.")
+
+    for match in matches:
+        match.deposit_paid = deposit_paid
+    db.commit()

@@ -71,6 +71,8 @@ export const littersApi = {
   puppies: (id: string) => api.get(`/litters/${id}/puppies`),
   addPuppy: (id: string, data: any) => api.post(`/litters/${id}/puppies`, data),
   waitlist: (id: string) => api.get(`/litters/${id}/waitlist`),
+  recordDeposit: (litterId: string, buyerId: string, depositPaid: boolean) =>
+    api.put(`/litters/${litterId}/waitlist/${buyerId}/deposit`, { deposit_paid: depositPaid }),
 }
 
 // ─── Buyers ──────────────────────────────────────────────────────────────────
@@ -120,6 +122,4 @@ export const paymentsApi = {
   syncSubscription: (sessionId: string) => api.post('/payments/sync-subscription', null, { params: { session_id: sessionId } }),
   deposits: () => api.get('/payments/deposits'),
   createPortal: () => api.post('/payments/create-portal'),
-  collectDeposit: (data: any) => api.post('/payments/collect-deposit', null, { params: data }),
-  stripeConnectOnboard: () => api.post('/payments/stripe-connect/onboard'),
 }
