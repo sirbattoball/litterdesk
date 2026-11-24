@@ -177,88 +177,21 @@ def send_weekly_digest(self):
 
 @celery_app.task(bind=True)
 def check_trial_expiry(self):
-    """
-    Daily: warn breeders whose trial ends in 3 days.
-    On expiry day, downgrade them to free.
-    """
+    """Trial reminders. Logic lives in app/services/lifecycle_emails.py."""
+    from app.services.lifecycle_emails import run_trial_lifecycle
     db = SessionLocal()
     try:
-        now = datetime.now(timezone.utc)
-
-        # 3-day warning
-        warn_date = now + timedelta(days=3)
-        expiring_soon = db.query(User).filter(
-            User.subscription_active == False,
-            User.trial_ends_at >= now,
-            User.trial_ends_at <= warn_date,
-            User.subscription_plan == "free",
-        ).all()
-
-        for user in expiring_soon:
-            days_left = (user.trial_ends_at - now).days + 1
-            send_email(
-                to=user.email,
-                subject=f"Your LitterDesk trial ends in {days_left} day{'s' if days_left != 1 else ''}",
-                body=f"Hi {user.full_name},\n\n"
-                     f"Your 7-day free trial of LitterDesk ends in {days_left} day{'s' if days_left != 1 else ''}.\n\n"
-                     f"To keep access to all features, upgrade to a paid plan:\n\n"
-                     f"• Starter — $29/month (2 litters)\n"
-                     f"• Pro — $79/month (unlimited + AI features) ⭐\n"
-                     f"• Kennel — $149/month (multi-user)\n\n"
-                     f"Upgrade here: https://litterdesk.com/dashboard/upgrade\n\n"
-                     f"Questions? Just reply to this email.\n\n"
-                     f"— The LitterDesk Team"
-            )
-
-        db.commit()
+        return run_trial_lifecycle(db)
     finally:
         db.close()
 
 
 @celery_app.task(bind=True)
 def send_lead_nurture_emails(self):
-    """
-    Daily: send the next nurture email to landing-page leads who haven't
-    signed up yet, based on days since capture. See app/services/nurture_emails.py
-    for the schedule and content.
-    """
+    """Lead nurture sequence. Logic lives in app/services/lifecycle_emails.py."""
+    from app.services.lifecycle_emails import run_lead_nurture
     db = SessionLocal()
     try:
-        now = datetime.now(timezone.utc)
-        leads = db.query(Lead).filter(
-            Lead.converted_to_signup == False,
-            Lead.unsubscribed == False,
-            Lead.nurture_step < len(NURTURE_SCHEDULE),
-        ).all()
-
-        for lead in leads:
-            # Stop nurturing anyone who already signed up as a real user
-            existing_user = db.query(User).filter(User.email == lead.email).first()
-            if existing_user:
-                lead.converted_to_signup = True
-                continue
-
-            step_index = lead.nurture_step
-            if step_index >= len(NURTURE_SCHEDULE):
-                continue
-
-            threshold_days, step_key = NURTURE_SCHEDULE[step_index]
-            days_since = (now - lead.created_at).days
-
-            if days_since >= threshold_days:
-                email_content = NURTURE_EMAILS[step_key]
-                sent = send_email(
-                    to=lead.email,
-                    subject=email_content["subject"],
-                    body="",
-                    html=render_for(email_content["html"], lead.email),
-                )
-                if sent:
-                    lead.nurture_step += 1
-                else:
-                    logger.error(f"Failed to send nurture step {step_key} to lead {lead.id}")
-
-        db.commit()
+        return run_lead_nurture(db)
     finally:
         db.close()
-

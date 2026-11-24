@@ -35,8 +35,12 @@ class Settings(BaseSettings):
     # App
     APP_URL: str = "https://litterdesk.com"
     API_URL: str = "https://litterdesk.onrender.com"  # public backend URL, used in email unsubscribe links
+    # Public support inbox: used as reply-to on customer emails.
+    SUPPORT_EMAIL: str = "litterdesk.hello@gmail.com"
     # Where contact-form submissions are emailed. Override with CONTACT_NOTIFY_EMAIL in Render.
-    CONTACT_NOTIFY_EMAIL: str = "jhighroller9@gmail.com"
+    CONTACT_NOTIFY_EMAIL: str = "litterdesk.hello@gmail.com"
+    # Shared secret for POST /api/internal/run-daily. Empty = endpoint disabled.
+    CRON_SECRET: str = ""
     ENVIRONMENT: str = "development"
 
     class Config:

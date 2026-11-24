@@ -6,7 +6,7 @@ import logging
 from sqlalchemy import text
 
 from app.database import engine, Base
-from app.routers import auth, dogs, litters, buyers, contracts, payments, ai_agent, dashboard, leads
+from app.routers import auth, dogs, litters, buyers, contracts, payments, ai_agent, dashboard, leads, internal
 from app.config import settings
 
 logger = logging.getLogger("uvicorn.error")
@@ -103,6 +103,7 @@ app.include_router(contracts.router, prefix="/api/contracts", tags=["contracts"]
 app.include_router(payments.router, prefix="/api/payments", tags=["payments"])
 app.include_router(ai_agent.router, prefix="/api/ai", tags=["ai"])
 app.include_router(leads.router, prefix="/api/leads", tags=["leads"])
+app.include_router(internal.router, prefix="/api/internal", tags=["internal"])
 
 
 @app.get("/health")

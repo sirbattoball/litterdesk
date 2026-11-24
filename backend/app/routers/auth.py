@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -92,7 +92,7 @@ def get_active_user(user: User = Depends(get_current_user)) -> User:
 
 
 @router.post("/register", response_model=Token)
-def register(data: UserRegister, db: Session = Depends(get_db)):
+def register(data: UserRegister, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     existing = db.query(User).filter(func.lower(User.email) == data.email).first()
     if existing:
         # Allow an abandoned checkout to resume only after authenticating
@@ -129,6 +129,9 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(409, "Email already registered")
     db.refresh(user)
+
+    from app.services.lifecycle_emails import send_welcome_email
+    background_tasks.add_task(send_welcome_email, user)
 
     token = create_access_token({"sub": user.id, "ver": user.credential_version})
     return {"access_token": token, "token_type": "bearer", "user": UserOut.model_validate(user)}
