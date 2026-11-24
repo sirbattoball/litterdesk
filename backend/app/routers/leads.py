@@ -1,13 +1,22 @@
+import hmac
 from html import escape
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 
 from app.database import get_db
 from app.models import Lead, ContactMessage
+from app.config import settings
 from app.services import email_service
+from app.services.nurture_emails import unsubscribe_signature
+from app.services.ratelimit import check_rate_limit
 
 router = APIRouter()
+
+
+def _client_ip(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
 
 
 class LeadCaptureRequest(BaseModel):
@@ -21,7 +30,7 @@ class LeadQualifyRequest(BaseModel):
     biggest_headache: str | None = None
 
 
-TEMPLATE_DOWNLOAD_URL = "https://litterdesk.vercel.app/downloads/puppy-buyer-agreement-deposit-terms-template.docx"
+TEMPLATE_DOWNLOAD_URL = f"{settings.APP_URL.rstrip('/')}/downloads/puppy-buyer-agreement-deposit-terms-template.docx"
 
 WELCOME_EMAIL_HTML = f"""
 <!DOCTYPE html>
@@ -49,11 +58,15 @@ WELCOME_EMAIL_HTML = f"""
 
 
 @router.post("/capture")
-def capture_lead(req: LeadCaptureRequest, db: Session = Depends(get_db)):
+def capture_lead(req: LeadCaptureRequest, request: Request, db: Session = Depends(get_db)):
     """Public endpoint: landing page lead magnet email capture. No auth required."""
+    # This endpoint sends an email to whatever address is submitted, so cap it
+    # per visitor and per recipient to stop it being used to email-bomb someone.
+    check_rate_limit(f"capture-ip:{_client_ip(request)}", 10, 3600)
+    check_rate_limit(f"capture-email:{req.email.lower()}", 3, 3600, "We already sent that template. Please check your inbox and spam folder.")
     existing = db.query(Lead).filter(Lead.email == req.email).first()
     if not existing:
-        lead = Lead(email=req.email, source=req.source)
+        lead = Lead(email=req.email, source=(req.source or "")[:100] or "buyer_agreement_template")
         db.add(lead)
         db.commit()
 
@@ -94,8 +107,9 @@ class ContactRequest(BaseModel):
 
 
 @router.post("/contact")
-def submit_contact(req: ContactRequest, db: Session = Depends(get_db)):
+def submit_contact(req: ContactRequest, request: Request, db: Session = Depends(get_db)):
     """Public endpoint: standalone 'get in touch' form. No auth required."""
+    check_rate_limit(f"contact-ip:{_client_ip(request)}", 5, 3600)
     message = req.message.strip()[:5000]
     if not message:
         raise HTTPException(400, "Message can't be empty")
@@ -107,7 +121,7 @@ def submit_contact(req: ContactRequest, db: Session = Depends(get_db)):
 
     # The message is retained even if notification delivery is unavailable.
     email_service.send_email(
-        to="jhighroller9@gmail.com",
+        to=settings.CONTACT_NOTIFY_EMAIL,
         subject=f"LitterDesk contact form — {name or req.email}",
         body="",
         html=(
@@ -119,3 +133,23 @@ def submit_contact(req: ContactRequest, db: Session = Depends(get_db)):
     )
 
     return {"status": "received"}
+
+
+@router.get("/unsubscribe", response_class=HTMLResponse)
+def unsubscribe(email: str, sig: str, db: Session = Depends(get_db)):
+    """One-click unsubscribe from the follow-up emails. The link is signed, so it
+    can only be used for the address it was sent to."""
+    email = email.strip().lower()
+    if not hmac.compare_digest(sig, unsubscribe_signature(email)):
+        return HTMLResponse(_unsub_page("That unsubscribe link isn't valid. Email litterdesk.hello@gmail.com and we'll remove you by hand."), status_code=400)
+    db.query(Lead).filter(Lead.email == email).update({"unsubscribed": True})
+    db.commit()
+    return HTMLResponse(_unsub_page("You're unsubscribed. We won't email you again."))
+
+
+def _unsub_page(message: str) -> str:
+    return (
+        "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<title>LitterDesk</title></head><body style=\"font-family:-apple-system,sans-serif;max-width:480px;margin:80px auto;padding:0 20px;color:#1a1a1a\">"
+        f"<h2 style='margin-bottom:8px'>LitterDesk</h2><p style='line-height:1.6'>{escape(message)}</p></body></html>"
+    )

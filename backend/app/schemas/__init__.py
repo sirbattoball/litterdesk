@@ -70,6 +70,7 @@ class UserUpdate(EmailModel):
     full_name: Optional[str] = None
     kennel_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    current_password: Optional[str] = None  # required only when changing email
     phone: Optional[str] = None
     website: Optional[str] = None
     breeds: Optional[List[str]] = None

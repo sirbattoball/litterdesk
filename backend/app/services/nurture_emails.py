@@ -15,8 +15,29 @@ everything at once: trial_offer (recap + the ask), trial_objections
 one CTA, honest cost-of-waiting — no fabricated deadline or scarcity).
 """
 
-REGISTER_URL = "https://litterdesk.vercel.app/register"
-BLOG_URL = "https://litterdesk.vercel.app/blog"
+import hashlib
+import hmac
+
+from app.config import settings
+
+REGISTER_URL = f"{settings.APP_URL.rstrip('/')}/register"
+BLOG_URL = f"{settings.APP_URL.rstrip('/')}/blog"
+
+UNSUBSCRIBE_TOKEN = "__UNSUBSCRIBE_URL__"
+
+
+def unsubscribe_signature(email: str) -> str:
+    return hmac.new(settings.SECRET_KEY.encode(), email.lower().encode(), hashlib.sha256).hexdigest()[:32]
+
+
+def unsubscribe_url(email: str) -> str:
+    from urllib.parse import quote
+    return f"{settings.API_URL.rstrip('/')}/api/leads/unsubscribe?email={quote(email.lower())}&sig={unsubscribe_signature(email)}"
+
+
+def render_for(email_html: str, email: str) -> str:
+    """Fill in the recipient's personal unsubscribe link."""
+    return email_html.replace(UNSUBSCRIBE_TOKEN, unsubscribe_url(email))
 
 # (days_since_capture_required, step_key)
 NURTURE_SCHEDULE = [
@@ -41,7 +62,7 @@ def _wrap(inner_html: str) -> str:
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
   <p style="font-size: 12px; color: #9ca3af;">
     LitterDesk · Breeder Operations Platform<br>
-    <a href="https://litterdesk.com/unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
+    <a href="__UNSUBSCRIBE_URL__" style="color: #9ca3af;">Unsubscribe</a>
   </p>
 </body>
 </html>

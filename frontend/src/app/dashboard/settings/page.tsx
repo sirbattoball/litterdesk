@@ -13,6 +13,8 @@ export default function SettingsPage() {
     email: user?.email ?? '',
   })
   const [saving, setSaving] = useState(false)
+  const [emailPassword, setEmailPassword] = useState('')
+  const emailChanged = form.email.trim().toLowerCase() !== (user?.email ?? '').toLowerCase()
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm_password: '' })
   const [changingPw, setChangingPw] = useState(false)
 
@@ -55,8 +57,9 @@ export default function SettingsPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      const res = await authApi.updateMe(form)
+      const res = await authApi.updateMe(emailChanged ? { ...form, current_password: emailPassword } : { full_name: form.full_name, kennel_name: form.kennel_name })
       setUser(res.data)
+      setEmailPassword('')
       toast.success('Profile saved!')
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Save failed')
@@ -86,8 +89,14 @@ export default function SettingsPage() {
                 <div className="field">
                   <label className="label" htmlFor="field-email-address-3">Email address</label>
                   <input id="field-email-address-3" type="email" className="input" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} required/>
-                  <p style={{fontSize:12,color:'var(--ink-4)',marginTop:4}}>Used for login and contract notifications.</p>
+                  <p style={{fontSize:12,color:'var(--ink-4)',marginTop:4}}>Used for login and password recovery.</p>
                 </div>
+                {emailChanged && (
+                  <div className="field">
+                    <label className="label" htmlFor="field-email-password">Current password</label>
+                    <input id="field-email-password" type="password" className="input" value={emailPassword} onChange={e=>setEmailPassword(e.target.value)} autoComplete="current-password" placeholder="Needed to change your email" required/>
+                  </div>
+                )}
                 <button type="submit" disabled={saving} className="btn-primary">
                   {saving ? 'Saving…' : 'Save profile'}
                 </button>
