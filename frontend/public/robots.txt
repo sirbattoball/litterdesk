@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /sign/
+Disallow: /reset-password/
+Disallow: /forgot-password
+Disallow: /deposit-result
+
+Sitemap: https://litterdesk.com/sitemap.xml

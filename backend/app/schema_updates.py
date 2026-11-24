@@ -2,7 +2,8 @@
 from sqlalchemy import inspect, text
 
 ADDITIONS = {
-    "users": {"credential_version": "INTEGER NOT NULL DEFAULT 0", "onboarding_completed": "BOOLEAN NOT NULL DEFAULT TRUE"},
+    "users": {"credential_version": "INTEGER NOT NULL DEFAULT 0", "onboarding_completed": "BOOLEAN NOT NULL DEFAULT TRUE",
+              "trial_warning_sent_at": "TIMESTAMP WITH TIME ZONE", "trial_ended_email_sent_at": "TIMESTAMP WITH TIME ZONE"},
     "leads": {"unsubscribed": "BOOLEAN NOT NULL DEFAULT FALSE"},
     "buyers": {"budget_min": "FLOAT", "budget_max": "FLOAT", "timeline": "VARCHAR"},
 }

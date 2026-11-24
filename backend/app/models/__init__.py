@@ -90,6 +90,9 @@ class User(Base):
     stripe_subscription_id = Column(String)
     subscription_active = Column(Boolean, default=False)
     trial_ends_at = Column(DateTime(timezone=True))
+    # Lifecycle email bookkeeping so each reminder is sent at most once.
+    trial_warning_sent_at = Column(DateTime(timezone=True))
+    trial_ended_email_sent_at = Column(DateTime(timezone=True))
 
     @property
     def has_subscription(self):

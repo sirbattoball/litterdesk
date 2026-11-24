@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models import Lead, ContactMessage
 from app.config import settings
 from app.services import email_service
-from app.services.nurture_emails import unsubscribe_signature
+from app.services.nurture_emails import render_for, unsubscribe_signature
 from app.services.ratelimit import check_rate_limit
 
 router = APIRouter()
@@ -45,12 +45,13 @@ WELCOME_EMAIL_HTML = f"""
     <a href="{TEMPLATE_DOWNLOAD_URL}" style="background:#1a4730;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;">Download the template →</a>
   </p>
   <p>It's a Word doc, so feel free to edit it however fits your kennel. And it's worth having a local attorney glance over your final version — laws around pet sales vary by state.</p>
-  <p>This requested template email does not subscribe you to marketing messages.</p>
-  <p>— The LitterDesk team</p>
+  <p>Over the next couple of weeks I'll also send about six short emails on running a small breeding program: screening buyers, contracts, and deposits. If they aren't useful, unsubscribe any time with the link below.</p>
+  <p>— LitterDesk</p>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
   <p style="font-size: 12px; color: #9ca3af;">
-    LitterDesk · Breeder Operations Platform<br>
-    Requested template delivery.
+    LitterDesk · Software for small dog breeders<br>
+    You're getting this because you asked for the buyer agreement template.
+    <a href="__UNSUBSCRIBE_URL__" style="color: #9ca3af;">Unsubscribe</a>
   </p>
 </body>
 </html>
@@ -74,7 +75,8 @@ def capture_lead(req: LeadCaptureRequest, request: Request, db: Session = Depend
         to=req.email,
         subject="Your Puppy Buyer Agreement template",
         body="",
-        html=WELCOME_EMAIL_HTML,
+        html=render_for(WELCOME_EMAIL_HTML, req.email),
+        reply_to=settings.SUPPORT_EMAIL,
     )
     if not sent:
         raise HTTPException(500, "Could not send the template email — please try again.")
