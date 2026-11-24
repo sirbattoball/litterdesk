@@ -1,0 +1,14 @@
+name: Daily emails
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily job
+        run: |
+          curl --fail-with-body --max-time 150 --retry 2 --retry-delay 20 \
+            -X POST -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            https://litterdesk-1.onrender.com/api/internal/run-daily
