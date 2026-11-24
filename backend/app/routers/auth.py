@@ -214,7 +214,14 @@ def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
 @router.put("/me", response_model=UserOut)
 def update_me(data: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     update_data = data.model_dump(exclude_none=True)
-    if "email" in update_data and update_data["email"] != current_user.email:
+    current_password = update_data.pop("current_password", None)
+    if "email" in update_data and update_data["email"] == current_user.email.lower():
+        update_data.pop("email")  # unchanged
+    if "email" in update_data:
+        # Email is the account's recovery address, so changing it needs the password.
+        # Otherwise anyone with a stolen session could lock the owner out.
+        if not current_password or not verify_password(current_password, current_user.hashed_password):
+            raise HTTPException(400, "Enter your current password to change your email.")
         existing = db.query(User).filter(func.lower(User.email) == update_data["email"], User.id != current_user.id).first()
         if existing:
             raise HTTPException(400, "That email is already in use.")

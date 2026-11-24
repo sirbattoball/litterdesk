@@ -34,6 +34,9 @@ class Settings(BaseSettings):
 
     # App
     APP_URL: str = "https://litterdesk.com"
+    API_URL: str = "https://litterdesk.onrender.com"  # public backend URL, used in email unsubscribe links
+    # Where contact-form submissions are emailed. Override with CONTACT_NOTIFY_EMAIL in Render.
+    CONTACT_NOTIFY_EMAIL: str = "jhighroller9@gmail.com"
     ENVIRONMENT: str = "development"
 
     class Config:

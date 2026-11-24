@@ -4,6 +4,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy import text
 from app.database import Base
 import uuid
 import enum
@@ -391,6 +392,7 @@ class Lead(Base):
     biggest_headache = Column(String)  # "buyers", "contracts", "deposits", "records"
     nurture_step = Column(Integer, default=0)  # which sequence email they're on
     converted_to_signup = Column(Boolean, default=False)
+    unsubscribed = Column(Boolean, nullable=False, default=False, server_default=text("false"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

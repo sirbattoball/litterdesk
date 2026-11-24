@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, text, inspect
 from app.models import User, Contract, BuyerLitterMatch, DepositPayment
 from app.routers import auth, dogs, dashboard
 from app.schema_updates import ensure_customer_columns
+from app.services import ratelimit
 import test_workflows as workflows
 from test_workflows import Obj, page
 
@@ -18,7 +19,7 @@ class CustomerJourneyTests(unittest.TestCase):
     new_contract=workflows.WorkflowTests.new_contract
     sub=workflows.WorkflowTests.sub
     def setUp(self):
-        auth._login_attempts.clear();workflows.WorkflowTests.setUp(self)
+        auth._login_attempts.clear();ratelimit.reset();workflows.WorkflowTests.setUp(self)
         with self.engine.connect() as conn: conn.execute(text('PRAGMA foreign_keys=ON'))
         self.app.include_router(dogs.router,prefix='/api/dogs')
         self.app.include_router(dashboard.router,prefix='/api/dashboard')
@@ -107,7 +108,36 @@ class CustomerJourneyTests(unittest.TestCase):
     def test_profile_onboarding_and_duplicate_email(self):
         self.assertEqual(self.put('auth/me',{'full_name':'Updated','kennel_name':'Updated Kennel','onboarding_completed':True}).status_code,200)
         self.assertTrue(self.get('auth/me').json()['onboarding_completed'])
-        self.assertEqual(self.put('auth/me',{'email':'OTHER@example.com'}).status_code,400)
+        r=self.put('auth/me',{'email':'OTHER@example.com','current_password':'original-password'});self.assertEqual(r.status_code,400);self.assertIn('already in use',r.json()['detail'])
+
+    def test_changing_email_requires_current_password(self):
+        # A stolen session alone must not be able to repoint the recovery email.
+        for body in ({'email':'moved@example.com'},{'email':'moved@example.com','current_password':'wrong'}):
+            r=self.put('auth/me',body);self.assertEqual(r.status_code,400,r.text);self.assertIn('password',r.json()['detail'])
+        self.assertEqual(self.get('auth/me').json()['email'],'owner@example.com')
+        r=self.put('auth/me',{'email':'Moved@Example.com','current_password':'original-password'});self.assertEqual(r.status_code,200,r.text)
+        self.assertEqual(r.json()['email'],'moved@example.com');self.assertEqual(self.login(email='moved@example.com').status_code,200)
+        # Unchanged email never asks for a password, so ordinary profile saves keep working.
+        self.assertEqual(self.put('auth/me',{'full_name':'Same','email':'moved@example.com'}).status_code,200)
+
+    def test_public_forms_are_rate_limited_and_unsubscribe_works(self):
+        from app.routers import leads
+        from app.models import Lead
+        from app.services.nurture_emails import unsubscribe_signature, unsubscribe_url, render_for, NURTURE_EMAILS
+        self.app.include_router(leads.router,prefix='/api/leads')
+        with patch('app.services.email_service.send_email',return_value=True) as send:
+            codes=[self.post('leads/capture',{'email':'victim@example.com'}).status_code for _ in range(5)]
+            self.assertEqual(codes,[200,200,200,429,429]);self.assertEqual(send.call_count,3)  # a stranger can't be mail-bombed
+            self.assertTrue(all(self.post('leads/contact',{'email':f'a{i}@example.com','message':'hi'}).status_code==200 for i in range(5)))
+            self.assertEqual(self.post('leads/contact',{'email':'z@example.com','message':'hi'}).status_code,429)
+        self.assertIn('/downloads/',leads.TEMPLATE_DOWNLOAD_URL);self.assertNotIn('vercel.app',leads.TEMPLATE_DOWNLOAD_URL)
+        # unsubscribe: signed per-address link, bad signature changes nothing
+        bad=self.client.get('/api/leads/unsubscribe',params={'email':'victim@example.com','sig':'0'*32});self.assertEqual(bad.status_code,400)
+        with self.Session() as db:self.assertFalse(db.query(Lead).filter_by(email='victim@example.com').one().unsubscribed)
+        good=self.client.get('/api/leads/unsubscribe',params={'email':'Victim@Example.com','sig':unsubscribe_signature('victim@example.com')});self.assertEqual(good.status_code,200)
+        with self.Session() as db:self.assertTrue(db.query(Lead).filter_by(email='victim@example.com').one().unsubscribed)
+        html=render_for(NURTURE_EMAILS['buyer_chaos']['html'],'victim@example.com')
+        self.assertIn(unsubscribe_url('victim@example.com'),html);self.assertNotIn('__UNSUBSCRIBE_URL__',html);self.assertNotIn('litterdesk.com/unsubscribe',html)
 
     def test_dog_health_create_edit_clear_filter_delete(self):
         r=self.post('dogs/',{'name':'Bella','breed':'Poodle','sex':'female','health_tests':{'OFA':'OFA Good'}})

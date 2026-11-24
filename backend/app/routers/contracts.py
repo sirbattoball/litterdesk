@@ -55,8 +55,11 @@ def get_contract_for_signing(token: str, db: Session = Depends(get_db)):
 
 @router.post("/sign/{token}")
 def sign_contract(token: str, buyer_name: str, db: Session = Depends(get_db)):
-    if not buyer_name.strip():
+    buyer_name = buyer_name.strip()
+    if not buyer_name:
         raise HTTPException(400, "Your name is required")
+    if len(buyer_name) > 200:
+        raise HTTPException(400, "Name is too long")
     contract = db.query(Contract).filter(Contract.sign_token == token).with_for_update().first()
     if not contract:
         raise HTTPException(404, "Contract not found")

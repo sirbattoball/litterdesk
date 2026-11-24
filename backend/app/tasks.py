@@ -12,7 +12,7 @@ from app.database import SessionLocal
 from app.models import User, Buyer, Litter, BuyerLitterMatch, Lead
 from app.services import ai_service
 from app.services.email_service import send_email
-from app.services.nurture_emails import NURTURE_SCHEDULE, NURTURE_EMAILS
+from app.services.nurture_emails import NURTURE_SCHEDULE, NURTURE_EMAILS, render_for
 from datetime import datetime, timedelta, timezone
 import logging
 
@@ -227,6 +227,7 @@ def send_lead_nurture_emails(self):
         now = datetime.now(timezone.utc)
         leads = db.query(Lead).filter(
             Lead.converted_to_signup == False,
+            Lead.unsubscribed == False,
             Lead.nurture_step < len(NURTURE_SCHEDULE),
         ).all()
 
@@ -250,7 +251,7 @@ def send_lead_nurture_emails(self):
                     to=lead.email,
                     subject=email_content["subject"],
                     body="",
-                    html=email_content["html"],
+                    html=render_for(email_content["html"], lead.email),
                 )
                 if sent:
                     lead.nurture_step += 1
