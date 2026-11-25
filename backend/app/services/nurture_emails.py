@@ -112,7 +112,7 @@ NURTURE_EMAILS = {
   <p>Hey,</p>
   <p>Free rule, works with or without any software: no name moves off "inquiry" and onto your actual waitlist until a deposit lands. Not a promise to pay, not "I'll send it Friday" — landed.</p>
   <p>It sounds obvious written down, but it's the rule almost every breeder we talk to has broken at least once — usually for someone who seemed serious. It's also the fastest way to tell a real buyer from someone still deciding: a buyer who balks at a deposit before meeting a puppy is telling you something worth knowing before you've held a spot for them for six weeks.</p>
-  <p>Where this gets genuinely hard without a system: tracking who's actually paid across six waitlisted buyers when the proof is a Venmo screenshot buried in a text thread. In LitterDesk you mark each deposit against the buyer on the litter's waitlist, so "wait, did they actually pay?" has one place to look. Pro can also collect deposits online.</p>
+  <p>Where this gets genuinely hard without a system: tracking who's actually paid across six waitlisted buyers when the proof is a Venmo screenshot buried in a text thread. In LitterDesk you mark each deposit against the buyer on the litter's waitlist, so "wait, did they actually pay?" has one place to look.</p>
   <p style="margin: 28px 0;">
     <a href="{REGISTER_URL}" style="background:#1a4730;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;">See how deposits work →</a>
   </p>

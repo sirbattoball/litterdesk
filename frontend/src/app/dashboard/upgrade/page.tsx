@@ -78,7 +78,7 @@ export default function UpgradePage() {
             const isCurrent = paidAccount && user?.subscription_active && user?.subscription_plan === p.key
             return (
             <div key={p.key} className="animate-fade-in-up" style={{animationDelay:`${i*80}ms`,position:'relative'}}>
-              {p.popular&&<div style={{position:'absolute',top:-13,left:'50%',transform:'translateX(-50%)',background:'linear-gradient(135deg,var(--amber),#e8891e)',color:'#fff',fontSize:11.5,fontWeight:700,padding:'4px 16px',borderRadius:20,whiteSpace:'nowrap',zIndex:1}}>✦ AI & deposits</div>}
+              {p.popular&&<div style={{position:'absolute',top:-13,left:'50%',transform:'translateX(-50%)',background:'linear-gradient(135deg,var(--amber),#e8891e)',color:'#fff',fontSize:11.5,fontWeight:700,padding:'4px 16px',borderRadius:20,whiteSpace:'nowrap',zIndex:1}}>✦ Adds AI</div>}
               <div style={{borderRadius:'var(--r-2xl)',padding:28,height:'100%',...(p.popular?{background:'linear-gradient(160deg,var(--forest-l) 0%,var(--forest) 100%)',border:'2px solid rgba(255,255,255,.1)',boxShadow:'0 8px 32px rgba(26,71,48,.35)'}:{background:'var(--white)',border:'1px solid rgba(230,223,212,.7)',boxShadow:'var(--sh-sm)'})}}>
                 <div style={{fontSize:12,fontWeight:700,color:p.popular?'rgba(250,248,243,.6)':'var(--ink-4)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>{p.name}</div>
                 <div style={{display:'flex',alignItems:'baseline',gap:3,marginBottom:6}}>

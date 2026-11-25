@@ -203,4 +203,14 @@ def record_waitlist_deposit(
 
     for match in matches:
         match.deposit_paid = deposit_paid
+    buyer_row = db.query(Buyer).filter_by(id=buyer_id, breeder_id=current_user.id).first()
+    if buyer_row:
+        if deposit_paid and buyer_row.status in ("inquiry", "waitlisted"):
+            buyer_row.status = "deposit_paid"
+        elif not deposit_paid and buyer_row.status == "deposit_paid":
+            still_paid = db.query(BuyerLitterMatch.id).filter(
+                BuyerLitterMatch.buyer_id == buyer_id, BuyerLitterMatch.deposit_paid == True  # noqa: E712
+            ).first()
+            if not still_paid:
+                buyer_row.status = "waitlisted"
     db.commit()

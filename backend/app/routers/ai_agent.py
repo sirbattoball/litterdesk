@@ -128,12 +128,37 @@ def draft_email(
     if not buyer:
         raise HTTPException(404, "Buyer not found")
 
+    from app.models import BuyerLitterMatch
+    match = (
+        db.query(BuyerLitterMatch)
+        .join(Litter, BuyerLitterMatch.litter_id == Litter.id)
+        .filter(BuyerLitterMatch.buyer_id == buyer.id, Litter.breeder_id == current_user.id)
+        .order_by(BuyerLitterMatch.created_at.desc())
+        .first()
+    )
+    litter_details = None
+    if match:
+        l = match.litter
+        bits = [f"{l.name or l.breed} ({l.breed})"]
+        if l.puppy_price:
+            bits.append(f"puppy price ${l.puppy_price:,.0f}")
+        deposit = match.deposit_amount or l.deposit_amount
+        if deposit:
+            bits.append(f"deposit ${deposit:,.0f}")
+        if l.go_home_date:
+            bits.append(f"go-home date {l.go_home_date}")
+        elif l.due_date:
+            bits.append(f"due date {l.due_date}")
+        bits.append("deposit already received" if match.deposit_paid else "deposit not yet received")
+        litter_details = "; ".join(bits)
+
     result = ai_service.draft_followup_email(
         buyer_name=buyer.full_name,
         breeder_name=current_user.full_name,
         kennel_name=current_user.kennel_name or "our kennel",
         context=req.context,
         email_type=req.email_type,
+        litter_details=litter_details,
     )
     return result
 
@@ -210,5 +235,6 @@ def litter_announcement(
         num_females=litter.num_females,
         notes=litter.notes or "healthy, well-socialized puppies",
         photos_count=len(litter.photos or []),
+        go_home_date=str(litter.go_home_date) if litter.go_home_date else None,
     )
     return result

@@ -158,6 +158,8 @@ class WorkflowTests(unittest.TestCase):
             entries = self.client.get('/api/litters/litter/waitlist', headers=self.headers).json()
             self.assertEqual(entries[0]['deposit_paid'], paid)
             self.assertFalse(entries[0]['online_deposit'])
+            with self.Session() as db:
+                self.assertEqual(db.get(Buyer, 'buyer').status, 'deposit_paid' if paid else 'waitlisted')
         self.assertEqual(self.client.put(
             url.replace('/litter/', '/foreign-litter/'), json={'deposit_paid': True}, headers=self.headers
         ).status_code, 404)

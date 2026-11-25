@@ -83,7 +83,7 @@ class OverviewTests(unittest.TestCase):
         self.assertEqual(d["litters"][0]["waitlist"], 2); self.assertEqual(d["litters"][0]["deposits"], 1)
         self.assertEqual(d["litters"][0]["stage"], 1)
         done = {i["key"]: i["done"] for i in d["setup"]["items"]}
-        self.assertEqual(done, {"dog": True, "litter": True, "buyer": True, "waitlist": True, "contract": True, "payouts": False})
+        self.assertEqual(done, {"dog": True, "litter": True, "buyer": True, "waitlist": True, "contract": True})
         self.assertEqual(d["setup"]["done"], 5)
 
         keys = [a["key"] for a in d["actions"]]

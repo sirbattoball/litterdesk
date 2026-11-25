@@ -70,6 +70,7 @@ Generate a complete contract including:
 10. Governing law and signatures section
 
 Format as a proper legal document with clear section headings. Include signature lines at the end.
+Keep it complete but tight: about 2,000 to 2,500 words. Where a detail was not provided (addresses, phone numbers, microchip, registration numbers, puppy color), leave a clear [bracketed blank] for the breeder to fill in. Do not invent terms the breeder did not ask for.
 
 IMPORTANT FORMATTING RULES:
 - Do NOT use markdown tables (no | characters)
@@ -123,6 +124,8 @@ Write a genuine, personable email that:
 - Is appropriately warm but professional
 - Gets to the point without being abrupt
 - Is 100-200 words
+
+FACTS RULE: use only the facts given above. Never invent or guess a price, deposit amount, date, policy or puppy detail. If a detail is not given, leave it out or invite the buyer to ask. Do not use emoji.
 
 Respond in JSON:
 {{
@@ -207,6 +210,7 @@ def generate_litter_update(
     num_females: int,
     notes: str,
     photos_count: int,
+    go_home_date: Optional[str] = None,
 ) -> str:
     """Generate a shareable litter announcement for social media or email."""
 
@@ -218,6 +222,9 @@ WHELPED: {whelp_date}
 COUNT: {num_males} males, {num_females} females
 NOTES: {notes}
 PHOTOS: {photos_count} photos available
+GO-HOME DATE: {go_home_date or "not set"}
+
+FACTS RULE: use only the facts above. Never invent a date, price or health claim. If the go-home date is "not set", do not mention when puppies go home. If NOTES are generic, keep the claims generic.
 
 Write two versions:
 1. An email version (2-3 paragraphs, warm and personal)
