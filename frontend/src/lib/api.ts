@@ -48,6 +48,8 @@ export const dashboardApi = {
   stats: () => api.get('/dashboard/stats'),
   recentActivity: () => api.get('/dashboard/recent-activity'),
   overview: () => api.get('/dashboard/overview'),
+  loadSample: () => api.post('/dashboard/sample'),
+  removeSample: () => api.delete('/dashboard/sample'),
 }
 
 // ─── Dogs ────────────────────────────────────────────────────────────────────

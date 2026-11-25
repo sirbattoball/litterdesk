@@ -116,5 +116,34 @@ class OverviewTests(unittest.TestCase):
         self.assertEqual(d["actions"], []); self.assertEqual(d["setup"]["done"], 0)
 
 
+
+class SampleKennelTests(OverviewTests):
+    def test_load_then_remove(self):
+        r = self.client.post("/api/dashboard/sample"); self.assertEqual(r.status_code, 200, r.text)
+        data = self.get()
+        self.assertTrue(data["sample"])
+        self.assertEqual(data["setup"]["done"], 5)
+        self.assertEqual(data["kpis"]["active_litters"], 2)
+        self.assertEqual(data["kpis"]["expected_revenue"], 32000.0)
+        self.assertEqual(data["kpis"]["deposits_held"], 1800.0)
+        self.assertGreaterEqual(len(data["actions"]), 3)
+        self.assertTrue(data["upcoming"])
+        self.assertEqual(self.client.post("/api/dashboard/sample").status_code, 409)
+        self.assertEqual(self.client.delete("/api/dashboard/sample").status_code, 200)
+        data = self.get()
+        self.assertFalse(data["sample"])
+        self.assertEqual(data["kpis"]["total_buyers"], 0)
+        self.assertEqual(data["setup"]["done"], 0)
+
+    def test_remove_keeps_real_data(self):
+        self.db.add(Dog(id="d1", owner_id="me", name="Real", breed="Lab", sex="female")); self.db.commit()
+        self.client.post("/api/dashboard/sample")
+        self.client.delete("/api/dashboard/sample")
+        self.assertEqual(self.db.query(Dog).filter(Dog.owner_id == "me").count(), 1)
+
+    def test_refuses_when_real_buyers_exist(self):
+        self.db.add(Buyer(id="b1", breeder_id="me", full_name="Real Buyer", email="r@x.com")); self.db.commit()
+        self.assertEqual(self.client.post("/api/dashboard/sample").status_code, 409)
+
 if __name__ == "__main__":
     unittest.main()

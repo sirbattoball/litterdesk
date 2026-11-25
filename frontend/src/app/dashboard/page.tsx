@@ -1,13 +1,13 @@
 'use client'
 import { QueryFailure } from '@/components/QueryFailure'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { dashboardApi } from '@/lib/api'
 import { useAuthStore } from '@/lib/store'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
 import {
   ArrowRight, Check, FileText, Heart, Home, Bell, Baby, Sparkles,
-  Users, Wallet, CalendarDays, CircleCheck, Mail, TrendingUp, PawPrint,
+  Users, Wallet, CalendarDays, CircleCheck, Mail, TrendingUp, PawPrint, Eye, X,
 } from 'lucide-react'
 
 type SetupItem = { key: string; label: string; hint: string; done: boolean; href: string; cta: string; optional?: boolean }
@@ -18,6 +18,7 @@ type LitterCard = {
   deposits: number; open_spots: number | null; puppy_price: number | null; waitlist_open: boolean
 }
 type Overview = {
+  sample: boolean
   setup: { items: SetupItem[]; done: number; total: number }
   kpis: { expected_revenue: number; deposits_held: number; deposits_count: number; puppies_expected: number; buyers_waiting: number; open_spots: number; active_litters: number; total_buyers: number }
   pipeline: { status: string; label: string; count: number }[]
@@ -116,6 +117,29 @@ function LitterBoard({ litter }: { litter: LitterCard }) {
   )
 }
 
+function SampleStrip({ loaded }: { loaded: boolean }) {
+  const qc = useQueryClient()
+  const m = useMutation({
+    mutationFn: () => (loaded ? dashboardApi.removeSample() : dashboardApi.loadSample()),
+    onSuccess: () => { qc.invalidateQueries() },
+  })
+  const err = (m.error as any)?.response?.data?.detail
+  return (
+    <section className={`dash-sample ${loaded ? 'on' : ''}`}>
+      <span className="dash-sample-icon">{loaded ? <Eye size={16} /> : <Sparkles size={16} />}</span>
+      <p>
+        {loaded
+          ? <><b>You are looking at a sample kennel.</b> Click around, then remove it when you are ready to add your own.</>
+          : <><b>Want to see it with real-looking data?</b> Load a sample kennel with litters, buyers and contracts. Remove it in one click.</>}
+        {err && <span className="dash-sample-err"> {String(err)}</span>}
+      </p>
+      <button className={loaded ? 'btn-ghost' : 'btn-primary'} disabled={m.isPending} onClick={() => m.mutate()}>
+        {m.isPending ? 'One moment…' : loaded ? <><X size={14} /> Remove sample</> : 'Load sample kennel'}
+      </button>
+    </section>
+  )
+}
+
 function Skeleton() {
   return (
     <div className="page-body">
@@ -161,6 +185,7 @@ export default function DashboardPage() {
     <div className="page-enter">
       {header}
       <div className="page-body dash">
+        {(data.sample || kpis.total_buyers === 0) && <SampleStrip loaded={data.sample} />}
         {!setupDone && <SetupCard setup={setup} />}
 
         <div className="dash-kpis stagger">
