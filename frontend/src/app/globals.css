@@ -772,7 +772,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px soli
 @media print { .site-home-link { display:none; } }
 
 /* ─── DASHBOARD OVERVIEW ─── */
-.dash { display: flex; flex-direction: column; gap: 18px; max-width: 1320px; }
+.dash { display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 1360px; margin-inline: auto; }
 .dash-h2 { font-family: var(--serif); font-size: 24px; font-weight: 400; color: var(--ink); line-height: 1.2; }
 .dash-h3 { font-size: 15px; font-weight: 700; color: var(--ink); }
 .dash-muted { font-size: 14px; color: var(--ink-3); line-height: 1.5; margin-top: 2px; }
@@ -913,3 +913,13 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px soli
 .trial-banner.soon { background: var(--amber-f); color: var(--amber); border-color: #f0dcb0; }
 .trial-banner.expired { background: var(--red-f); color: #b91c1c; border-color: #f3caca; }
 .dash-fill-text p { margin: 0; }
+
+/* sample kennel strip */
+.dash-sample { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border: 1px dashed #c9c6b3; border-radius: 14px; background: #fbf9f1; }
+.dash-sample.on { border-style: solid; border-color: #d9c98f; background: #fbf4dc; }
+.dash-sample-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: #fff; color: var(--forest); flex: none; }
+.dash-sample p { flex: 1; font-size: 13.5px; line-height: 1.5; color: var(--ink-3); margin: 0; }
+.dash-sample p b { color: var(--ink); }
+.dash-sample-err { color: #b3402a; }
+.dash-sample button { flex: none; display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 640px) { .dash-sample { flex-direction: column; align-items: flex-start; } .dash-sample button { width: 100%; justify-content: center; } }

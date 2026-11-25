@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import date, datetime, timedelta, timezone
@@ -319,7 +321,12 @@ def get_overview(
             upcoming.append({"date": c.balance_due_date.isoformat(), "kind": "balance", "title": f"Balance due from {who}", "href": f"/dashboard/contracts/{c.id}"})
     upcoming.sort(key=lambda e: e["date"])
 
+    sample_loaded = any(
+        (l.notes == SAMPLE_TAG) for l in litters
+    ) or any((b.referral_source == SAMPLE_TAG) for b in buyers)
+
     return {
+        "sample": sample_loaded,
         "setup": setup,
         "kpis": kpis,
         "pipeline": pipeline,
@@ -327,3 +334,125 @@ def get_overview(
         "actions": actions,
         "upcoming": upcoming[:6],
     }
+
+
+# ─── Sample kennel ────────────────────────────────────────────────────────────
+# Lets a new account see a full dashboard in one click. Every row carries
+# SAMPLE_TAG so it can be removed without touching real data.
+
+SAMPLE_TAG = "[sample]"
+
+
+def _sample_rows(db, uid):
+    dogs = db.query(Dog).filter(Dog.owner_id == uid, Dog.health_notes == SAMPLE_TAG).all()
+    litters = db.query(Litter).filter(Litter.breeder_id == uid, Litter.notes == SAMPLE_TAG).all()
+    buyers = db.query(Buyer).filter(Buyer.breeder_id == uid, Buyer.referral_source == SAMPLE_TAG).all()
+    return dogs, litters, buyers
+
+
+@router.post("/sample")
+def load_sample(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    uid = current_user.id
+    dogs, litters, buyers = _sample_rows(db, uid)
+    if dogs or litters or buyers:
+        raise HTTPException(status_code=409, detail="The sample kennel is already loaded.")
+    real_buyers = db.query(Buyer).filter(Buyer.breeder_id == uid).count()
+    if real_buyers:
+        raise HTTPException(status_code=409, detail="The sample kennel is only for accounts with no buyers yet.")
+
+    now = datetime.now(timezone.utc)
+    today = now.date()
+    d = lambda n: today + timedelta(days=n)  # noqa: E731
+    t = lambda n: now + timedelta(days=n)  # noqa: E731
+
+    honey = Dog(id=str(uuid.uuid4()), owner_id=uid, name="Honey", breed="Golden Retriever", sex="female",
+                dob=d(-1100), color="Golden", health_notes=SAMPLE_TAG, registration_org="AKC")
+    cooper = Dog(id=str(uuid.uuid4()), owner_id=uid, name="Cooper", breed="Golden Retriever", sex="male",
+                 dob=d(-1300), color="Dark golden", health_notes=SAMPLE_TAG, registration_org="AKC")
+    db.add_all([honey, cooper])
+    db.flush()
+
+    spring = Litter(id=str(uuid.uuid4()), breeder_id=uid, name="Spring Litter (sample)", breed="Golden Retriever",
+                    status="born", sire_id=cooper.id, dam_id=honey.id, breeding_date=d(-84),
+                    due_date=d(-21), whelp_date=d(-21), go_home_date=d(35), num_males=4, num_females=4,
+                    puppy_price=2200, deposit_amount=300, notes=SAMPLE_TAG, waitlist_open=True)
+    summer = Litter(id=str(uuid.uuid4()), breeder_id=uid, name="Summer Litter (sample)", breed="Golden Retriever",
+                    status="pregnant", sire_id=cooper.id, dam_id=honey.id, breeding_date=d(45),
+                    due_date=d(18), go_home_date=d(90), num_males=3, num_females=3,
+                    puppy_price=2400, deposit_amount=300, notes=SAMPLE_TAG, waitlist_open=True)
+    db.add_all([spring, summer])
+    db.flush()
+
+    def buyer(name, city, state, status, created_days_ago, follow=None, contacted=True):
+        b = Buyer(id=str(uuid.uuid4()), breeder_id=uid, full_name=name,
+                  email=f"sample-{uuid.uuid4().hex[:8]}@example.com", city=city, state=state,
+                  breed_preference="Golden Retriever", status=status, referral_source=SAMPLE_TAG,
+                  follow_up_date=follow, last_contacted=(t(-created_days_ago + 1) if contacted else None),
+                  created_at=t(-created_days_ago))
+        db.add(b)
+        db.flush()
+        return b
+
+    def match(b, litter, pos, paid):
+        m = BuyerLitterMatch(id=str(uuid.uuid4()), buyer_id=b.id, litter_id=litter.id, position=pos,
+                             deposit_paid=paid, deposit_amount=300 if paid else None)
+        db.add(m)
+        return m
+
+    sarah = buyer("Sarah Mitchell", "Austin", "TX", "deposit_paid", 40)
+    marcus = buyer("Marcus Johnson", "Dallas", "TX", "contract_sent", 38)
+    emily = buyer("Emily Carter", "Tulsa", "OK", "complete", 60)
+    daniel = buyer("Daniel Reyes", "Plano", "TX", "waitlisted", 20, follow=t(-2))
+    priya = buyer("Priya Patel", "Houston", "TX", "waitlisted", 14)
+    walsh = buyer("Tom & Jenna Walsh", "Waco", "TX", "deposit_paid", 30)
+    lauren = buyer("Lauren Kim", "Denver", "CO", "matched", 25)
+    chris = buyer("Chris Alvarez", "Fort Worth", "TX", "inquiry", 2, contacted=False)
+    hannah = buyer("Hannah Brooks", "Norman", "OK", "waitlisted", 9, follow=t(1))
+    greg = buyer("Greg Foster", "Katy", "TX", "waitlisted", 6)
+    natalie = buyer("Natalie Ford", "Irving", "TX", "deposit_paid", 12)
+
+    for pos, (b, paid) in enumerate([(emily, True), (sarah, True), (marcus, True), (walsh, True),
+                                     (lauren, True), (daniel, False), (priya, False)], start=1):
+        match(b, spring, pos, paid)
+    for pos, (b, paid) in enumerate([(natalie, True), (hannah, False), (greg, False)], start=1):
+        match(b, summer, pos, paid)
+
+    db.add(Contract(id=str(uuid.uuid4()), breeder_id=uid, buyer_id=marcus.id, litter_id=spring.id, status="sent",
+                    title="Puppy Sales Agreement", content="Sample contract.", template_vars={"sample": True},
+                    sale_price=2200, deposit_amount=300, balance_due=1900, balance_due_date=d(35),
+                    sent_at=t(-5), sign_token=uuid.uuid4().hex))
+    db.add(Contract(id=str(uuid.uuid4()), breeder_id=uid, buyer_id=emily.id, litter_id=spring.id, status="signed",
+                    title="Puppy Sales Agreement", content="Sample contract.", template_vars={"sample": True},
+                    sale_price=2200, deposit_amount=300, balance_due=1900, balance_due_date=d(35),
+                    sent_at=t(-30), signed_at=t(-28), buyer_signature="Emily Carter", sign_token=uuid.uuid4().hex))
+    db.commit()
+    return {"loaded": True, "dogs": 2, "litters": 2, "buyers": 11}
+
+
+@router.delete("/sample")
+def remove_sample(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    uid = current_user.id
+    dogs, litters, buyers = _sample_rows(db, uid)
+    buyer_ids = [b.id for b in buyers]
+    litter_ids = [l.id for l in litters]
+    if buyer_ids:
+        db.query(Contract).filter(Contract.buyer_id.in_(buyer_ids)).delete(synchronize_session=False)
+        db.query(BuyerLitterMatch).filter(BuyerLitterMatch.buyer_id.in_(buyer_ids)).delete(synchronize_session=False)
+    if litter_ids:
+        db.query(BuyerLitterMatch).filter(BuyerLitterMatch.litter_id.in_(litter_ids)).delete(synchronize_session=False)
+        db.query(Contract).filter(Contract.litter_id.in_(litter_ids)).delete(synchronize_session=False)
+    for b in buyers:
+        db.delete(b)
+    for l in litters:
+        db.delete(l)
+    db.flush()
+    for g in dogs:
+        db.delete(g)
+    db.commit()
+    return {"removed": True}
