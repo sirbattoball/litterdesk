@@ -162,13 +162,11 @@ def get_overview(
         {"key": "buyer", "label": "Add a buyer", "hint": "Anyone who has asked about a puppy", "done": len(buyers) > 0, "href": "/dashboard/buyers/new", "cta": "Add buyer"},
         {"key": "waitlist", "label": "Put a buyer on a waitlist", "hint": "Their place in line is saved for you", "done": len(matches) > 0, "href": "/dashboard/buyers" if buyers else "/dashboard/buyers/new", "cta": "Open buyers"},
         {"key": "contract", "label": "Send a contract for signing", "hint": "The buyer signs from a link, no account", "done": len(sent_or_signed) > 0, "href": "/dashboard/contracts/new", "cta": "New contract"},
-        {"key": "payouts", "label": "Connect deposit payouts", "hint": "Optional. Pro lets buyers pay deposits online", "done": bool(current_user.stripe_onboarded), "href": "/dashboard/payments", "cta": "Set up", "optional": True},
     ]
-    required = [i for i in items if not i.get("optional")]
     setup = {
         "items": items,
-        "done": sum(1 for i in required if i["done"]),
-        "total": len(required),
+        "done": sum(1 for i in items if i["done"]),
+        "total": len(items),
     }
 
     # ── Litter cards ──
@@ -274,7 +272,9 @@ def get_overview(
             "href": "/dashboard/contracts", "cta": "Open contracts",
         })
 
-    no_deposit = [b for b in buyers if _val(b.status) == "waitlisted"]
+    paid_buyers = {m.buyer_id for m in matches if m.deposit_paid}
+    waiting_buyers = {m.buyer_id for m in matches if m.litter_id in active_ids}
+    no_deposit = [b for b in live_buyers if b.id in waiting_buyers and b.id not in paid_buyers]
     if no_deposit:
         actions.append({
             "key": "deposits", "tone": "normal",

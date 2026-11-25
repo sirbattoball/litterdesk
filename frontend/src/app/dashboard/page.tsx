@@ -179,7 +179,7 @@ export default function DashboardPage() {
   const maxPipe = Math.max(1, ...pipeline.map(p => p.count))
   const hasMoney = kpis.expected_revenue > 0
   const firstLitter = litters[0]
-  const aiOn = !!user?.subscription_active
+  const aiOn = !!user?.subscription_active && ['pro', 'kennel'].includes(user?.subscription_plan ?? '')
 
   return (
     <div className="page-enter">
