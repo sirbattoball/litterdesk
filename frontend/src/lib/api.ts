@@ -47,6 +47,7 @@ export const authApi = {
 export const dashboardApi = {
   stats: () => api.get('/dashboard/stats'),
   recentActivity: () => api.get('/dashboard/recent-activity'),
+  overview: () => api.get('/dashboard/overview'),
 }
 
 // ─── Dogs ────────────────────────────────────────────────────────────────────

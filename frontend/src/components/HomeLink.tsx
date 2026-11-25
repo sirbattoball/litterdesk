@@ -6,8 +6,8 @@ import { House } from 'lucide-react'
 
 export function HomeLink() {
   const pathname = usePathname()
-  if (pathname === '/') return null
-  const mobileNavigation = pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/onboarding')
+  if (pathname === '/' || pathname.startsWith('/dashboard')) return null
+  const mobileNavigation = false
 
   return (
     <Link href="/" className={`site-home-link${mobileNavigation ? ' above-mobile-nav' : ''}`} aria-label="Home — LitterDesk front page">

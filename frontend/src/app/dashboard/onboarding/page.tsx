@@ -103,24 +103,16 @@ export default function OnboardingPage() {
         {/* STEP 0 — Welcome */}
         {step === 0 && (
           <div className="card animate-fade-in-up" style={{padding:36,textAlign:'center'}}>
-            <div style={{fontSize:40,marginBottom:16}}>🐾</div>
+            <div style={{width:52,height:52,borderRadius:14,background:'var(--forest)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 18px'}}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            </div>
             <h2 style={{fontFamily:'var(--serif)',fontSize:28,color:'var(--ink)',marginBottom:10,letterSpacing:'-.2px'}}>
-              Welcome, {firstName}!
+              Welcome, {firstName}
             </h2>
             <p style={{fontSize:16,color:'var(--ink-3)',lineHeight:1.65,marginBottom:28}}>
-              Let&apos;s get your kennel set up in 3 minutes.<br/>
-              We&apos;ll add your first litter and dog, then you&apos;re ready to go.
+              Two quick questions, one about a litter and one about a dog.<br/>
+              Buyers, contracts and everything else you can add from your dashboard.
             </p>
-            <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
-              {['Add your first litter to start tracking','Add your dam or sire','Then invite buyers from your dashboard'].map((item, i) => (
-                <div key={i} style={{display:'flex',alignItems:'center',gap:12,background:'var(--paper)',borderRadius:12,padding:'12px 16px',textAlign:'left'}}>
-                  <div style={{width:24,height:24,borderRadius:'50%',background:'var(--sage-l)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:12,fontWeight:700,color:'var(--forest)'}}>
-                    {i + 1}
-                  </div>
-                  <span style={{fontSize:14,color:'var(--ink-2)'}}>{item}</span>
-                </div>
-              ))}
-            </div>
             <button onClick={() => setStep(1)} className="btn-primary" style={{width:'100%',justifyContent:'center',padding:'13px',fontSize:15}}>
               Let&apos;s set up your kennel →
             </button>
