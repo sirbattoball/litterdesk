@@ -5,67 +5,26 @@ import { useAuthStore } from '@/lib/store'
 
 export function TrialBanner() {
   const { user } = useAuthStore()
-
   if (!user || !user.trial_ends_at) return null
 
-  const endsAt = new Date(user.trial_ends_at)
-  const now = new Date()
-  const msLeft = endsAt.getTime() - now.getTime()
-  const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24))
+  const msLeft = new Date(user.trial_ends_at).getTime() - Date.now()
+  const daysLeft = Math.ceil(msLeft / 86400000)
   const expired = msLeft <= 0
+  if (user.has_subscription && user.subscription_active) return null
+  // A calm trial needs no banner: the sidebar already shows the days left.
+  if (!expired && daysLeft > 3) return null
 
-  if (expired && user.has_subscription && user.subscription_active) return null
-
-  const urgent = !expired && daysLeft <= 2
-
-  const bg = expired
-    ? 'var(--red-f)'
-    : urgent
-    ? 'var(--amber-f)'
-    : 'var(--paper-2)'
-  const fg = expired ? '#b91c1c' : urgent ? 'var(--amber)' : 'var(--ink-3)'
-  const border = expired ? '#f3caca' : urgent ? '#f0dcb0' : 'var(--paper-3)'
-
+  const tone = expired ? 'expired' : 'soon'
   const message = expired
-    ? "Your free trial has ended. Upgrade to keep using LitterDesk — your data is safe and waiting."
-    : daysLeft === 1
-    ? "Your free trial ends within 24 hours."
-    : urgent
-    ? `Your free trial ends in ${daysLeft} days.`
-    : `${daysLeft} days left in your free trial.`
-
-  const ctaText = user.has_subscription ? 'Manage plan →' : 'View plans →'
+    ? 'Your trial has ended. Your data is saved and waiting.'
+    : daysLeft <= 1
+    ? 'Your trial ends within 24 hours.'
+    : `Your trial ends in ${daysLeft} days.`
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 16,
-        padding: '10px 20px',
-        background: bg,
-        borderBottom: `1px solid ${border}`,
-        fontSize: 13.5,
-        color: fg,
-        flexWrap: 'wrap',
-      }}
-    >
-      <div>
-        <div style={{ fontWeight: 600 }}>{message}{!user.has_subscription && ' No automatic charges.'}</div>
-        {!expired && !user.has_subscription && <div style={{fontSize:12,marginTop:4}}>No card needed. Add your first litter and buyers, then choose a plan anytime if it fits.</div>}
-      </div>
-      <Link
-        href="/dashboard/upgrade"
-        style={{
-          fontWeight: 600,
-          color: fg,
-          textDecoration: 'underline',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {ctaText}
-      </Link>
+    <div className={`trial-banner ${tone}`}>
+      <span>{message}</span>
+      <Link href="/dashboard/upgrade">{expired ? 'Choose a plan' : 'See plans'} →</Link>
     </div>
   )
 }

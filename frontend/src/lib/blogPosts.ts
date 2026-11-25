@@ -12,7 +12,7 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: 'how-to-vet-a-buyer',
     title: 'How to Vet a Buyer Before You Ever Meet Them',
     category: 'Buyer Screening',
-    phase: 'Phase 1 — Plan',
+    phase: 'Choosing buyers',
     excerpt: "What to look for in the first message so you're not guessing who's serious 40 inquiries in.",
     bodyHtml: `
       <p>By the time a bad buyer becomes a bad <em>situation</em> — a bounced payment, a puppy returned three weeks later, a screaming match in your driveway — it's already too late to have prevented it. The vetting happens earlier, in the messages you almost don't bother reading closely because you're excited someone's interested.</p>
@@ -36,14 +36,14 @@ export const BLOG_POSTS: BlogPost[] = [
       <p>If you tell a buyer you don't have their preferred color, sex, or timeline available, how they react tells you a lot. Someone who asks thoughtful follow-up questions ("what do you have instead, and when's your next litter?") is a very different signal than someone who gets pushy or disappears without a word — both are worth remembering if they come back.</p>
       <h3>The goal isn't suspicion — it's a system</h3>
       <p>None of this means treating every inquiry like a threat. Most people reaching out for a puppy are genuinely excited, first-time or fifth-time owners, and perfectly good homes. The point of vetting isn't paranoia — it's having a consistent, repeatable way to tell the difference between "excited and ready" and "excited and not there yet," so you're not making that call from scratch, exhausted, at 11pm after your fortieth message of the week.</p>
-      <p>That consistency is exactly what the first phase of the LitterDesk system — <strong>Plan</strong> — is built around: every inquiry lands in one pipeline instead of six different apps, so you can actually see who you're talking to instead of trying to remember it.</p>
+      <p>In LitterDesk, every inquiry lands in one pipeline instead of six different apps, so you can see who you're talking to without trying to remember.</p>
     `,
   },
   {
     slug: 'what-belongs-in-a-puppy-contract',
     title: 'What Actually Belongs in a Puppy Contract',
     category: 'Contracts',
-    phase: 'Phase 2 — Protect',
+    phase: 'Contracts',
     excerpt: 'Health guarantees, spay/neuter terms, and return policy — the clauses that actually protect you.',
     bodyHtml: `
       <p>A lot of breeder contracts are really just a bill of sale with a health guarantee bolted on. That's not nothing, but it's not protection either — it's a document that looks official and does very little the day something actually goes wrong.</p>
@@ -73,14 +73,14 @@ export const BLOG_POSTS: BlogPost[] = [
       <p>A contract that lives in someone's email as a Word doc attachment, never actually signed, is barely better than a verbal agreement. If a dispute ever escalates, "we both understood it that way" is a much weaker position than a signed, dated, timestamped document both sides agreed to.</p>
       <h3>The point isn't to lawyer-proof everything</h3>
       <p>You don't need twelve pages of legalese. You need the handful of clauses above written specifically enough that there's no room for "well, I thought it meant..." six months from now. Most disputes don't happen because someone acted in bad faith — they happen because something was assumed instead of written down.</p>
-      <p>That's exactly what Phase 2 of the LitterDesk system — <strong>Protect</strong> — exists for: contracts drafted with the clauses that matter, sent for e-signature, and actually signed before a puppy changes hands — not after.</p>
+      <p>LitterDesk sends the contract for online signing, so it is signed before a puppy changes hands, not after.</p>
     `,
   },
   {
     slug: 'go-home-checklist',
     title: 'The Go-Home Checklist Every Serious Breeder Should Have',
     category: 'Buyer Follow-Through',
-    phase: 'Phase 3 — Place',
+    phase: 'Go-home',
     excerpt: 'What to send, when to follow up, and why go-home day is the start of the relationship, not the end.',
     bodyHtml: `
       <p>Go-home day gets treated like the finish line. It's actually the start of the part of the relationship most likely to determine whether that buyer ever refers a friend, leaves you a review, or comes back for their next dog — or goes quiet and disappears the moment the puppy's in the car.</p>
@@ -113,7 +113,7 @@ export const BLOG_POSTS: BlogPost[] = [
       <p>This is also, not coincidentally, when most referrals and reviews get generated — buyers who feel looked after after the sale are the ones who talk about you to their friends.</p>
       <h3>Don't let the relationship just end</h3>
       <p>The breeders buyers rave about aren't the ones with the fanciest litter announcements. They're the ones who followed up, answered the 2am "is this normal" text without judgment, and made it clear the relationship didn't end at the transaction. That's not extra work if it's built into how you already operate — it's the difference between a breeder buyers use once and one they come back to.</p>
-      <p>That consistency — go-home tracking, health records ready in advance, and a follow-up cadence that doesn't rely on remembering — is exactly what Phase 3 of the LitterDesk system, <strong>Place</strong>, is built to handle.</p>
+      <p>LitterDesk keeps go-home dates, health records and follow-up reminders in one place, so none of it relies on memory.</p>
     `,
   },
 ]

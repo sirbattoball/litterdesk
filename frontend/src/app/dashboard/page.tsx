@@ -1,147 +1,278 @@
 'use client'
 import { QueryFailure } from '@/components/QueryFailure'
-
 import { useQuery } from '@tanstack/react-query'
 import { dashboardApi } from '@/lib/api'
 import { useAuthStore } from '@/lib/store'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
-import { Heart, Users, TrendingUp, Bell, UserPlus, Zap, Dog } from 'lucide-react'
+import {
+  ArrowRight, Check, FileText, Heart, Home, Bell, Baby, Sparkles,
+  Users, Wallet, CalendarDays, CircleCheck, Mail, TrendingUp, PawPrint,
+} from 'lucide-react'
 
-function StatCard({ label, value, sub, color, fill, icon, href, delay = 0 }: any) {
-  const inner = (
-    <div
-      className="stat-card animate-fade-in-up"
-      style={{
-        animationDelay: `${delay}ms`,
-        borderTop: `3px solid ${color}`,
-        background: `linear-gradient(165deg, ${fill} 0%, var(--white) 55%)`,
-      }}
-    >
-      <div className="stat-top">
-        <span className="stat-label">{label}</span>
-        <div className="stat-icon" style={{ background: 'var(--white)', boxShadow: '0 1px 3px rgba(13,26,15,.08)' }}>
-          {icon}
-        </div>
-      </div>
-      <div className="stat-value">{value ?? <span className="skeleton skeleton-title" style={{width:60,display:'inline-block'}}/>}</div>
-      {sub && <div className="stat-sub" style={{marginTop:4}}>{sub}</div>}
-    </div>
-  )
-  return href ? <Link href={href} style={{ textDecoration: 'none' }}>{inner}</Link> : inner
+type SetupItem = { key: string; label: string; hint: string; done: boolean; href: string; cta: string; optional?: boolean }
+type Action = { key: string; tone: 'urgent' | 'normal'; title: string; detail: string; href: string; cta: string }
+type LitterCard = {
+  id: string; name: string; breed: string; status: string; stage: number; due_date: string | null
+  go_home_date: string | null; days_to_go_home: number | null; puppies: number; waitlist: number
+  deposits: number; open_spots: number | null; puppy_price: number | null; waitlist_open: boolean
+}
+type Overview = {
+  setup: { items: SetupItem[]; done: number; total: number }
+  kpis: { expected_revenue: number; deposits_held: number; deposits_count: number; puppies_expected: number; buyers_waiting: number; open_spots: number; active_litters: number; total_buyers: number }
+  pipeline: { status: string; label: string; count: number }[]
+  litters: LitterCard[]
+  actions: Action[]
+  upcoming: { date: string; kind: string; title: string; href: string }[]
 }
 
-const QUICK_ACTIONS = [
-  { href: '/dashboard/litters/new', label: 'New Litter', icon: Heart, color: 'var(--pink)', bg: 'var(--pink-f)' },
-  { href: '/dashboard/buyers/new', label: 'Add Buyer', icon: UserPlus, color: 'var(--blue)', bg: 'var(--blue-f)' },
-  { href: '/dashboard/contracts/new', label: 'New contract', icon: Zap, color: 'var(--purple)', bg: 'var(--purple-f)' },
-  { href: '/dashboard/dogs/new', label: 'Add Dog', icon: Dog, color: 'var(--amber)', bg: 'var(--amber-f)' },
-]
+const money = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0)
+const STAGES = ['Planned', 'Expecting', 'Born', 'Weaning', 'Ready']
+const EVENT_ICON: Record<string, any> = { due: Baby, go_home: Home, follow_up: Bell, balance: Wallet }
+
+function Ring({ done, total }: { done: number; total: number }) {
+  const r = 34, c = 2 * Math.PI * r, pct = total ? done / total : 0
+  return (
+    <svg className="dash-ring" viewBox="0 0 80 80" aria-label={`${done} of ${total} steps done`}>
+      <circle cx="40" cy="40" r={r} className="dash-ring-bg" />
+      <circle cx="40" cy="40" r={r} className="dash-ring-fg" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} />
+      <text x="40" y="45" textAnchor="middle" className="dash-ring-text">{done}/{total}</text>
+    </svg>
+  )
+}
+
+function SetupCard({ setup }: { setup: Overview['setup'] }) {
+  const next = setup.items.find(i => !i.done && !i.optional)
+  return (
+    <section className="dash-setup animate-fade-in-up">
+      <div className="dash-setup-head">
+        <Ring done={setup.done} total={setup.total} />
+        <div>
+          <h2 className="dash-h2">Get your kennel running</h2>
+          <p className="dash-muted">{setup.done === 0 ? 'Five quick steps. Each one unlocks something below.' : `${setup.total - setup.done} step${setup.total - setup.done === 1 ? '' : 's'} left. You are ${Math.round((setup.done / setup.total) * 100)}% there.`}</p>
+        </div>
+        {next && <Link href={next.href} className="btn-primary dash-setup-cta">{next.cta}<ArrowRight size={15} /></Link>}
+      </div>
+      <ol className="dash-steps">
+        {setup.items.map(i => (
+          <li key={i.key} className={`dash-step${i.done ? ' done' : ''}${next?.key === i.key ? ' next' : ''}`}>
+            <span className="dash-step-mark">{i.done ? <Check size={13} strokeWidth={3} /> : null}</span>
+            <div className="dash-step-body">
+              <div className="dash-step-label">{i.label}{i.optional && <em>optional</em>}</div>
+              <div className="dash-step-hint">{i.hint}</div>
+            </div>
+            {!i.done && next?.key !== i.key && <Link href={i.href} className="dash-step-link">{i.cta}<ArrowRight size={13} /></Link>}
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
+function Kpi({ icon, label, value, sub, tone }: { icon: React.ReactNode; label: string; value: string; sub: string; tone: string }) {
+  return (
+    <div className={`dash-kpi tone-${tone}`}>
+      <div className="dash-kpi-top"><span>{label}</span><i>{icon}</i></div>
+      <div className="dash-kpi-value">{value}</div>
+      <div className="dash-kpi-sub">{sub}</div>
+    </div>
+  )
+}
+
+function LitterBoard({ litter }: { litter: LitterCard }) {
+  const fill = litter.puppies ? Math.min(100, Math.round((litter.waitlist / litter.puppies) * 100)) : 0
+  const full = litter.puppies > 0 && litter.waitlist >= litter.puppies
+  return (
+    <Link href={`/dashboard/litters/${litter.id}`} className="dash-litter">
+      <div className="dash-litter-top">
+        <div>
+          <div className="dash-litter-name">{litter.name}</div>
+          <div className="dash-litter-meta">
+            {litter.breed}
+            {litter.go_home_date && <> · go-home {format(parseISO(litter.go_home_date), 'MMM d')}{litter.days_to_go_home != null && litter.days_to_go_home >= 0 && <> ({litter.days_to_go_home}d)</>}</>}
+          </div>
+        </div>
+        {litter.puppy_price ? <div className="dash-litter-price">{money(litter.puppy_price)}<small>per puppy</small></div> : null}
+      </div>
+      <div className="dash-stages" aria-label={`Stage: ${STAGES[litter.stage]}`}>
+        {STAGES.map((s, i) => (
+          <div key={s} className={`dash-stage${i < litter.stage ? ' past' : ''}${i === litter.stage ? ' now' : ''}`}>
+            <span /><label>{s}</label>
+          </div>
+        ))}
+      </div>
+      {litter.puppies > 0 ? (
+        <div className="dash-fill">
+          <div className="dash-fill-bar"><div style={{ width: `${fill}%` }} className={full ? 'full' : ''} /></div>
+          <div className="dash-fill-text">
+            <p><b>{litter.waitlist}</b> of {litter.puppies} spots claimed</p>
+            <span>{litter.deposits} deposit{litter.deposits === 1 ? '' : 's'}{full ? ' · full' : litter.open_spots ? ` · ${litter.open_spots} open` : ''}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="dash-fill-text dim">Add expected puppies to track spots and deposits.</div>
+      )}
+    </Link>
+  )
+}
+
+function Skeleton() {
+  return (
+    <div className="page-body">
+      <div className="skeleton skeleton-card" style={{ height: 180, marginBottom: 16 }} />
+      <div className="dash-kpis">{[0, 1, 2, 3].map(i => <div key={i} className="skeleton skeleton-card" />)}</div>
+      <div className="skeleton skeleton-card" style={{ height: 320 }} />
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
-  const { data: stats, isError: statsError, refetch: retryStats } = useQuery({ queryKey: ['dashboard-stats'], queryFn: () => dashboardApi.stats().then(r => r.data) })
-  const { data: activity, isError: activityError, refetch: retryActivity } = useQuery({ queryKey: ['dashboard-activity'], queryFn: () => dashboardApi.recentActivity().then(r => r.data) })
-
-  if (statsError || activityError) return <QueryFailure retry={() => { retryStats(); retryActivity() }} />
+  const { data, isError, refetch } = useQuery<Overview>({ queryKey: ['dashboard-overview'], queryFn: () => dashboardApi.overview().then(r => r.data) })
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const firstName = user?.full_name?.split(' ')[0] ?? 'there'
-  const emoji = hour < 12 ? '☀️' : hour < 17 ? '👋' : '🌙'
+
+  if (isError) return <QueryFailure retry={() => refetch()} />
+
+  const header = (
+    <div className="topbar">
+      <div>
+        <div className="topbar-title">{greeting}, {firstName}</div>
+        <div className="topbar-sub">{user?.kennel_name ?? 'Your kennel'} · {format(new Date(), 'EEEE, MMMM d')}</div>
+      </div>
+      <div className="topbar-right">
+        <Link href="/dashboard/buyers/new" className="btn-ghost">Add buyer</Link>
+        <Link href="/dashboard/litters/new" className="btn-primary">+ New litter</Link>
+      </div>
+    </div>
+  )
+  if (!data) return <div className="page-enter">{header}<Skeleton /></div>
+
+  const { setup, kpis, pipeline, litters, actions, upcoming } = data
+  const setupDone = setup.done >= setup.total
+  const maxPipe = Math.max(1, ...pipeline.map(p => p.count))
+  const hasMoney = kpis.expected_revenue > 0
+  const firstLitter = litters[0]
+  const aiOn = !!user?.subscription_active
 
   return (
     <div className="page-enter">
-      <div className="topbar">
-        <div>
-          <div className="topbar-title">{greeting}, {firstName} {emoji}</div>
-          <div className="topbar-sub">{user?.kennel_name ?? 'Your Kennel'} · {format(new Date(), 'EEEE, MMMM d')}</div>
-        </div>
-        <div className="topbar-right">
-          <Link href="/dashboard/litters/new" className="btn-primary">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            New Litter
-          </Link>
-        </div>
-      </div>
+      {header}
+      <div className="page-body dash">
+        {!setupDone && <SetupCard setup={setup} />}
 
-      <div className="page-body">
-
-        <div className="stats-grid stagger">
-          <StatCard delay={0} label="Active Litters" value={stats?.active_litters} sub="↑ tracking in real time" color="var(--pink)" fill="var(--pink-f)" href="/dashboard/litters"
-            icon={<Heart size={17} color="var(--pink)" strokeWidth={2}/>}
-          />
-          <StatCard delay={60} label="Total Buyers" value={stats?.total_buyers} sub="↑ in your pipeline" color="var(--blue)" fill="var(--blue-f)" href="/dashboard/buyers"
-            icon={<Users size={17} color="var(--blue)" strokeWidth={2}/>}
-          />
-          <StatCard delay={120} label="Buyers with deposits" value={stats?.buyers_with_deposit} sub="across your litter waitlists" color="var(--forest-ll)" fill="var(--sage-l)"
-            icon={<TrendingUp size={17} color="var(--forest-ll)" strokeWidth={2}/>}
-          />
-          <StatCard delay={180} label="Follow-ups Due" value={stats?.follow_ups_due}
-            sub={stats ? (stats.follow_ups_due > 0 ? '⚠ Action needed' : '✓ All caught up') : 'Loading…'}
-            color={stats?.follow_ups_due > 0 ? 'var(--red)' : 'var(--forest-ll)'}
-            fill={stats?.follow_ups_due > 0 ? 'var(--red-f)' : 'var(--sage-l)'}
-            href="/dashboard/buyers"
-            icon={<Bell size={17} color={stats?.follow_ups_due > 0 ? 'var(--red)' : 'var(--forest-ll)'} strokeWidth={2}/>}
-          />
+        <div className="dash-kpis stagger">
+          <Kpi tone="gold" icon={<TrendingUp size={16} />} label="Expected revenue" value={money(kpis.expected_revenue)}
+            sub={hasMoney ? `${kpis.puppies_expected} puppies across ${kpis.active_litters} active litter${kpis.active_litters === 1 ? '' : 's'}` : 'Add a price and puppy count to a litter'} />
+          <Kpi tone="green" icon={<Wallet size={16} />} label="Deposits held" value={money(kpis.deposits_held)}
+            sub={kpis.deposits_count ? `${kpis.deposits_count} buyer${kpis.deposits_count === 1 ? '' : 's'} committed` : 'Nothing recorded yet'} />
+          <Kpi tone="blue" icon={<Users size={16} />} label="Buyers waiting" value={String(kpis.buyers_waiting)}
+            sub={kpis.puppies_expected ? `${kpis.open_spots} spot${kpis.open_spots === 1 ? '' : 's'} still open` : `${kpis.total_buyers} buyer${kpis.total_buyers === 1 ? '' : 's'} in total`} />
+          <Kpi tone="pink" icon={<PawPrint size={16} />} label="Puppies expected" value={String(kpis.puppies_expected)}
+            sub={kpis.active_litters ? `${kpis.active_litters} active litter${kpis.active_litters === 1 ? '' : 's'}` : 'No active litters'} />
         </div>
 
-        <div className="two-col">
-          {/* Activity Feed */}
-          <div className="card animate-fade-in-up" style={{padding:22,animationDelay:'220ms'}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-              <h3 style={{fontSize:15,fontWeight:700,color:'var(--ink)'}}>Recent Activity</h3>
-              <Link href="/dashboard/buyers" style={{fontSize:13,color:'var(--forest)',textDecoration:'none',fontWeight:500}}>View all →</Link>
-            </div>
-            {activity?.length ? activity.slice(0,6).map((item: any, i: number) => (
-              <div key={i} className="activity-item animate-slide-in" style={{animationDelay:`${i*40}ms`}}>
-                <div className="activity-dot" style={{background: i%3===0?'var(--forest-ll)':i%3===1?'var(--blue)':'var(--amber)'}}/>
-                <div>
-                  <div className="activity-text">{item.description}</div>
-                  <div className="activity-time">{format(parseISO(item.timestamp),'MMM d, h:mm a')}</div>
-                </div>
+        <div className="dash-grid">
+          <div className="dash-col">
+            <section className="dash-card animate-fade-in-up">
+              <div className="dash-card-head">
+                <h3 className="dash-h3">Next best actions</h3>
+                {actions.length > 0 && <span className="dash-pill">{actions.length}</span>}
               </div>
-            )) : (
-              <div style={{textAlign:'center',padding:'32px 0'}}>
-                <div className="empty-icon" style={{margin:'0 auto 12px'}}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:24,height:24,color:'var(--ink-4)'}}><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+              {actions.length ? (
+                <ul className="dash-actions">
+                  {actions.map(a => (
+                    <li key={a.key}>
+                      <Link href={a.href} className={`dash-action ${a.tone}`}>
+                        <span className="dash-action-dot" />
+                        <span className="dash-action-body"><b>{a.title}</b><small>{a.detail}</small></span>
+                        <span className="dash-action-cta">{a.cta}<ArrowRight size={13} /></span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="dash-clear">
+                  <CircleCheck size={26} />
+                  <b>{kpis.total_buyers || kpis.active_litters ? 'You are all caught up' : 'Nothing needs you yet'}</b>
+                  <p>{kpis.total_buyers || kpis.active_litters ? 'Follow-ups, unsigned contracts and litter updates will show up here the moment they need you.' : 'Once you add a litter and a few buyers, this list tells you what to do each day.'}</p>
                 </div>
-                <p style={{fontSize:14,color:'var(--ink-4)',lineHeight:1.5}}>No activity yet.<br/>Add your first litter to get started.</p>
+              )}
+            </section>
+
+            <section className="dash-card animate-fade-in-up">
+              <div className="dash-card-head">
+                <h3 className="dash-h3">Your litters</h3>
+                <Link href="/dashboard/litters" className="dash-link">All litters<ArrowRight size={13} /></Link>
               </div>
-            )}
+              {litters.length ? (
+                <div className="dash-litters">{litters.map(l => <LitterBoard key={l.id} litter={l} />)}</div>
+              ) : (
+                <div className="dash-clear">
+                  <Heart size={26} />
+                  <b>No active litters</b>
+                  <p>Create one to track its stage, waitlist and deposits in one card.</p>
+                  <Link href="/dashboard/litters/new" className="btn-primary">New litter</Link>
+                </div>
+              )}
+            </section>
           </div>
 
-          {/* Quick Actions */}
-          <div className="card animate-fade-in-up" style={{padding:22,animationDelay:'280ms'}}>
-            <h3 style={{fontSize:15,fontWeight:700,color:'var(--ink)',marginBottom:16}}>Quick Actions</h3>
-            <div className="qa-grid" style={{marginBottom:16}}>
-              {QUICK_ACTIONS.map((a, i) => (
-                <Link key={a.href} href={a.href} className="qa-btn" style={{
-                  animationDelay:`${i*40}ms`,
-                  background: `linear-gradient(165deg, ${a.bg} 0%, var(--white) 75%)`,
-                  borderColor: a.color,
-                }}>
-                  <div className="qa-icon" style={{ background: 'var(--white)', boxShadow: '0 1px 3px rgba(13,26,15,.1)' }}>
-                    <a.icon size={20} color={a.color} strokeWidth={2}/>
-                  </div>
-                  <div className="qa-label">{a.label}</div>
-                </Link>
-              ))}
-            </div>
+          <div className="dash-col">
+            <section className="dash-card animate-fade-in-up">
+              <div className="dash-card-head">
+                <h3 className="dash-h3">Buyer pipeline</h3>
+                <Link href="/dashboard/buyers" className="dash-link">All buyers<ArrowRight size={13} /></Link>
+              </div>
+              <ul className="dash-pipe">
+                {pipeline.map(p => (
+                  <li key={p.status}>
+                    <span>{p.label}</span>
+                    <div className="dash-pipe-bar"><div style={{ width: `${(p.count / maxPipe) * 100}%` }} /></div>
+                    <b>{p.count}</b>
+                  </li>
+                ))}
+              </ul>
+            </section>
 
-            {user?.subscription_active ? (
-              <div className="ai-result">
-                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--forest)"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  <span style={{fontSize:12,fontWeight:700,color:'var(--forest)',textTransform:'uppercase',letterSpacing:'.4px'}}>AI features active</span>
-                </div>
-                <p style={{fontSize:13,color:'var(--ink-3)',lineHeight:1.5}}>Generate contracts, draft litter announcements, and write buyer emails with Claude from any buyer or litter page.</p>
-              </div>
+            <section className="dash-card animate-fade-in-up">
+              <div className="dash-card-head"><h3 className="dash-h3">Coming up</h3></div>
+              {upcoming.length ? (
+                <ul className="dash-upcoming">
+                  {upcoming.map((e, i) => {
+                    const Icon = EVENT_ICON[e.kind] ?? CalendarDays
+                    const d = parseISO(e.date)
+                    return (
+                      <li key={i}>
+                        <Link href={e.href}>
+                          <span className="dash-date"><b>{format(d, 'd')}</b>{format(d, 'MMM')}</span>
+                          <span className="dash-up-body"><Icon size={14} />{e.title}</span>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <p className="dash-muted dash-pad">Due dates, go-home days and follow-ups land here once you set them.</p>
+              )}
+            </section>
+
+            {aiOn ? (
+              <section className="dash-ai animate-fade-in-up">
+                <div className="dash-ai-head"><Sparkles size={15} /> Claude can do this for you</div>
+                <Link href="/dashboard/contracts/new"><FileText size={15} />Draft a sales contract</Link>
+                {firstLitter && <Link href={`/dashboard/litters/${firstLitter.id}`}><Mail size={15} />Announce {firstLitter.name}</Link>}
+                <Link href="/dashboard/buyers"><Users size={15} />Write a buyer email</Link>
+                <Link href={firstLitter ? `/dashboard/litters/${firstLitter.id}` : '/dashboard/litters'}><Heart size={15} />Match buyers to a litter</Link>
+              </section>
             ) : (
-              <div style={{background:'var(--paper)',border:'1px solid var(--paper-3)',borderRadius:'var(--r-lg)',padding:14}}>
-                <p style={{fontSize:13,color:'var(--ink-4)',lineHeight:1.5,marginBottom:10}}>Unlock AI contracts, litter announcements, and automated follow-ups.</p>
-                <Link href="/dashboard/upgrade" style={{fontSize:13,color:'var(--forest)',fontWeight:600,textDecoration:'none'}}>Upgrade to Pro →</Link>
-              </div>
+              <section className="dash-ai muted animate-fade-in-up">
+                <div className="dash-ai-head"><Sparkles size={15} /> Pro adds AI</div>
+                <p>Contract drafts, litter announcements and buyer emails, written for you to review.</p>
+                <Link href="/dashboard/upgrade" className="dash-ai-cta">See Pro<ArrowRight size={13} /></Link>
+              </section>
             )}
           </div>
         </div>
