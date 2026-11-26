@@ -2,7 +2,7 @@
 import { QueryFailure } from '@/components/QueryFailure'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { dashboardApi } from '@/lib/api'
-import { useAuthStore } from '@/lib/store'
+import { useAuthStore, isPro } from '@/lib/store'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
 import {
@@ -179,7 +179,7 @@ export default function DashboardPage() {
   const maxPipe = Math.max(1, ...pipeline.map(p => p.count))
   const hasMoney = kpis.expected_revenue > 0
   const firstLitter = litters[0]
-  const aiOn = !!user?.subscription_active && ['pro', 'kennel'].includes(user?.subscription_plan ?? '')
+  const aiOn = isPro(user)
 
   return (
     <div className="page-enter">

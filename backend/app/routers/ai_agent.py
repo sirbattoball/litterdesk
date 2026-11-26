@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models import User, Buyer, Litter, Contract
 from app.routers.auth import get_current_user
 from app.services import ai_service
+from app.services.subscriptions import has_ai_access
 import uuid
 import anthropic
 from functools import wraps
@@ -66,7 +67,7 @@ def generate_contract(
     current_user: User = Depends(get_current_user)
 ):
     """Generate an AI-written puppy sale contract."""
-    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
+    if not has_ai_access(current_user):
         raise HTTPException(403, "Contract generation requires Pro plan")
 
     buyer = db.query(Buyer).filter(
@@ -118,7 +119,7 @@ def draft_email(
     current_user: User = Depends(get_current_user)
 ):
     """Draft a follow-up email to a buyer."""
-    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
+    if not has_ai_access(current_user):
         raise HTTPException(403, "Email drafting requires Pro plan")
 
     buyer = db.query(Buyer).filter(
@@ -171,7 +172,7 @@ def match_litter(
     current_user: User = Depends(get_current_user)
 ):
     """AI-match buyers on waitlist to available puppies."""
-    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
+    if not has_ai_access(current_user):
         raise HTTPException(403, "AI matching requires Pro plan")
 
     litter = db.query(Litter).filter(
@@ -217,7 +218,7 @@ def litter_announcement(
     current_user: User = Depends(get_current_user)
 ):
     """Generate a litter announcement for email/social media."""
-    if not (current_user.subscription_active and current_user.subscription_plan in ["pro", "kennel"]):
+    if not has_ai_access(current_user):
         raise HTTPException(403, "AI litter announcements require Pro plan")
 
     litter = db.query(Litter).filter(

@@ -12,6 +12,16 @@ def trial_deadline(user):
     return value
 
 
+def has_ai_access(user):
+    """Pro/Kennel subscribers, plus everyone during the 7-day no-card trial."""
+    if not user.subscription_active:
+        return False
+    if user.subscription_plan in ("pro", "kennel"):
+        return True
+    end = trial_deadline(user)
+    return bool(not user.stripe_subscription_id and end and end > datetime.now(timezone.utc))
+
+
 def expire_local_trial(user):
     """Enforce the no-card deadline on requests, without a scheduled worker."""
     end = trial_deadline(user)
