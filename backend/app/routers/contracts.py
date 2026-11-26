@@ -17,7 +17,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-def _notify_breeder_signed(to, buyer_name, buyer_email, signed_at, contract_url):
+def _notify_breeder_signed(to, buyer_name, buyer_email, contract_url):
     """Best-effort alert so the breeder knows without checking the app."""
     try:
         if not settings.RESEND_API_KEY or not to:
@@ -25,7 +25,7 @@ def _notify_breeder_signed(to, buyer_name, buyer_email, signed_at, contract_url)
         email_service.send_email(
             to=to,
             subject=f"{buyer_name} signed their puppy contract",
-            body=(f"{buyer_name} just signed their puppy contract ({signed_at:%b %d, %Y %I:%M %p} UTC).\n\n"
+            body=(f"{buyer_name} just signed their puppy contract.\n\n"
                   f"View it: {contract_url}\n\n"
                   "Reply to this email to write to the buyer.\n\n— LitterDesk"),
             reply_to=buyer_email,
@@ -95,7 +95,7 @@ def sign_contract(token: str, buyer_name: str, background_tasks: BackgroundTasks
     signed_at = contract.signed_at
     contract_url = f"{settings.APP_URL.rstrip('/')}/dashboard/contracts/{contract.id}"
     db.commit()
-    background_tasks.add_task(_notify_breeder_signed, breeder_email, buyer_name, buyer_email, signed_at, contract_url)
+    background_tasks.add_task(_notify_breeder_signed, breeder_email, buyer_name, buyer_email, contract_url)
     return {"message": "Contract signed successfully", "signed_at": signed_at}
 
 
