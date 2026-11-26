@@ -57,6 +57,7 @@ class UserOut(BaseModel):
     subscription_plan: str
     subscription_active: bool
     has_subscription: bool = False
+    ai_access: bool = False
     stripe_onboarded: bool
     trial_ends_at: Optional[datetime] = None
     onboarding_completed: bool = False

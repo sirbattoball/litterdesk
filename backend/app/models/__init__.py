@@ -115,6 +115,12 @@ class User(Base):
 
 # ─── Dog ──────────────────────────────────────────────────────────────────────
 
+    @property
+    def ai_access(self):
+        from app.services.subscriptions import has_ai_access
+        return has_ai_access(self)
+
+
 class Dog(Base):
     __tablename__ = "dogs"
 

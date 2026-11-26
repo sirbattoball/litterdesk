@@ -12,6 +12,7 @@ interface User {
   subscription_plan: string
   subscription_active: boolean
   has_subscription?: boolean
+  ai_access?: boolean
   stripe_onboarded: boolean
   trial_ends_at?: string | null
 }
@@ -86,4 +87,4 @@ export const useAuthStore = create<AuthState>()(
 )
 
 export const isPro = (user: User | null) =>
-  user?.subscription_active && ['pro', 'kennel'].includes(user.subscription_plan || '')
+  !!user?.subscription_active && (user.ai_access ?? ['pro', 'kennel'].includes(user.subscription_plan || ''))
