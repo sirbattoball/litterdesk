@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, timezone
@@ -12,6 +14,24 @@ from app.config import settings
 from app.services import email_service
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+def _notify_breeder_signed(to, buyer_name, buyer_email, signed_at, contract_url):
+    """Best-effort alert so the breeder knows without checking the app."""
+    try:
+        if not settings.RESEND_API_KEY or not to:
+            return
+        email_service.send_email(
+            to=to,
+            subject=f"{buyer_name} signed their puppy contract",
+            body=(f"{buyer_name} just signed their puppy contract ({signed_at:%b %d, %Y %I:%M %p} UTC).\n\n"
+                  f"View it: {contract_url}\n\n"
+                  "Reply to this email to write to the buyer.\n\n— LitterDesk"),
+            reply_to=buyer_email,
+        )
+    except Exception:
+        logger.exception("signed-contract alert failed")
 
 FRONTEND_URL = "https://litterdesk.vercel.app"
 
@@ -54,7 +74,7 @@ def get_contract_for_signing(token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/sign/{token}")
-def sign_contract(token: str, buyer_name: str, db: Session = Depends(get_db)):
+def sign_contract(token: str, buyer_name: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     buyer_name = buyer_name.strip()
     if not buyer_name:
         raise HTTPException(400, "Your name is required")
@@ -68,10 +88,15 @@ def sign_contract(token: str, buyer_name: str, db: Session = Depends(get_db)):
     contract.status = "signed"
     contract.signed_at = datetime.now(timezone.utc)
     contract.buyer_signature = buyer_name
-    if contract.buyer and contract.buyer.status in ("inquiry", "waitlisted", "deposit_paid"):
-        contract.buyer.status = "contract_sent"
+    if contract.buyer and contract.buyer.status in ("inquiry", "waitlisted", "deposit_paid", "matched", "contract_sent"):
+        contract.buyer.status = "complete"
+    breeder_email = contract.breeder.email if contract.breeder else None
+    buyer_email = contract.buyer.email if contract.buyer else None
+    signed_at = contract.signed_at
+    contract_url = f"{settings.APP_URL.rstrip('/')}/dashboard/contracts/{contract.id}"
     db.commit()
-    return {"message": "Contract signed successfully", "signed_at": contract.signed_at}
+    background_tasks.add_task(_notify_breeder_signed, breeder_email, buyer_name, buyer_email, signed_at, contract_url)
+    return {"message": "Contract signed successfully", "signed_at": signed_at}
 
 
 @router.get("/{contract_id}", response_model=ContractOut)

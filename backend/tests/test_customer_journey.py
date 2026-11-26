@@ -209,6 +209,21 @@ class CustomerJourneyTests(unittest.TestCase):
         r=self.client.get('/api/contracts/sign/'+token);self.assertEqual(r.status_code,200,r.text);self.assertEqual(r.json()['status'],'signed')
         self.assertEqual(self.client.post('/api/contracts/sign/'+token,params={'buyer_name':'Buyer'}).status_code,400)
 
+    def test_signing_alerts_the_breeder_and_advances_the_buyer(self):
+        from app.config import settings
+        c=self.new_contract()
+        with patch('app.services.email_service.send_contract_email',return_value=True):self.post('contracts/'+c+'/send')
+        with self.Session() as db:
+            token=db.get(Contract,c).sign_token;breeder_email=db.get(Contract,c).breeder.email
+        with patch.object(settings,'RESEND_API_KEY','re_test'),patch('app.services.email_service.send_email',return_value=True) as send:
+            self.assertEqual(self.client.post('/api/contracts/sign/'+token,params={'buyer_name':'Pat Buyer'}).status_code,200)
+        self.assertEqual(send.call_count,1);kw=send.call_args.kwargs
+        self.assertEqual(kw['to'],breeder_email);self.assertIn('Pat Buyer signed',kw['subject'])
+        with self.Session() as db:self.assertEqual(db.get(Contract,c).buyer.status,'complete')
+        with patch.object(settings,'RESEND_API_KEY','re_test'),patch('app.services.email_service.send_email',return_value=True) as send:
+            self.client.post('/api/contracts/sign/'+token,params={'buyer_name':'Pat Buyer'})
+        send.assert_not_called()
+
     def test_billing_and_connect_return_reconciliation(self):
         self.pro()
         with patch('stripe.Subscription.list',return_value=page([self.sub(status='canceled')])):
