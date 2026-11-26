@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { BLOG_POSTS } from '@/lib/blogPosts'
 
 export const metadata = {
-  title: 'From The Kennel — LitterDesk Blog',
-  description: 'Practical, no-fluff guides for the 1–4 litter breeder — buyer screening, contracts, and running a serious breeding program without an ops team.',
+  title: 'Guides for small breeders — LitterDesk',
+  description: 'Short, practical guides on screening buyers, writing puppy contracts and handling go-home day, for breeders raising 1–4 litters a year.',
 }
 
 export default function BlogIndexPage() {
@@ -29,9 +29,8 @@ export default function BlogIndexPage() {
       </nav>
 
       <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center', padding: '20px 24px 56px' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--forest-ll)', marginBottom: 10 }}>From The Kennel</div>
         <h1 style={{ fontFamily: 'var(--serif)', fontSize: 40, color: 'var(--ink)', letterSpacing: '-.3px', marginBottom: 14 }}>Guides for the 1–4 litter breeder</h1>
-        <p style={{ fontSize: 16, color: 'var(--ink-4)', lineHeight: 1.6 }}>Practical, no-fluff advice on contracts, buyer chaos, and running a serious breeding program without an ops team.</p>
+        <p style={{ fontSize: 16, color: 'var(--ink-4)', lineHeight: 1.6 }}>Short, practical advice on screening buyers, writing contracts and handling go-home day.</p>
       </div>
 
       <div className="blog-cards">
@@ -40,7 +39,7 @@ export default function BlogIndexPage() {
             <span style={{ alignSelf: 'flex-start', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--forest)', background: 'rgba(26,71,48,.08)', padding: '3px 10px', borderRadius: 20 }}>{post.category}</span>
             <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--ink)', lineHeight: 1.4 }}>{post.title}</div>
             <p style={{ fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.6, flex: 1 }}>{post.excerpt}</p>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-4)' }}>{post.phase} · Read more →</span>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-4)' }}>Read guide →</span>
           </Link>
         ))}
       </div>

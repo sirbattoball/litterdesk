@@ -6,7 +6,7 @@ import { House } from 'lucide-react'
 
 export function HomeLink() {
   const pathname = usePathname()
-  if (pathname === '/' || pathname.startsWith('/dashboard') || pathname.startsWith('/sign')) return null
+  if (pathname === '/' || pathname.startsWith('/dashboard') || pathname.startsWith('/sign') || pathname.startsWith('/blog')) return null
   const mobileNavigation = false
 
   return (
