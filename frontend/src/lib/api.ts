@@ -73,6 +73,8 @@ export const littersApi = {
   delete: (id: string) => api.delete(`/litters/${id}`),
   puppies: (id: string) => api.get(`/litters/${id}/puppies`),
   addPuppy: (id: string, data: any) => api.post(`/litters/${id}/puppies`, data),
+  updatePuppy: (id: string, puppyId: string, data: any) => api.put(`/litters/${id}/puppies/${puppyId}`, data),
+  deletePuppy: (id: string, puppyId: string) => api.delete(`/litters/${id}/puppies/${puppyId}`),
   waitlist: (id: string) => api.get(`/litters/${id}/waitlist`),
   recordDeposit: (litterId: string, buyerId: string, depositPaid: boolean) =>
     api.put(`/litters/${litterId}/waitlist/${buyerId}/deposit`, { deposit_paid: depositPaid }),

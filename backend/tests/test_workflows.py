@@ -341,6 +341,19 @@ class WorkflowTests(unittest.TestCase):
             self.assertIn('stripe_session_id', columns)
             self.assertIn('amount_cents', columns)
 
+    def test_puppy_can_be_edited_and_removed(self):
+        made = self.client.post('/api/litters/litter/puppies', json={'name': 'Pip', 'sex': 'female'}, headers=self.headers)
+        self.assertEqual(made.status_code, 201, made.text)
+        pid = made.json()['id']
+        edited = self.client.put(f'/api/litters/litter/puppies/{pid}', json={'name': 'Pip Squeak', 'sex': 'male', 'color': 'Gold'}, headers=self.headers)
+        self.assertEqual(edited.status_code, 200, edited.text)
+        self.assertEqual((edited.json()['name'], edited.json()['sex']), ('Pip Squeak', 'male'))
+        other = self.client.delete(f'/api/litters/foreign-litter/puppies/{pid}', headers=self.headers)
+        self.assertIn(other.status_code, (403, 404))
+        gone = self.client.delete(f'/api/litters/litter/puppies/{pid}', headers=self.headers)
+        self.assertEqual(gone.status_code, 204)
+        self.assertEqual(self.client.get('/api/litters/litter/puppies', headers=self.headers).json(), [])
+
 
 if __name__ == '__main__':
     unittest.main()

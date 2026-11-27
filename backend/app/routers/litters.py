@@ -138,6 +138,41 @@ def add_puppy(
     return puppy
 
 
+@router.put("/{litter_id}/puppies/{puppy_id}", response_model=PuppyOut)
+def update_puppy(
+    litter_id: str,
+    puppy_id: str,
+    data: PuppyCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    check_litter_access(litter_id, current_user, db)
+    puppy = db.query(Puppy).filter(Puppy.id == puppy_id, Puppy.litter_id == litter_id).first()
+    if not puppy:
+        raise HTTPException(404, "Puppy not found")
+    for key, value in data.model_dump().items():
+        setattr(puppy, key, value)
+    db.commit()
+    db.refresh(puppy)
+    return puppy
+
+
+@router.delete("/{litter_id}/puppies/{puppy_id}", status_code=204)
+def delete_puppy(
+    litter_id: str,
+    puppy_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    check_litter_access(litter_id, current_user, db)
+    puppy = db.query(Puppy).filter(Puppy.id == puppy_id, Puppy.litter_id == litter_id).first()
+    if not puppy:
+        raise HTTPException(404, "Puppy not found")
+    db.query(BuyerLitterMatch).filter(BuyerLitterMatch.puppy_id == puppy_id).update({BuyerLitterMatch.puppy_id: None})
+    db.delete(puppy)
+    db.commit()
+
+
 @router.get("/{litter_id}/waitlist")
 def get_waitlist(
     litter_id: str,
