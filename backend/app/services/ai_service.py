@@ -228,7 +228,7 @@ FACTS RULE: use only the facts above. Never invent a date, price or health claim
 
 Write two versions:
 1. An email version (2-3 paragraphs, warm and personal)
-2. A social media caption (energetic, with relevant hashtags)
+2. A social media caption (energetic, with relevant hashtags). Do not use emoji in either version.
 
 Format as JSON:
 {{
