@@ -143,9 +143,9 @@ export default function SettingsPage() {
                     return 'No active plan'
                   })()}
                 </span>
-                {user?.subscription_active && <span style={{fontSize:13,color:'var(--forest-ll)',fontWeight:500}}>✓ Active</span>}
+                {user?.has_subscription && user?.subscription_active && <span style={{fontSize:13,color:'var(--forest-ll)',fontWeight:500}}>✓ Active</span>}
               </div>
-              <Link href="/dashboard/payments" className="btn-ghost" style={{marginBottom:12}}>Manage billing →</Link>
+              {user?.has_subscription && <Link href="/dashboard/payments" className="btn-ghost" style={{marginBottom:12}}>Manage billing →</Link>}
               {user?.has_subscription ? (
                 <p style={{fontSize:13,color:'var(--ink-4)',marginBottom:12}}>Manage billing, download invoices, or cancel your subscription.</p>
               ) : (
@@ -173,6 +173,7 @@ export default function SettingsPage() {
                 style={{fontSize:13,color:'var(--red)',background:'none',border:'1px solid rgba(196,64,64,.3)',borderRadius:'var(--r-lg)',padding:'8px 16px',cursor:'pointer',fontFamily:'var(--sans)'}}>
                 Request account deletion
               </button>
+              <p style={{fontSize:12.5,color:'var(--ink-4)',marginTop:10}}>This opens an email to litterdesk.hello@gmail.com. If nothing opens, send that address a note from your account email.</p>
             </div>
           </div>
         </div>
