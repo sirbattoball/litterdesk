@@ -14,7 +14,7 @@ export default function NewLitterPage() {
   const router = useRouter()
   const qc = useQueryClient()
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ name:'', breed:'Golden Retriever', status:'planned', whelp_date:'', go_home_date:'', num_males:0, num_females:0, puppy_price:'', dam_id:'', sire_id:'', notes:'' })
+  const [form, setForm] = useState({ name:'', breed:'Golden Retriever', status:'planned', whelp_date:'', go_home_date:'', num_males:0, num_females:0, puppy_price:'', deposit_amount:'', dam_id:'', sire_id:'', notes:'' })
   const { data: dogs } = useQuery({ queryKey:['dogs'], queryFn: () => dogsApi.list().then(r=>r.data) })
   const females = dogs?.filter((d:any) => d.sex==='female') ?? []
   const males = dogs?.filter((d:any) => d.sex==='male' || d.is_external) ?? []
@@ -29,6 +29,8 @@ export default function NewLitterPage() {
       const payload: any = { ...form, num_males: Number(form.num_males), num_females: Number(form.num_females) }
       if (form.puppy_price) payload.puppy_price = Number(form.puppy_price)
       else delete payload.puppy_price
+      if (form.deposit_amount) payload.deposit_amount = Number(form.deposit_amount)
+      else delete payload.deposit_amount
       if (!form.dam_id) delete payload.dam_id
       if (!form.sire_id) delete payload.sire_id
       if (!form.whelp_date) delete payload.whelp_date
@@ -84,6 +86,7 @@ export default function NewLitterPage() {
                 <div className="field"><label className="label" htmlFor="field-females-6">Females</label><input id="field-females-6" type="number" className="input" min={0} value={form.num_females} onChange={e=>set('num_females',e.target.value)} /></div>
               </div>
               <div className="field"><label className="label" htmlFor="field-price-per-puppy-7">Price per puppy ($)</label><input id="field-price-per-puppy-7" type="number" className="input" placeholder="e.g. 2800" value={form.puppy_price} onChange={e=>set('puppy_price',e.target.value)} /></div>
+              <div className="field"><label className="label" htmlFor="field-deposit-8">Deposit per puppy ($)</label><input id="field-deposit-8" type="number" className="input" placeholder="e.g. 300" value={form.deposit_amount} onChange={e=>set('deposit_amount',e.target.value)} /></div>
             </div>
 
             <div className="card" style={{ padding: 24, marginBottom: 16 }}>

@@ -21,7 +21,7 @@ export default function OnboardingPage() {
   const qc = useQueryClient()
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
-  const [litter, setLitter] = useState({ breed: 'Golden Retriever', status: 'planned', num_males: '', num_females: '', puppy_price: '', go_home_date: '' })
+  const [litter, setLitter] = useState({ breed: 'Golden Retriever', status: 'planned', num_males: '', num_females: '', puppy_price: '', deposit_amount: '', go_home_date: '' })
   const [dog, setDog] = useState({ name: '', breed: 'Golden Retriever', sex: 'female' })
   const [skipDog, setSkipDog] = useState(false)
 
@@ -29,7 +29,7 @@ export default function OnboardingPage() {
     let live = true
     Promise.all([littersApi.list(), dogsApi.list()]).then(([litters, dogs]) => {
       if (!live) return
-      if (litters.data.length) { const saved = litters.data[0]; setLitterId(saved.id); setLitter({breed:saved.breed,status:saved.status,num_males:String(saved.num_males),num_females:String(saved.num_females),puppy_price:saved.puppy_price == null ? '' : String(saved.puppy_price),go_home_date:saved.go_home_date || ''}); setStep(dogs.data.length ? 3 : 2) }
+      if (litters.data.length) { const saved = litters.data[0]; setLitterId(saved.id); setLitter({breed:saved.breed,status:saved.status,num_males:String(saved.num_males),num_females:String(saved.num_females),puppy_price:saved.puppy_price == null ? '' : String(saved.puppy_price),deposit_amount:saved.deposit_amount == null ? '' : String(saved.deposit_amount),go_home_date:saved.go_home_date || ''}); setStep(dogs.data.length ? 3 : 2) }
     }).catch(() => setResumeError(true)).finally(() => { if(live) setResuming(false) })
     return () => { live = false }
   }, [])
@@ -47,6 +47,8 @@ export default function OnboardingPage() {
       const payload: any = { ...litter, num_males: Number(litter.num_males), num_females: Number(litter.num_females) }
       if (litter.puppy_price) payload.puppy_price = Number(litter.puppy_price)
       else delete payload.puppy_price
+      if (litter.deposit_amount) payload.deposit_amount = Number(litter.deposit_amount)
+      else delete payload.deposit_amount
       if (!litter.go_home_date) delete payload.go_home_date
       const res = litterId ? await littersApi.update(litterId, payload) : await littersApi.create(payload)
       setLitterId(res.data.id)
@@ -150,6 +152,7 @@ export default function OnboardingPage() {
               <div className="field"><label className="label" htmlFor="field-puppy-price-5">Puppy price ($)</label><input id="field-puppy-price-5" type="number" className="input" placeholder="2800" value={litter.puppy_price} onChange={e=>setLitter(l=>({...l,puppy_price:e.target.value}))} /></div>
               <div className="field"><label className="label" htmlFor="field-go-home-date-6">Go-home date</label><input id="field-go-home-date-6" type="date" className="input" value={litter.go_home_date} onChange={e=>setLitter(l=>({...l,go_home_date:e.target.value}))} onInput={e=>setLitter(l=>({...l,go_home_date:(e.target as HTMLInputElement).value}))} /></div>
             </div>
+            <div className="field" style={{maxWidth:240}}><label className="label" htmlFor="field-deposit-9">Deposit per puppy ($)</label><input id="field-deposit-9" type="number" className="input" placeholder="300" value={litter.deposit_amount} onChange={e=>setLitter(l=>({...l,deposit_amount:e.target.value}))} /></div>
 
             <div style={{display:'flex',gap:10}}>
               <button onClick={() => setStep(0)} className="btn-ghost" style={{flex:'0 0 auto'}}>← Back</button>

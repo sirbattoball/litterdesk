@@ -30,6 +30,8 @@ export default function LitterDetailPage() {
   const qc = useQueryClient()
   const { user } = useAuthStore()
   const [counts, setCounts] = useState<{males: string, females: string} | null>(null)
+  const [money, setMoney] = useState<{price: string, deposit: string} | null>(null)
+  const [savingMoney, setSavingMoney] = useState(false)
   const [savingCounts, setSavingCounts] = useState(false)
   const [announcing, setAnnouncing] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
@@ -94,6 +96,24 @@ export default function LitterDetailPage() {
       setCounts(null)
       toast.success('Puppy counts saved')
     } catch { toast.error('Could not save puppy counts') } finally { setSavingCounts(false) }
+  }
+
+  const saveMoney = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!money) return
+    const price = money.price === '' ? null : Number(money.price), deposit = money.deposit === '' ? null : Number(money.deposit)
+    if ((price !== null && (!Number.isFinite(price) || price < 0)) || (deposit !== null && (!Number.isFinite(deposit) || deposit < 0))) { toast.error('Enter amounts of zero or more'); return }
+    if (price !== null && deposit !== null && deposit > price) { toast.error('Deposit cannot be more than the price'); return }
+    setSavingMoney(true)
+    try {
+      await littersApi.update(id, { puppy_price: price, deposit_amount: deposit })
+      await qc.invalidateQueries({ queryKey: ['litter', id] })
+      qc.invalidateQueries({ queryKey: ['litters'] })
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      qc.invalidateQueries({ queryKey: ['dashboard-overview'] })
+      setMoney(null)
+      toast.success('Price and deposit saved')
+    } catch { toast.error('Could not save price and deposit') } finally { setSavingMoney(false) }
   }
 
   const handleAddToWaitlist = async () => {
@@ -179,6 +199,7 @@ export default function LitterDetailPage() {
             ['Puppies', total || '—'],
             ['Sex split', total ? `${litter.num_males}M / ${litter.num_females}F` : '—'],
             ['Price each', litter.puppy_price ? `$${litter.puppy_price.toLocaleString()}` : '—'],
+            ['Deposit each', litter.deposit_amount ? `$${litter.deposit_amount.toLocaleString()}` : 'Not set'],
             ['Whelp date', litter.whelp_date ? format(parseISO(litter.whelp_date),'MMM d, yyyy') : '—'],
             ['Go-home', litter.go_home_date ? format(parseISO(litter.go_home_date),'MMM d, yyyy') : '—'],
             ['Waitlist', waitlist?.length ?? 0],
@@ -192,6 +213,11 @@ export default function LitterDetailPage() {
 
         <div className="card" style={{padding:20,marginBottom:20}}>
           {counts ? <form onSubmit={saveCounts}><div className="two-col"><div className="field"><label className="label" htmlFor="male-count">Males</label><input id="male-count" className="input" type="number" min="0" step="1" required value={counts.males} onChange={e=>setCounts({...counts,males:e.target.value})}/></div><div className="field"><label className="label" htmlFor="female-count">Females</label><input id="female-count" className="input" type="number" min="0" step="1" required value={counts.females} onChange={e=>setCounts({...counts,females:e.target.value})}/></div></div><button className="btn-primary" disabled={savingCounts} type="submit">{savingCounts ? 'Saving…' : 'Save counts'}</button><button className="btn-ghost" disabled={savingCounts} type="button" onClick={()=>setCounts(null)}>Cancel</button></form> : <button className="btn-ghost" onClick={()=>setCounts({males:String(litter.num_males ?? 0),females:String(litter.num_females ?? 0)})}>Edit puppy counts</button>}
+        </div>
+
+        <div className="card" style={{padding:20,marginBottom:20}}>
+          {money ? <form onSubmit={saveMoney}><div className="two-col"><div className="field"><label className="label" htmlFor="price-each">Price per puppy ($)</label><input id="price-each" className="input" type="number" min="0" step="0.01" value={money.price} onChange={e=>setMoney({...money,price:e.target.value})}/></div><div className="field"><label className="label" htmlFor="deposit-each">Deposit per puppy ($)</label><input id="deposit-each" className="input" type="number" min="0" step="0.01" placeholder="e.g. 300" value={money.deposit} onChange={e=>setMoney({...money,deposit:e.target.value})}/></div></div><div style={{display:'flex',gap:8}}><button className="btn-primary" disabled={savingMoney} type="submit">{savingMoney ? 'Saving…' : 'Save price and deposit'}</button><button className="btn-ghost" type="button" onClick={()=>setMoney(null)}>Cancel</button></div></form>
+          : <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}><span style={{fontSize:14,color:'var(--ink-3)'}}>{litter.deposit_amount ? 'Each deposit you mark received counts toward Deposits held.' : 'Set a deposit amount so Deposits held adds up when you mark deposits received.'}</span><button className="btn-ghost" type="button" onClick={()=>setMoney({price: litter.puppy_price == null ? '' : String(litter.puppy_price), deposit: litter.deposit_amount == null ? '' : String(litter.deposit_amount)})}>Edit price and deposit</button></div>}
         </div>
 
         <PuppyRoster litterId={id}/>
