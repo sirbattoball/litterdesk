@@ -47,12 +47,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <article style={{ maxWidth: 700, margin: '0 auto', padding: '20px 24px 40px' }}>
         <span style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--forest)', background: 'rgba(26,71,48,.08)', padding: '3px 10px', borderRadius: 20, marginBottom: 14 }}>{post.category}</span>
         <h1 style={{ fontFamily: 'var(--serif)', fontSize: 38, color: 'var(--ink)', letterSpacing: '-.3px', lineHeight: 1.15, marginBottom: 10 }}>{post.title}</h1>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-4)', marginBottom: 32 }}>{post.phase}</div>
+        <div style={{ marginBottom: 22 }} />
         <div className="post-body" dangerouslySetInnerHTML={{ __html: post.bodyHtml }} />
 
         <div style={{ marginTop: 40, padding: 24, borderRadius: 16, background: 'linear-gradient(160deg,var(--forest-l) 0%,var(--forest) 100%)', textAlign: 'center' }}>
           <div style={{ fontFamily: 'var(--serif)', fontSize: 20, color: '#fff', marginBottom: 8 }}>Put this into practice</div>
-          <p style={{ fontSize: 14, color: 'rgba(250,248,243,.8)', marginBottom: 18, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>Keep inquiries, contracts and deposits in one place.</p>
+          <p style={{ fontSize: 14, color: 'rgba(250,248,243,.8)', marginBottom: 18, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>Add your next litter and buyers, then send a contract for signing.</p>
           <Link href="/#pricing" style={{ display: 'inline-block', background: 'var(--cream)', color: 'var(--forest)', fontWeight: 600, fontSize: 14, padding: '11px 24px', borderRadius: 10, textDecoration: 'none' }}>Start free →</Link>
         </div>
       </article>

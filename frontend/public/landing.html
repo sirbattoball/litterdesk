@@ -310,6 +310,7 @@ body{font-size:16px}
 .fine a{color:var(--forest);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .tpl-ok{margin-top:22px;max-width:560px;background:#fff;border:1.5px solid var(--forest-l);border-radius:12px;padding:18px 20px;display:grid;gap:4px;font-size:15.5px}
 .tpl-ok strong{color:var(--forest);font-size:17px}
+.tpl-ok[hidden]{display:none}
 .tpl-ok a{color:var(--forest);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .tpl-err{margin-top:12px;color:#9a3412;font-size:15px;font-weight:600}
 .template-art{position:relative;display:grid;place-items:center;min-height:300px}
@@ -326,7 +327,7 @@ body{font-size:16px}
 @media(max-width:950px){
 .pains,.steps{grid-template-columns:1fr}
 .template-band{grid-template-columns:1fr;padding:40px 30px}
-.template-art{min-height:240px;order:-1}
+.template-art{min-height:200px;order:2;transform:scale(.85)}
 .doc{width:210px}
 }
 @media(max-width:680px){
@@ -462,23 +463,20 @@ body{padding-bottom:0}
 <li><span class="step-n">2</span><h3>Build your waitlist</h3><p>Add buyers as they ask, then mark deposits as they arrive.</p></li>
 <li><span class="step-n">3</span><h3>Send the contract</h3><p>Write or paste it, then send a link. Buyers sign on any device.</p></li>
 </ol>
-<div class="chips" aria-label="Also included">
-<span>Dog profiles &amp; health records</span><span>Buyer notes &amp; contact history</span><span>Deposit tracking</span><span>Online signing</span><span>Pro: AI drafting &amp; buyer matching</span>
-</div>
 </section>
 
 <section class="template-band" id="template" aria-labelledby="template-title">
 <div class="template-copy">
 <div class="eyebrow">Free for every breeder</div>
 <h2 id="template-title">Start with the<br><em>buyer agreement.</em></h2>
-<p>A plain-English puppy sales agreement with deposit terms, health guarantee, registration, and pickup sections. Edit it in Word and make it yours. It isn’t legal advice, so have a local attorney review your final version.</p>
+<p>Plain-English terms for deposits, the health guarantee, registration and pickup. Edit it in Word and make it yours.</p>
 <form id="tpl-form" class="tpl-form" novalidate>
 <label class="sr-only" for="tpl-email">Your email</label>
 <input id="tpl-email" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="you@yourkennel.com">
 <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
 <button class="btn" type="submit">Send me the template</button>
 </form>
-<p class="fine" id="tpl-fine">I’ll also email about six short tips on buyers, contracts, and deposits over two weeks. Unsubscribe anytime. <a href="/downloads/puppy-buyer-agreement-deposit-terms-template.docx" download data-cta="template-direct">Or just download it, no email needed →</a></p>
+<p class="fine" id="tpl-fine">You’ll also get six short tips on buyers, contracts and deposits over two weeks. Unsubscribe anytime. Not legal advice; have a local attorney review your final version.<br><a href="/downloads/puppy-buyer-agreement-deposit-terms-template.docx" download data-cta="template-direct">Or just download it, no email needed →</a></p>
 <div class="tpl-ok" id="tpl-ok" role="status" hidden>
 <strong>Your download should start now.</strong>
 <span>We’re also emailing you a copy. Check spam if you don’t see it. <a href="/downloads/puppy-buyer-agreement-deposit-terms-template.docx" download>Download again →</a></span>
@@ -521,7 +519,7 @@ body{padding-bottom:0}
 <div class="plan-top"><h3>Starter</h3><span class="sample">Most breeders start here</span></div>
 <div class="price">$39<span> / month</span></div>
 <p>Everything you need to get organized.</p>
-<a href="/register?plan=starter" class="btn light" data-cta="plan-starter">Start Starter free <span aria-hidden="true">→</span></a>
+<a href="/register?plan=starter" class="btn light" data-cta="plan-starter">Try Starter free <span aria-hidden="true">→</span></a>
 <ul>
 <li>Litter tracking &amp; buyer waitlists</li>
 <li>Dog profiles &amp; health records</li>
@@ -534,7 +532,7 @@ body{padding-bottom:0}
 <div class="plan-top"><h3>Pro</h3><span class="plan-tag">Adds AI</span></div>
 <div class="price">$89<span> / month</span></div>
 <p>Starter, plus AI to save you writing time.</p>
-<a href="/register?plan=pro" class="btn" data-cta="plan-pro">Start Pro free <span aria-hidden="true">→</span></a>
+<a href="/register?plan=pro" class="btn" data-cta="plan-pro">Try Pro free <span aria-hidden="true">→</span></a>
 <ul>
 <li>Everything in Starter</li>
 <li>AI contract drafting you review and edit</li>
@@ -571,7 +569,7 @@ body{padding-bottom:0}
 <div>
 <a class="brand" href="/">
 <span class="mark" aria-hidden="true">♥</span>LitterDesk</a>
-<p>Software for small dog breeders.<br>Built independently by one developer.</p>
+<p>Software for small dog breeders.</p>
 </div>
 <div class="footer-links">
 <a href="/blog">Guides</a>
@@ -583,7 +581,7 @@ body{padding-bottom:0}
 </div>
 </div>
 <div class="footer-bottom">
-<span>© 2026 LitterDesk. Made for small breeders.</span>
+<span>© 2026 LitterDesk</span>
 <span>Subscription billing through Stripe.</span>
 </div>
 </footer>
